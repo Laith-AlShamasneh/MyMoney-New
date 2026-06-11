@@ -1,0 +1,28 @@
+{
+  "en": {
+    "Common.Success": "Operation completed successfully.",
+    "Common.Created": "Created successfully.",
+    "Common.Updated": "Updated successfully.",
+    "Common.Deleted": "Deleted successfully.",
+    "Common.NotFound": "Resource not found.",
+    "Common.Conflict": "Resource is conflict.",
+    "Common.InternalServerError": "Error!",
+
+    "Authentication.EmailRequired": "Email address is required.",
+    "Authentication.InvalidEmail": "Please enter a valid email address.",
+    "Authentication.UserLoginSuccess": "User logged in successfully."
+  },
+  "ar": {
+    "Common.Success": "تمت العملية بنجاح.",
+    "Common.Created": "تم الإنشاء بنجاح.",
+    "Common.Updated": "تم التعديل بنجاح.",
+    "Common.Deleted": "تم الحذف بنجاح.",
+    "Common.NotFound": "العنصر غير موجود.",
+    "Common.Conflict": "العنصر مستخدم.",
+    "Common.InternalServerError": "حدثت مشكلة في النظام!",
+
+    "Authentication.EmailRequired": "البريد الإلكتروني مطلوب.",
+    "Authentication.InvalidEmail": "يرجى إدخال بريد إلكتروني صحيح.",
+    "Authentication.UserLoginSuccess": "تم تسجيل الدخول بنجاح."
+  }
+}

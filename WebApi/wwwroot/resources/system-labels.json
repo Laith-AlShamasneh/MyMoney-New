@@ -1,0 +1,16 @@
+{
+  "en": {
+    "Onboarding.Packages": {
+      "subjects": "Subjects",
+      "joinNow": "Join now",
+      "bestValue": "Best value"
+    }
+  },
+  "ar": {
+    "Onboarding.Packages": {
+      "subjects": "المواد",
+      "joinNow": "اشترك الآن",
+      "bestValue": "أفضل قيمة"
+    }
+  }
+}
