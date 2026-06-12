@@ -13,4 +13,5 @@ public interface IAuthService
     Task<ServiceResult<bool>>             ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken ct = default);
     Task<ServiceResult<bool>>             ValidateResetTokenAsync(ValidateResetTokenRequest request, CancellationToken ct = default);
     Task<ServiceResult<bool>>             ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default);
+    Task<ServiceResult<LoginResponse>>    RefreshTokenAsync(RefreshTokenRequest request, CancellationToken ct = default);
 }

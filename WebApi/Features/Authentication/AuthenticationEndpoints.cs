@@ -37,6 +37,9 @@ public static class AuthenticationEndpoints
 
         group.MapPost("/reset-password", ResetPasswordAsync)
              .AddEndpointFilter<ValidationFilter<ResetPasswordRequest>>();
+
+        group.MapPost("/refresh-token", RefreshTokenAsync)
+             .AddEndpointFilter<ValidationFilter<RefreshTokenRequest>>();
     }
 
     private static async Task<IResult> RegisterAsync(
@@ -108,6 +111,15 @@ public static class AuthenticationEndpoints
         CancellationToken    ct)
     {
         var result = await authService.ResetPasswordAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> RefreshTokenAsync(
+        RefreshTokenRequest request,
+        IAuthService        authService,
+        CancellationToken   ct)
+    {
+        var result = await authService.RefreshTokenAsync(request, ct);
         return result.ToHttpResponse();
     }
 }

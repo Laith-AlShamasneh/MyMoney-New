@@ -508,4 +508,68 @@ internal sealed class AuthService(
                     await messageProvider.GetMessagesAsync(MessageKeys.Authentication.InvalidResetToken, ct))
         };
     }
+
+    public async Task<ServiceResult<LoginResponse>> RefreshTokenAsync(
+        RefreshTokenRequest request, CancellationToken ct = default)
+    {
+        var oldHash   = tokenHasher.Hash(request.RefreshToken);
+        var newRaw    = tokenHasher.GenerateRawToken();
+        var newHash   = tokenHasher.Hash(newRaw);
+        var newExpiry = DateTime.UtcNow.AddDays(RefreshTokenExpiryDays);
+
+        var dbResult = await authRepository.RefreshTokenAsync(new RefreshTokenDbInput
+        {
+            OldTokenHash    = oldHash,
+            NewTokenHash    = newHash,
+            NewExpiresOnUtc = newExpiry,
+            RevokedByIp     = userContext.IpAddress
+        }, ct);
+
+        if (dbResult.ResultCode == 2)
+            return ServiceResultFactory.Failure<LoginResponse>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.TokenExpired, ct));
+
+        if (dbResult.ResultCode != 0)
+            return ServiceResultFactory.Failure<LoginResponse>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.InvalidToken, ct));
+
+        var jwtModel = new JwtTokenResponse(
+            dbResult.UserId, dbResult.Email!, dbResult.DisplayNameEn!, [dbResult.RoleId]);
+
+        var (accessToken, accessTokenExpiresAt) = jwtService.GenerateAccessToken(jwtModel);
+
+        var isArabic    = userContext.Language == SystemLanguages.Arabic;
+        var displayName = isArabic && !string.IsNullOrWhiteSpace(dbResult.DisplayNameAr)
+            ? dbResult.DisplayNameAr
+            : dbResult.DisplayNameEn!;
+        var roleName = isArabic ? dbResult.RoleNameAr! : dbResult.RoleNameEn!;
+
+        string? profileImageUrl = null;
+        if (!string.IsNullOrEmpty(dbResult.ProfilePicture))
+        {
+            var (url, _) = storageUtility.BuildFilePathWithExpiration(
+                FolderPaths.ProfilePictures,
+                dbResult.ProfilePicture,
+                isInternalStorage: true,
+                baseUrl: userContext.RequestBaseUrl);
+            profileImageUrl = url;
+        }
+
+        var response = new LoginResponse(
+            Email:                 dbResult.Email!,
+            DisplayName:           displayName,
+            ProfileImageUrl:       profileImageUrl,
+            Roles:                 [roleName],
+            AccessToken:           accessToken,
+            RefreshToken:          newRaw,
+            AccessTokenExpiresAt:  accessTokenExpiresAt,
+            RefreshTokenExpiresAt: newExpiry);
+
+        return ServiceResultFactory.Success(
+            response,
+            InternalResponseCodes.OK,
+            await messageProvider.GetMessagesAsync(MessageKeys.Authentication.TokenRefreshed, ct));
+    }
 }

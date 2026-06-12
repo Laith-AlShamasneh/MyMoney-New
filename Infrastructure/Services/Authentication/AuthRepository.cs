@@ -165,4 +165,18 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
             "MyMoney.usp_Authentication_ResetPassword", p, ct)
             ?? new ResetPasswordDbResult { ResultCode = 1 };
     }
+
+    public async Task<RefreshTokenDbResult> RefreshTokenAsync(
+        RefreshTokenDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OldTokenHash",    input.OldTokenHash,    DbType.String);
+        p.Add("@NewTokenHash",    input.NewTokenHash,    DbType.String);
+        p.Add("@NewExpiresOnUtc", input.NewExpiresOnUtc, DbType.DateTime2);
+        p.Add("@RevokedByIp",     input.RevokedByIp,     DbType.String);
+
+        return await db.QuerySingleAsync<RefreshTokenDbResult>(
+            "MyMoney.usp_Authentication_RefreshToken", p, ct)
+            ?? new RefreshTokenDbResult { ResultCode = 1 };
+    }
 }

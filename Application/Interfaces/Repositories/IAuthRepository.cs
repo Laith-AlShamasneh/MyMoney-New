@@ -21,4 +21,6 @@ public interface IAuthRepository
     Task                             SavePasswordResetTokenAsync(SavePasswordResetTokenDbInput input, CancellationToken ct = default);
     Task<ValidateResetTokenDbResult> ValidatePasswordResetTokenAsync(string tokenHash, CancellationToken ct = default);
     Task<ResetPasswordDbResult>      ResetPasswordAsync(ResetPasswordDbInput input, CancellationToken ct = default);
+
+    Task<RefreshTokenDbResult> RefreshTokenAsync(RefreshTokenDbInput input, CancellationToken ct = default);
 }
