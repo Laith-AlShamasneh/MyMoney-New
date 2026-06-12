@@ -14,4 +14,5 @@ public interface IUserContext
     string? UserAgent { get; }
     string? SessionId { get; }
     string? TraceId { get; }
+    string RequestBaseUrl { get; }
 }

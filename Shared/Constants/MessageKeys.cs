@@ -36,8 +36,18 @@ public static class MessageKeys
         public const string ResetTokenRequired          = "Authentication.ResetTokenRequired";
         public const string NewPasswordRequired         = "Authentication.NewPasswordRequired";
 
+        // Validation (Register-specific)
+        public const string FirstNameTooLong              = "Authentication.FirstNameTooLong";
+        public const string LastNameTooLong               = "Authentication.LastNameTooLong";
+        public const string DisplayNameRequired           = "Authentication.DisplayNameRequired";
+        public const string DisplayNameTooLong            = "Authentication.DisplayNameTooLong";
+        public const string InvalidDateOfBirth            = "Authentication.InvalidDateOfBirth";
+        public const string InvalidProfileImageFormat     = "Authentication.InvalidProfileImageFormat";
+        public const string ProfileImageTooLarge          = "Authentication.ProfileImageTooLarge";
+
         // Business
-        public const string EmailAlreadyInUse       = "Authentication.EmailAlreadyInUse";
+        public const string RegistrationFailed       = "Authentication.RegistrationFailed";
+        public const string EmailAlreadyInUse        = "Authentication.EmailAlreadyInUse";
         public const string InvalidCredentials      = "Authentication.InvalidCredentials";
         public const string AccountLocked           = "Authentication.AccountLocked";
         public const string AccountNotActive        = "Authentication.AccountNotActive";

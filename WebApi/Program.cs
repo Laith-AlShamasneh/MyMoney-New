@@ -1,4 +1,5 @@
 using Application.Common.Extensions;
+using WebApi.Features.Authentication;
 using FluentValidation;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -68,5 +69,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // ── 8. Endpoints ──────────────────────────────────────────────────────────────
+app.MapAuthenticationEndpoints();
 
 app.Run();

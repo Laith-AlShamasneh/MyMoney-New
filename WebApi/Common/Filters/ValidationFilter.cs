@@ -25,17 +25,18 @@ public sealed class ValidationFilter<TRequest>(IMessageProvider messageProvider)
 
                 if (!result.IsValid)
                 {
-                    var messages = new List<string>();
+                    var errors = new List<string>();
 
                     foreach (var error in result.Errors)
-                    {
-                        var translated = await messageProvider.GetMessagesAsync(error.ErrorMessage);
-                        messages.Add(translated);
-                    }
+                        errors.Add(await messageProvider.GetMessagesAsync(error.ErrorMessage));
+
+                    var validationMsg = await messageProvider.GetMessagesAsync(
+                        Shared.Constants.MessageKeys.Common.ValidationError);
 
                     var response = ApiResponse<object?>.Fail(
                         (int)InternalResponseCodes.BadRequest,
-                        string.Join(" | ", messages));
+                        validationMsg,
+                        errors);
 
                     return Results.Json(response, statusCode: StatusCodes.Status400BadRequest);
                 }

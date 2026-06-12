@@ -56,7 +56,8 @@ GO
 CREATE TABLE MyMoney.Roles
 (
     RoleId          INT             IDENTITY(1,1)   NOT NULL,
-    Name            NVARCHAR(100)                   NOT NULL,
+    NameEn          NVARCHAR(100)                   NOT NULL,
+    NameAr          NVARCHAR(100)                   NOT NULL,
     Description     NVARCHAR(500)                   NULL,
     IsSystemRole    BIT                             NOT NULL    DEFAULT 0,
 
@@ -67,8 +68,8 @@ CREATE TABLE MyMoney.Roles
     UpdatedAt       DATETIME2(0)                    NULL,
     UpdatedBy       BIGINT                          NULL,
 
-    CONSTRAINT PK_Roles         PRIMARY KEY (RoleId),
-    CONSTRAINT UQ_Roles_Name    UNIQUE      (Name)
+    CONSTRAINT PK_Roles           PRIMARY KEY (RoleId),
+    CONSTRAINT UQ_Roles_NameEn    UNIQUE      (NameEn)
 );
 GO
 
@@ -171,8 +172,8 @@ GO
 CREATE TABLE MyMoney.Categories
 (
     CategoryId          INT             IDENTITY(1,1)   NOT NULL,
-    Name                NVARCHAR(100)                   NOT NULL,
-    NameAr              NVARCHAR(100)                   NULL,
+    NameEn              NVARCHAR(100)                   NOT NULL,
+    NameAr              NVARCHAR(100)                   NOT NULL,
     TransactionTypeId   TINYINT                         NOT NULL,
     IconFileName        NVARCHAR(500)                   NULL,
     SortOrder           SMALLINT                        NOT NULL    DEFAULT 0,
@@ -323,14 +324,14 @@ GO
 -- =============================================================================
 
 -- Roles
-INSERT INTO MyMoney.Roles (Name, Description, IsSystemRole, IsActive, CreatedAt)
+INSERT INTO MyMoney.Roles (NameEn, NameAr, Description, IsSystemRole, IsActive, CreatedAt)
 VALUES
-    ('Admin', 'Full system access. Can manage users and reference data.', 1, 1, GETUTCDATE()),
-    ('User',  'Standard user. Can manage their own financial data.',      1, 1, GETUTCDATE());
+    ('Admin', N'مدير',     'Full system access. Can manage users and reference data.', 1, 1, GETUTCDATE()),
+    ('User',  N'مستخدم',   'Standard user. Can manage their own financial data.',      1, 1, GETUTCDATE());
 GO
 
 -- Categories — Income (TransactionTypeId = 1)
-INSERT INTO MyMoney.Categories (Name, NameAr, TransactionTypeId, SortOrder, IsActive, CreatedAt)
+INSERT INTO MyMoney.Categories (NameEn, NameAr, TransactionTypeId, SortOrder, IsActive, CreatedAt)
 VALUES
     ('Salary',          N'الراتب',              1, 1,  1, GETUTCDATE()),
     ('Freelance',       N'عمل حر',              1, 2,  1, GETUTCDATE()),
@@ -343,7 +344,7 @@ VALUES
 GO
 
 -- Categories — Expense (TransactionTypeId = 2)
-INSERT INTO MyMoney.Categories (Name, NameAr, TransactionTypeId, SortOrder, IsActive, CreatedAt)
+INSERT INTO MyMoney.Categories (NameEn, NameAr, TransactionTypeId, SortOrder, IsActive, CreatedAt)
 VALUES
     ('Food & Dining',       N'الطعام والمطاعم',     2, 1,  1, GETUTCDATE()),
     ('Transportation',      N'المواصلات',            2, 2,  1, GETUTCDATE()),

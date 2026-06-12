@@ -53,4 +53,14 @@ internal sealed class UserContext(IHttpContextAccessor httpContextAccessor) : IU
     public string? TraceId       => Http?.TraceIdentifier
                                  ?? Http?.Request.Headers["X-Trace-Id"].FirstOrDefault()
                                  ?? Guid.NewGuid().ToString();
+
+    public string RequestBaseUrl
+    {
+        get
+        {
+            if (Http is null) return string.Empty;
+            var req = Http.Request;
+            return $"{req.Scheme}://{req.Host}";
+        }
+    }
 }

@@ -30,14 +30,16 @@ internal sealed class JwtService : IJwtService
         };
     }
 
-    public string GenerateAccessToken(JwtTokenResponse model)
+    public (string Token, DateTime ExpiresAt) GenerateAccessToken(JwtTokenResponse model)
     {
+        var expiresAt = DateTime.UtcNow.AddHours(_options.ExpiryHours);
+
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.NameId, model.UserId.ToString()),
-            new(JwtRegisteredClaimNames.Email,  model.Email),
-            new(JwtRegisteredClaimNames.PreferredUsername,  model.DisplayName),
-            new(JwtRegisteredClaimNames.Jti,    Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.NameId,             model.UserId.ToString()),
+            new(JwtRegisteredClaimNames.Email,               model.Email),
+            new(JwtRegisteredClaimNames.PreferredUsername,   model.DisplayName),
+            new(JwtRegisteredClaimNames.Jti,                 Guid.NewGuid().ToString())
         };
 
         foreach (var role in model.RoleIds)
@@ -50,10 +52,10 @@ internal sealed class JwtService : IJwtService
             issuer:             _options.Issuer,
             audience:           _options.Audience,
             claims:             claims,
-            expires:            DateTime.UtcNow.AddHours(_options.ExpiryHours),
+            expires:            expiresAt,
             signingCredentials: creds);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
     }
 
     public ClaimsPrincipal? GetPrincipalFromToken(string token)

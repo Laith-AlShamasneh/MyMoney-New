@@ -12,7 +12,7 @@ public static class ServiceResultExtensions
 
         var response = result.IsSuccess
             ? ApiResponse<T>.SuccessResponse(result.Data, (int)result.Code, result.Message)
-            : ApiResponse<T>.Fail((int)result.Code, result.Message);
+            : ApiResponse<T>.Fail((int)result.Code, result.Message, result.Errors);
 
         return Results.Json(response, statusCode: httpStatus);
     }

@@ -5,6 +5,6 @@ namespace Application.Interfaces.Services;
 
 public interface IJwtService
 {
-    string GenerateAccessToken(JwtTokenResponse model);
+    (string Token, DateTime ExpiresAt) GenerateAccessToken(JwtTokenResponse model);
     ClaimsPrincipal? GetPrincipalFromToken(string token);
 }

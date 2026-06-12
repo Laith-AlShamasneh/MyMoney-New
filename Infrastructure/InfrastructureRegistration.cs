@@ -1,4 +1,5 @@
 using Application.Interfaces.Database;
+using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Infrastructure.Database;
 using Infrastructure.Services.Authentication;
@@ -25,12 +26,13 @@ public static class InfrastructureRegistration
         services.AddScoped<IDbExecutor, DbExecutor>();
 
         // 3. Repositories
+        services.AddScoped<IAuthRepository, AuthRepository>();
 
-        // 4. Auth services
+        // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<ITokenHasher, TokenHasher>();
         services.AddScoped<IUserContext, UserContext>();
-        //services.AddHttpContextAccessor();
 
         // 5. Cache & Localization
         services.AddMemoryCache();
@@ -39,6 +41,7 @@ public static class InfrastructureRegistration
 
         // 6. Storage
         services.AddSingleton<IStorageUtility, StorageUtility>();
+        services.AddScoped<IFileService, LocalFileService>();
 
         return services;
     }
