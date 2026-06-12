@@ -320,6 +320,35 @@ CREATE INDEX IX_BackgroundJobs_NextRetryAt
 GO
 
 -- =============================================================================
+-- TABLE: MyMoney.EmailAttachments
+-- Metadata for email attachments. Binary content is stored on the filesystem
+-- (via IFileService); only the metadata is persisted here.
+-- Linked to a BackgroundJob so the handler can locate and read the file.
+-- =============================================================================
+
+CREATE TABLE MyMoney.EmailAttachments
+(
+    AttachmentId        BIGINT          IDENTITY(1,1)   NOT NULL,
+    JobId               BIGINT                          NOT NULL,   -- FK to BackgroundJobs
+    FileName            NVARCHAR(500)                   NOT NULL,   -- sent to email recipient
+    OriginalFileName    NVARCHAR(500)                   NOT NULL,   -- original upload name
+    RelativePath        NVARCHAR(1000)                  NOT NULL,   -- IFileService key (e.g. reports/file.pdf)
+    ContentType         NVARCHAR(200)                   NOT NULL,
+    FileSize            BIGINT                          NOT NULL,   -- bytes
+    CreatedAt           DATETIME2(0)                    NOT NULL    DEFAULT GETUTCDATE(),
+
+    CONSTRAINT PK_EmailAttachments          PRIMARY KEY (AttachmentId),
+    CONSTRAINT FK_EmailAttachments_Jobs     FOREIGN KEY (JobId) REFERENCES MyMoney.BackgroundJobs(JobId)
+);
+GO
+
+-- EmailAttachments — lookup by job
+CREATE INDEX IX_EmailAttachments_JobId
+    ON MyMoney.EmailAttachments (JobId);
+
+GO
+
+-- =============================================================================
 -- SEED DATA
 -- =============================================================================
 

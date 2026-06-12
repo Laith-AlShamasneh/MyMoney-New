@@ -19,7 +19,9 @@ internal sealed class StorageUtility(IOptions<StorageOptions> options) : IStorag
     {
         _options.FolderPaths.TryGetValue(folderPathName.ToString(), out var basePath);
 
-        // Internal storage: build a public URL using the provided baseUrl (no signed expiry needed)
+        // Internal storage: build a public URL using the provided baseUrl (no signed expiry needed).
+        // Files are served from wwwroot/uploads/{folder}/{file}, so the URL is always
+        // {baseUrl}/uploads/{configuredFolderPath}/{fileName}.
         if (isInternalStorage)
         {
             var safeBase = baseUrl?.TrimEnd('/') ?? string.Empty;
@@ -27,8 +29,8 @@ internal sealed class StorageUtility(IOptions<StorageOptions> options) : IStorag
             var safeKey  = fileKey.TrimStart('/');
 
             var fullPath = string.IsNullOrWhiteSpace(safeDir)
-                ? $"{safeBase}/{safeKey}"
-                : $"{safeBase}/{safeDir}/{safeKey}";
+                ? $"{safeBase}/uploads/{safeKey}"
+                : $"{safeBase}/uploads/{safeDir}/{safeKey}";
 
             return (fullPath, TimeSpan.MaxValue);
         }
@@ -43,6 +45,15 @@ internal sealed class StorageUtility(IOptions<StorageOptions> options) : IStorag
             : TimeSpan.FromDays(1);
 
         return (path, expiration);
+    }
+
+    public string BuildFileKey(FolderPaths folder, string fileName)
+    {
+        _options.FolderPaths.TryGetValue(folder.ToString(), out var folderPath);
+        var safeFolder = folderPath?.Trim('/') ?? string.Empty;
+        return string.IsNullOrWhiteSpace(safeFolder)
+            ? fileName.TrimStart('/')
+            : $"{safeFolder}/{fileName.TrimStart('/')}";
     }
 
     public TimeSpan BuildExpiration(int duration, TimeUnits timeUnit) => timeUnit switch

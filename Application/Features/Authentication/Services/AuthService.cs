@@ -1,5 +1,7 @@
+using Application.Common.Constants;
 using Application.Features.Authentication.DbModels;
 using Application.Features.Authentication.DTOs;
+using Application.Features.Email.Jobs;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Shared.Constants;
@@ -9,14 +11,15 @@ using Shared.Results;
 namespace Application.Features.Authentication.Services;
 
 internal sealed class AuthService(
-    IAuthRepository  authRepository,
-    IPasswordHasher  passwordHasher,
-    IJwtService      jwtService,
-    ITokenHasher     tokenHasher,
-    IFileService     fileService,
-    IStorageUtility  storageUtility,
-    IUserContext     userContext,
-    IMessageProvider messageProvider) : IAuthService
+    IAuthRepository        authRepository,
+    IPasswordHasher        passwordHasher,
+    IJwtService            jwtService,
+    ITokenHasher           tokenHasher,
+    IFileService           fileService,
+    IStorageUtility        storageUtility,
+    IUserContext           userContext,
+    IMessageProvider       messageProvider,
+    IBackgroundJobService  backgroundJobService) : IAuthService
 {
     private const int RefreshTokenExpiryDays = 7;
 
@@ -38,8 +41,9 @@ internal sealed class AuthService(
         {
             var ext = Path.GetExtension(request.ProfileImage.FileName);
             profilePictureFileName = $"{Guid.NewGuid()}{ext}";
+            var fileKey = storageUtility.BuildFileKey(FolderPaths.ProfilePictures, profilePictureFileName);
             await using var stream = request.ProfileImage.OpenReadStream();
-            await fileService.UploadAsync(stream, $"profiles/{profilePictureFileName}", request.ProfileImage.ContentType, ct);
+            await fileService.UploadAsync(stream, fileKey, request.ProfileImage.ContentType, ct);
         }
 
         // 3. Persist Person + User + UserRole atomically
@@ -65,7 +69,7 @@ internal sealed class AuthService(
         {
             // Race-condition duplicate — clean up uploaded file
             if (profilePictureFileName is not null)
-                await fileService.DeleteAsync($"profiles/{profilePictureFileName}", ct);
+                await fileService.DeleteAsync(storageUtility.BuildFileKey(FolderPaths.ProfilePictures, profilePictureFileName), ct);
 
             var failMsg   = await messageProvider.GetMessagesAsync(MessageKeys.Authentication.RegistrationFailed, ct);
             var detailMsg = await messageProvider.GetMessagesAsync(MessageKeys.Authentication.EmailAlreadyInUse, ct);
@@ -90,7 +94,14 @@ internal sealed class AuthService(
             CreatedByIp  = userContext.IpAddress
         }, ct);
 
-        // 5. Build profile image URL
+        // 5. Localize display name and role name
+        var isArabic    = userContext.Language == SystemLanguages.Arabic;
+        var displayName = isArabic && !string.IsNullOrWhiteSpace(dbResult.DisplayNameAr)
+            ? dbResult.DisplayNameAr
+            : dbResult.DisplayNameEn;
+        var roleName = isArabic ? dbResult.RoleNameAr : dbResult.RoleNameEn;
+
+        // 6. Build profile image URL
         string? profileImageUrl = null;
         if (profilePictureFileName is not null)
         {
@@ -102,12 +113,11 @@ internal sealed class AuthService(
             profileImageUrl = url;
         }
 
-        // 6. Localize display name and role name
-        var isArabic    = userContext.Language == SystemLanguages.Arabic;
-        var displayName = isArabic && !string.IsNullOrWhiteSpace(dbResult.DisplayNameAr)
-            ? dbResult.DisplayNameAr
-            : dbResult.DisplayNameEn;
-        var roleName = isArabic ? dbResult.RoleNameAr : dbResult.RoleNameEn;
+        // 7. Enqueue welcome email — fire-and-forget via durable background job (Rule 16)
+        await backgroundJobService.EnqueueAsync(
+            jobType: JobTypes.WelcomeEmail,
+            payload: new WelcomeEmailPayload(dbResult.Email, displayName, userContext.Language),
+            ct: ct);
 
         var successMsg = await messageProvider.GetMessagesAsync(MessageKeys.Authentication.UserRegisteredSuccess, ct);
         var response   = new RegisterResponse(

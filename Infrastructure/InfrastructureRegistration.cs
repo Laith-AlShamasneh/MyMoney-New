@@ -1,15 +1,22 @@
 using Application.Interfaces.Database;
+using Application.Interfaces.Jobs;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Infrastructure.Database;
+using Infrastructure.Jobs;
+using Infrastructure.Jobs.Handlers;
+using Infrastructure.Jobs.Options;
 using Infrastructure.Services.Authentication;
 using Infrastructure.Services.Authentication.Options;
 using Infrastructure.Services.Caching;
+using Infrastructure.Services.Email;
+using Infrastructure.Services.Email.Options;
 using Infrastructure.Services.Localization;
 using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Infrastructure;
 
@@ -20,6 +27,8 @@ public static class InfrastructureRegistration
         // 1. Options
         services.Configure<JwtOptions>(config.GetSection("Jwt"));
         services.Configure<StorageOptions>(config.GetSection("Storage"));
+        services.Configure<SmtpOptions>(config.GetSection("Smtp"));
+        services.Configure<BackgroundJobOptions>(config.GetSection("BackgroundJobs"));
 
         // 2. Database engine
         services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
@@ -27,6 +36,7 @@ public static class InfrastructureRegistration
 
         // 3. Repositories
         services.AddScoped<IAuthRepository, AuthRepository>();
+        services.AddScoped<IBackgroundJobRepository, BackgroundJobRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -41,7 +51,16 @@ public static class InfrastructureRegistration
 
         // 6. Storage
         services.AddSingleton<IStorageUtility, StorageUtility>();
-        services.AddScoped<IFileService, LocalFileService>();
+        services.AddSingleton<IFileService, LocalFileService>();
+
+        // 7. Background jobs
+        services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+        services.AddScoped<IJobHandler, WelcomeEmailHandler>();
+        services.AddHostedService<BackgroundJobProcessor>();
+
+        // 8. Email
+        services.AddSingleton<IEmailService, SmtpEmailService>();
+        services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
 
         return services;
     }

@@ -13,4 +13,6 @@ public interface IStorageUtility
         TimeUnits? timeUnit = null);
 
     TimeSpan BuildExpiration(int duration, TimeUnits timeUnit);
+
+    string BuildFileKey(FolderPaths folder, string fileName);
 }

@@ -1,3 +1,4 @@
+using Application.Common.Upload;
 using Application.Features.Authentication.DTOs;
 using FluentValidation;
 using Shared.Constants;
@@ -6,8 +7,6 @@ namespace Application.Features.Authentication.Validators;
 
 public sealed class RegisterValidator : AbstractValidator<RegisterRequest>
 {
-    private static readonly string[] AllowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
-    private const long MaxImageSizeBytes = 5 * 1024 * 1024;
 
     public RegisterValidator()
     {
@@ -70,13 +69,19 @@ public sealed class RegisterValidator : AbstractValidator<RegisterRequest>
             .WithMessage(MessageKeys.Authentication.PasswordSpecialRequired);
 
         RuleFor(x => x.ProfileImage)
-            .Must(f => AllowedImageTypes.Contains(f!.ContentType, StringComparer.OrdinalIgnoreCase))
+            .Must(f =>
+            {
+                var policy = UploadPolicies.ProfileImage;
+                var ext    = Path.GetExtension(f!.FileName);
+                return policy.AllowedMimeTypes.Contains(f.ContentType, StringComparer.OrdinalIgnoreCase)
+                    && policy.AllowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
+            })
             .WithMessage(MessageKeys.Authentication.InvalidProfileImageFormat)
             .When(x => x.ProfileImage is not null)
             .DependentRules(() =>
             {
                 RuleFor(x => x.ProfileImage)
-                    .Must(f => f!.Length <= MaxImageSizeBytes)
+                    .Must(f => f!.Length <= UploadPolicies.ProfileImage.MaxSizeBytes)
                     .WithMessage(MessageKeys.Authentication.ProfileImageTooLarge)
                     .When(x => x.ProfileImage is not null);
             });

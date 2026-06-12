@@ -1,0 +1,14 @@
+{
+  "WelcomeEmail": {
+    "SubjectEn": "Welcome to MyMoney, {{DisplayName}}!",
+    "SubjectAr": "مرحباً بك في MyMoney، {{DisplayName}}!",
+    "BodyEn": "<h1 style=\"margin:0 0 16px;\">Welcome, {{DisplayName}}!</h1><p style=\"margin:0 0 16px;color:#4b5563;\">We're thrilled to have you on board. Your account has been created successfully.</p><p style=\"margin:0 0 16px;color:#4b5563;\"><strong>Email:</strong> {{Email}}</p><p style=\"margin:0 0 24px;color:#4b5563;\">Start tracking your finances today and take control of your money.</p>",
+    "BodyAr": "<h1 style=\"margin:0 0 16px;\">مرحباً، {{DisplayName}}!</h1><p style=\"margin:0 0 16px;color:#4b5563;\">يسعدنا انضمامك إلينا. تم إنشاء حسابك بنجاح.</p><p style=\"margin:0 0 16px;color:#4b5563;\"><strong>البريد الإلكتروني:</strong> {{Email}}</p><p style=\"margin:0 0 24px;color:#4b5563;\">ابدأ تتبع أموالك اليوم وتحكم في ميزانيتك.</p>"
+  },
+  "PasswordResetEmail": {
+    "SubjectEn": "Reset Your MyMoney Password",
+    "SubjectAr": "إعادة تعيين كلمة مرور MyMoney",
+    "BodyEn": "<h1 style=\"margin:0 0 16px;\">Password Reset</h1><p style=\"margin:0 0 16px;color:#4b5563;\">Hi {{DisplayName}}, we received a request to reset your password.</p><p style=\"margin:0 0 24px;color:#4b5563;\">Click the button below to reset it. This link expires in 15 minutes.</p><a href=\"{{ResetLink}}\" style=\"display:inline-block;background:#2563eb;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;\">Reset Password</a><p style=\"margin:24px 0 0;color:#9ca3af;font-size:13px;\">If you didn't request this, you can safely ignore this email.</p>",
+    "BodyAr": "<h1 style=\"margin:0 0 16px;\">إعادة تعيين كلمة المرور</h1><p style=\"margin:0 0 16px;color:#4b5563;\">مرحباً {{DisplayName}}، تلقينا طلباً لإعادة تعيين كلمة مرورك.</p><p style=\"margin:0 0 24px;color:#4b5563;\">اضغط على الزر أدناه لإعادة التعيين. ينتهي هذا الرابط خلال 15 دقيقة.</p><a href=\"{{ResetLink}}\" style=\"display:inline-block;background:#2563eb;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;\">إعادة تعيين كلمة المرور</a><p style=\"margin:24px 0 0;color:#9ca3af;font-size:13px;\">إذا لم تطلب هذا، يمكنك تجاهل هذا البريد بأمان.</p>"
+  }
+}
