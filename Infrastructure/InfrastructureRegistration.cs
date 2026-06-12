@@ -1,3 +1,4 @@
+using Application.Common.Options;
 using Application.Interfaces.Database;
 using Application.Interfaces.Jobs;
 using Application.Interfaces.Repositories;
@@ -29,6 +30,7 @@ public static class InfrastructureRegistration
         services.Configure<StorageOptions>(config.GetSection("Storage"));
         services.Configure<SmtpOptions>(config.GetSection("Smtp"));
         services.Configure<BackgroundJobOptions>(config.GetSection("BackgroundJobs"));
+        services.Configure<AuthenticationOptions>(config.GetSection("Authentication"));
 
         // 2. Database engine
         services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();

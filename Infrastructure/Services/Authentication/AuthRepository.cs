@@ -11,7 +11,7 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
     public async Task<bool> CheckEmailExistsAsync(string email, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@Email", email);
+        p.Add("@Email", email, DbType.String);
         var result = await db.ExecuteScalarAsync<bool?>("MyMoney.usp_Authentication_CheckEmailExists", p, ct);
         return result ?? false;
     }
@@ -19,18 +19,18 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
     public async Task<RegisterDbResult?> RegisterAsync(RegisterDbInput input, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@FirstNameEn",    input.FirstNameEn);
-        p.Add("@LastNameEn",     input.LastNameEn);
-        p.Add("@FirstNameAr",    input.FirstNameAr);
-        p.Add("@LastNameAr",     input.LastNameAr);
-        p.Add("@DisplayNameEn",  input.DisplayNameEn);
-        p.Add("@DisplayNameAr",  input.DisplayNameAr);
-        p.Add("@DateOfBirth",    input.DateOfBirth?.ToDateTime(TimeOnly.MinValue), DbType.DateTime2);
-        p.Add("@GenderId",       input.GenderId.HasValue ? (byte)input.GenderId.Value : (byte?)null, DbType.Byte);
-        p.Add("@ProfilePicture", input.ProfilePicture);
-        p.Add("@Email",          input.Email);
-        p.Add("@PasswordHash",   input.PasswordHash);
-        p.Add("@DefaultRoleId",  input.DefaultRoleId);
+        p.Add("@FirstNameEn",    input.FirstNameEn,                                                    DbType.String);
+        p.Add("@LastNameEn",     input.LastNameEn,                                                     DbType.String);
+        p.Add("@FirstNameAr",    input.FirstNameAr,                                                    DbType.String);
+        p.Add("@LastNameAr",     input.LastNameAr,                                                     DbType.String);
+        p.Add("@DisplayNameEn",  input.DisplayNameEn,                                                  DbType.String);
+        p.Add("@DisplayNameAr",  input.DisplayNameAr,                                                  DbType.String);
+        p.Add("@DateOfBirth",    input.DateOfBirth?.ToDateTime(TimeOnly.MinValue),                     DbType.DateTime2);
+        p.Add("@GenderId",       input.GenderId.HasValue ? (byte)input.GenderId.Value : (byte?)null,   DbType.Byte);
+        p.Add("@ProfilePicture", input.ProfilePicture,                                                 DbType.String);
+        p.Add("@Email",          input.Email,                                                          DbType.String);
+        p.Add("@PasswordHash",   input.PasswordHash,                                                   DbType.String);
+        p.Add("@DefaultRoleId",  input.DefaultRoleId,                                                  DbType.Int32);
 
         return await db.QuerySingleAsync<RegisterDbResult>("MyMoney.usp_Authentication_Register", p, ct);
     }
@@ -38,11 +38,30 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
     public async Task SaveRefreshTokenAsync(SaveRefreshTokenDbInput input, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",       input.UserId);
-        p.Add("@Token",        input.Token);
+        p.Add("@UserId",       input.UserId,       DbType.Int64);
+        p.Add("@Token",        input.Token,        DbType.String);
         p.Add("@ExpiresOnUtc", input.ExpiresOnUtc, DbType.DateTime2);
-        p.Add("@CreatedByIp",  input.CreatedByIp);
+        p.Add("@CreatedByIp",  input.CreatedByIp,  DbType.String);
 
         await db.ExecuteAsync("MyMoney.usp_Authentication_SaveRefreshToken", p, ct);
+    }
+
+    public async Task<LoginDbResult?> GetByEmailForLoginAsync(string email, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@Email", email, DbType.String);
+
+        return await db.QuerySingleAsync<LoginDbResult>("MyMoney.usp_Authentication_Login", p, ct);
+    }
+
+    public async Task UpdateLoginAsync(LoginUpdateDbModel model, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId",                 model.UserId,                 DbType.Int64);
+        p.Add("@LoginSucceeded",         model.LoginSucceeded,         DbType.Boolean);
+        p.Add("@MaxFailedAttempts",      model.MaxFailedAttempts,      DbType.Int32);
+        p.Add("@LockoutDurationMinutes", model.LockoutDurationMinutes, DbType.Int32);
+
+        await db.ExecuteAsync("MyMoney.usp_Authentication_UpdateLogin", p, ct);
     }
 }

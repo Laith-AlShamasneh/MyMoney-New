@@ -1,9 +1,11 @@
 using Application.Common.Constants;
+using Application.Common.Options;
 using Application.Features.Authentication.DbModels;
 using Application.Features.Authentication.DTOs;
 using Application.Features.Email.Jobs;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
+using Microsoft.Extensions.Options;
 using Shared.Constants;
 using Shared.Enums.System;
 using Shared.Results;
@@ -11,15 +13,16 @@ using Shared.Results;
 namespace Application.Features.Authentication.Services;
 
 internal sealed class AuthService(
-    IAuthRepository        authRepository,
-    IPasswordHasher        passwordHasher,
-    IJwtService            jwtService,
-    ITokenHasher           tokenHasher,
-    IFileService           fileService,
-    IStorageUtility        storageUtility,
-    IUserContext           userContext,
-    IMessageProvider       messageProvider,
-    IBackgroundJobService  backgroundJobService) : IAuthService
+    IAuthRepository              authRepository,
+    IPasswordHasher              passwordHasher,
+    IJwtService                  jwtService,
+    ITokenHasher                 tokenHasher,
+    IFileService                 fileService,
+    IStorageUtility              storageUtility,
+    IUserContext                 userContext,
+    IMessageProvider             messageProvider,
+    IBackgroundJobService        backgroundJobService,
+    IOptions<AuthenticationOptions> authOptions) : IAuthService
 {
     private const int RefreshTokenExpiryDays = 7;
 
@@ -131,5 +134,127 @@ internal sealed class AuthService(
             RefreshTokenExpiresAt: refreshTokenExpiresAt);
 
         return ServiceResultFactory.Success(response, InternalResponseCodes.Created, successMsg);
+    }
+
+    public async Task<ServiceResult<LoginResponse>> LoginAsync(
+        LoginRequest      request,
+        CancellationToken ct = default)
+    {
+        // 1. Load user record — NULL means email does not exist
+        var user = await authRepository.GetByEmailForLoginAsync(request.Email, ct);
+
+        // Always return generic failure — never reveal whether the email exists (Rule: no enumeration)
+        if (user is null)
+        {
+            return ServiceResultFactory.Failure<LoginResponse>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.InvalidCredentials, ct));
+        }
+
+        // 2. Inactive account — block before any further processing
+        if (!user.IsActive)
+        {
+            return ServiceResultFactory.Failure<LoginResponse>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.AccountNotActive, ct));
+        }
+
+        // 3. Lockout check — respect temporal locks; expired locks are cleared on the next successful login
+        var isCurrentlyLocked = user.IsLocked &&
+            (user.LockoutEndDateUtc is null || user.LockoutEndDateUtc > DateTime.UtcNow);
+
+        if (isCurrentlyLocked)
+        {
+            return ServiceResultFactory.Failure<LoginResponse>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.AccountLocked, ct));
+        }
+
+        // 4. Password verification — wrong password increments the failed-attempt counter atomically
+        if (!passwordHasher.Verify(request.Password, user.PasswordHash))
+        {
+            var options = authOptions.Value;
+            await authRepository.UpdateLoginAsync(new LoginUpdateDbModel
+            {
+                UserId                 = user.UserId,
+                LoginSucceeded         = false,
+                MaxFailedAttempts      = options.MaxFailedLoginAttempts,
+                LockoutDurationMinutes = options.LockoutDurationMinutes
+            }, ct);
+
+            return ServiceResultFactory.Failure<LoginResponse>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.InvalidCredentials, ct));
+        }
+
+        // 5. Email confirmation — password was correct so do not penalize the attempt counter
+        if (!user.IsEmailConfirmed)
+        {
+            return ServiceResultFactory.Failure<LoginResponse>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.EmailNotConfirmed, ct));
+        }
+
+        // 6. Mark login success — resets failed-attempt counter and updates LastLoginDateUtc atomically
+        await authRepository.UpdateLoginAsync(new LoginUpdateDbModel
+        {
+            UserId                 = user.UserId,
+            LoginSucceeded         = true,
+            MaxFailedAttempts      = authOptions.Value.MaxFailedLoginAttempts,
+            LockoutDurationMinutes = authOptions.Value.LockoutDurationMinutes
+        }, ct);
+
+        // 7. Generate access token
+        var jwtModel = new JwtTokenResponse(
+            user.UserId, user.Email, user.DisplayNameEn, [user.RoleId]);
+
+        var (accessToken, accessTokenExpiresAt) = jwtService.GenerateAccessToken(jwtModel);
+
+        // 8. Generate and persist refresh token (store only the SHA-256 hash — Rule 17)
+        var rawRefreshToken       = tokenHasher.GenerateRawToken();
+        var hashedRefreshToken    = tokenHasher.Hash(rawRefreshToken);
+        var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(RefreshTokenExpiryDays);
+
+        await authRepository.SaveRefreshTokenAsync(new SaveRefreshTokenDbInput
+        {
+            UserId       = user.UserId,
+            Token        = hashedRefreshToken,
+            ExpiresOnUtc = refreshTokenExpiresAt,
+            CreatedByIp  = userContext.IpAddress
+        }, ct);
+
+        // 9. Resolve localized display name and role name
+        var isArabic    = userContext.Language == SystemLanguages.Arabic;
+        var displayName = isArabic && !string.IsNullOrWhiteSpace(user.DisplayNameAr)
+            ? user.DisplayNameAr
+            : user.DisplayNameEn;
+        var roleName = isArabic ? user.RoleNameAr : user.RoleNameEn;
+
+        // 10. Build profile image URL if present
+        string? profileImageUrl = null;
+        if (!string.IsNullOrEmpty(user.ProfilePicture))
+        {
+            var (url, _) = storageUtility.BuildFilePathWithExpiration(
+                FolderPaths.ProfilePictures,
+                user.ProfilePicture,
+                isInternalStorage: true,
+                baseUrl: userContext.RequestBaseUrl);
+            profileImageUrl = url;
+        }
+
+        var loginResponse = new LoginResponse(
+            Email:                 user.Email,
+            DisplayName:           displayName,
+            ProfileImageUrl:       profileImageUrl,
+            Roles:                 [roleName],
+            AccessToken:           accessToken,
+            RefreshToken:          rawRefreshToken,
+            AccessTokenExpiresAt:  accessTokenExpiresAt,
+            RefreshTokenExpiresAt: refreshTokenExpiresAt);
+
+        return ServiceResultFactory.Success(
+            loginResponse,
+            InternalResponseCodes.OK,
+            await messageProvider.GetMessagesAsync(MessageKeys.Authentication.UserLoginSuccess, ct));
     }
 }

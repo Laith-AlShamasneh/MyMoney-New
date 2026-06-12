@@ -15,14 +15,26 @@ public static class AuthenticationEndpoints
         group.MapPost("/register", RegisterAsync)
              .DisableAntiforgery()
              .AddEndpointFilter<ValidationFilter<RegisterRequest>>();
+
+        group.MapPost("/login", LoginAsync)
+             .AddEndpointFilter<ValidationFilter<LoginRequest>>();
     }
 
     private static async Task<IResult> RegisterAsync(
         [FromForm] RegisterRequest request,
-        IAuthService authService,
-        CancellationToken ct)
+        IAuthService               authService,
+        CancellationToken          ct)
     {
         var result = await authService.RegisterAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> LoginAsync(
+        LoginRequest      request,
+        IAuthService      authService,
+        CancellationToken ct)
+    {
+        var result = await authService.LoginAsync(request, ct);
         return result.ToHttpResponse();
     }
 }
