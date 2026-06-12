@@ -1,33 +1,123 @@
-﻿namespace Shared.Constants;
+namespace Shared.Constants;
 
 public static class MessageKeys
 {
     public static class Common
     {
-        public const string Success = "Common.Success";
-        public const string Created = "Common.Created";
-        public const string Updated = "Common.Updated";
-        public const string Deleted = "Common.Deleted";
-        public const string NotFound = "Common.NotFound";
-        public const string BadRequest = "Common.BadRequest";
-        public const string ValidationError = "Common.ValidationError";
-        public const string Unauthorized = "Common.Unauthorized";
-        public const string Forbidden = "Common.Forbidden";
-        public const string Conflict = "Common.Conflict";
+        public const string Success             = "Common.Success";
+        public const string Created             = "Common.Created";
+        public const string Updated             = "Common.Updated";
+        public const string Deleted             = "Common.Deleted";
+        public const string NotFound            = "Common.NotFound";
+        public const string BadRequest          = "Common.BadRequest";
+        public const string ValidationError     = "Common.ValidationError";
+        public const string Unauthorized        = "Common.Unauthorized";
+        public const string Forbidden           = "Common.Forbidden";
+        public const string Conflict            = "Common.Conflict";
         public const string InternalServerError = "Common.InternalServerError";
-    }
-
-    public static class User
-    {
-        public const string UserNotFound = "User.UserNotFound";
-        public const string UserCreatedSuccess = "User.UserCreatedSuccess";
     }
 
     public static class Authentication
     {
-        public const string EmailRequired = "Authentication.EmailRequired";
-        public const string InvalidEmail = "Authentication.InvalidEmail";
-        public const string UserLoginSuccess = "Authentication.UserLoginSuccess";
+        // Validation
+        public const string FirstNameRequired           = "Authentication.FirstNameRequired";
+        public const string LastNameRequired            = "Authentication.LastNameRequired";
+        public const string EmailRequired               = "Authentication.EmailRequired";
+        public const string InvalidEmail                = "Authentication.InvalidEmail";
+        public const string PasswordRequired            = "Authentication.PasswordRequired";
+        public const string PasswordTooShort            = "Authentication.PasswordTooShort";
+        public const string PasswordUppercaseRequired   = "Authentication.PasswordUppercaseRequired";
+        public const string PasswordLowercaseRequired   = "Authentication.PasswordLowercaseRequired";
+        public const string PasswordDigitRequired       = "Authentication.PasswordDigitRequired";
+        public const string PasswordSpecialRequired     = "Authentication.PasswordSpecialRequired";
+        public const string ConfirmPasswordRequired     = "Authentication.ConfirmPasswordRequired";
+        public const string PasswordMismatch            = "Authentication.PasswordMismatch";
+        public const string RefreshTokenRequired        = "Authentication.RefreshTokenRequired";
+        public const string ResetTokenRequired          = "Authentication.ResetTokenRequired";
+        public const string NewPasswordRequired         = "Authentication.NewPasswordRequired";
+
+        // Business
+        public const string EmailAlreadyInUse       = "Authentication.EmailAlreadyInUse";
+        public const string InvalidCredentials      = "Authentication.InvalidCredentials";
+        public const string AccountLocked           = "Authentication.AccountLocked";
+        public const string AccountNotActive        = "Authentication.AccountNotActive";
+        public const string EmailNotConfirmed       = "Authentication.EmailNotConfirmed";
+        public const string InvalidToken            = "Authentication.InvalidToken";
+        public const string TokenExpired            = "Authentication.TokenExpired";
+        public const string TokenRefreshed          = "Authentication.TokenRefreshed";
+        public const string TokenRevoked            = "Authentication.TokenRevoked";
+        public const string ResetEmailSent          = "Authentication.ResetEmailSent";
+        public const string InvalidResetToken       = "Authentication.InvalidResetToken";
+        public const string PasswordResetSuccess    = "Authentication.PasswordResetSuccess";
+        public const string UserLoginSuccess        = "Authentication.UserLoginSuccess";
+        public const string UserRegisteredSuccess   = "Authentication.UserRegisteredSuccess";
+    }
+
+    public static class Transaction
+    {
+        // Validation
+        public const string AmountRequired          = "Transaction.AmountRequired";
+        public const string AmountMustBePositive    = "Transaction.AmountMustBePositive";
+        public const string CategoryRequired        = "Transaction.CategoryRequired";
+        public const string InvalidCategory         = "Transaction.InvalidCategory";
+        public const string DateRequired            = "Transaction.DateRequired";
+        public const string DateCannotBeFuture      = "Transaction.DateCannotBeFuture";
+        public const string DescriptionTooLong      = "Transaction.DescriptionTooLong";
+        public const string NotesTooLong            = "Transaction.NotesTooLong";
+        public const string InvalidTransactionType  = "Transaction.InvalidTransactionType";
+        public const string PageNumberInvalid       = "Transaction.PageNumberInvalid";
+        public const string PageSizeInvalid         = "Transaction.PageSizeInvalid";
+        public const string InvalidSortDirection    = "Transaction.InvalidSortDirection";
+        public const string AmountRangeInvalid      = "Transaction.AmountRangeInvalid";
+        public const string DateRangeInvalid        = "Transaction.DateRangeInvalid";
+
+        // Business
+        public const string NotFound    = "Transaction.NotFound";
+        public const string Created     = "Transaction.Created";
+        public const string Updated     = "Transaction.Updated";
+        public const string Deleted     = "Transaction.Deleted";
+    }
+
+    public static class Category
+    {
+        public const string NotFound            = "Category.NotFound";
+        public const string LoadedSuccessfully  = "Category.LoadedSuccessfully";
+    }
+
+    public static class Dashboard
+    {
+        public const string LoadedSuccessfully = "Dashboard.LoadedSuccessfully";
+    }
+
+    public static class Profile
+    {
+        // Validation
+        public const string FirstNameRequired           = "Profile.FirstNameRequired";
+        public const string FirstNameTooLong            = "Profile.FirstNameTooLong";
+        public const string LastNameRequired            = "Profile.LastNameRequired";
+        public const string LastNameTooLong             = "Profile.LastNameTooLong";
+        public const string DisplayNameTooLong          = "Profile.DisplayNameTooLong";
+        public const string InvalidGender               = "Profile.InvalidGender";
+        public const string CurrentPasswordRequired     = "Profile.CurrentPasswordRequired";
+        public const string NewPasswordRequired         = "Profile.NewPasswordRequired";
+        public const string NewPasswordTooShort         = "Profile.NewPasswordTooShort";
+        public const string NewPasswordUppercase        = "Profile.NewPasswordUppercase";
+        public const string NewPasswordLowercase        = "Profile.NewPasswordLowercase";
+        public const string NewPasswordDigit            = "Profile.NewPasswordDigit";
+        public const string NewPasswordSpecial          = "Profile.NewPasswordSpecial";
+        public const string ConfirmNewPasswordRequired  = "Profile.ConfirmNewPasswordRequired";
+        public const string NewPasswordMismatch         = "Profile.NewPasswordMismatch";
+        public const string InvalidProfilePictureFormat = "Profile.InvalidProfilePictureFormat";
+        public const string ProfilePictureTooLarge      = "Profile.ProfilePictureTooLarge";
+
+        // Business
+        public const string NotFound                   = "Profile.NotFound";
+        public const string Updated                    = "Profile.Updated";
+        public const string PasswordChanged            = "Profile.PasswordChanged";
+        public const string CurrentPasswordIncorrect   = "Profile.CurrentPasswordIncorrect";
+        public const string NewPasswordSameAsCurrent   = "Profile.NewPasswordSameAsCurrent";
+        public const string ProfilePictureUpdated      = "Profile.ProfilePictureUpdated";
+        public const string ProfilePictureDeleted      = "Profile.ProfilePictureDeleted";
     }
 
     public static class BackgroundJobs

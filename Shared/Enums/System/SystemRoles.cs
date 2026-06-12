@@ -1,6 +1,7 @@
-﻿namespace Shared.Enums.System;
+namespace Shared.Enums.System;
 
 public enum SystemRoles : byte
 {
-    DefaultUser = 1
+    Admin = 1,
+    User  = 2
 }
