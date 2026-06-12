@@ -18,8 +18,6 @@ internal sealed class BackgroundJobProcessor(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("BackgroundJobProcessor started. Polling every {Interval}s.", _options.PollingIntervalSeconds);
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -47,8 +45,6 @@ internal sealed class BackgroundJobProcessor(
         }
 
         if (jobs.Count == 0) return;
-
-        logger.LogInformation("Picked up {Count} background job(s).", jobs.Count);
 
         foreach (var job in jobs)
             await ExecuteJobAsync(job, ct);
@@ -79,8 +75,6 @@ internal sealed class BackgroundJobProcessor(
 
             await handler.HandleAsync(job.Payload, ct);
             await repository.CompleteAsync(job.JobId, ct);
-
-            logger.LogInformation("Job {JobId} ({JobType}) completed.", job.JobId, job.JobType);
         }
         catch (Exception ex)
         {

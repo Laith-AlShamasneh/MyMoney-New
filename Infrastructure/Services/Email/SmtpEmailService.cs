@@ -49,7 +49,6 @@ internal sealed class SmtpEmailService(
         try
         {
             await client.SendMailAsync(message, ct);
-            logger.LogInformation("Email sent to {To} (subject: {Subject}).", to, subject);
         }
         catch (Exception ex)
         {
