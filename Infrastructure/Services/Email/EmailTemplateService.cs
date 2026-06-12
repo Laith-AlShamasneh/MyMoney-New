@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Caching.Memory;
@@ -7,11 +6,28 @@ using Shared.Enums.System;
 
 namespace Infrastructure.Services.Email;
 
+/// <summary>
+/// Loads email templates from physical HTML files under WebApi/EmailTemplates/.
+///
+/// Directory structure:
+///   EmailTemplates/
+///   ├── Layouts/
+///   │   ├── base-en.html          ← full page wrapper; injects {{Content}}
+///   │   └── base-ar.html
+///   ├── {TemplateKey}/
+///   │   ├── meta.json             ← { SubjectEn, SubjectAr, PreviewEn, PreviewAr }
+///   │   ├── en.html               ← inner body content
+///   │   └── ar.html
+///   └── ...
+///
+/// Placeholder syntax: {{PlaceholderName}}
+/// Reserved layout placeholders: {{Content}}, {{Subject}}, {{PreviewText}}, {{CurrentYear}}
+/// </summary>
 internal sealed class EmailTemplateService(
     IWebHostEnvironment environment,
     IMemoryCache        cache) : IEmailTemplateService
 {
-    private const string CacheKey = "email-templates";
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public async Task<(string Subject, string HtmlBody)> RenderAsync(
         string                     templateKey,
@@ -19,98 +35,92 @@ internal sealed class EmailTemplateService(
         Dictionary<string, string> placeholders,
         CancellationToken          ct = default)
     {
-        var templates = await LoadTemplatesAsync(ct);
-
-        if (!templates.TryGetValue(templateKey, out var template))
-            throw new InvalidOperationException($"Email template '{templateKey}' not found.");
-
         var isArabic = language == SystemLanguages.Arabic;
+        var lang     = isArabic ? "ar" : "en";
 
-        var subject = isArabic ? template.SubjectAr : template.SubjectEn;
-        var body    = isArabic ? template.BodyAr    : template.BodyEn;
+        // 1. Load metadata (subjects + preview text)
+        var meta = await LoadMetaAsync(templateKey, ct);
 
+        var subject     = isArabic ? meta.SubjectAr  : meta.SubjectEn;
+        var previewText = isArabic ? meta.PreviewAr  : meta.PreviewEn;
+
+        // 2. Load base layout and content fragment
+        var layout  = await LoadFileAsync($"Layouts/base-{lang}.html",  ct);
+        var content = await LoadFileAsync($"{templateKey}/{lang}.html",  ct);
+
+        // 3. Apply feature-specific placeholders to the content fragment
+        content = ApplyPlaceholders(content, placeholders);
+
+        // 4. Build full set of layout-level placeholders and compose
+        var layoutPlaceholders = new Dictionary<string, string>(placeholders, StringComparer.OrdinalIgnoreCase)
+        {
+            ["Content"]     = content,
+            ["Subject"]     = ApplyPlaceholders(subject, placeholders),
+            ["PreviewText"] = ApplyPlaceholders(previewText, placeholders),
+            ["CurrentYear"] = DateTime.UtcNow.Year.ToString()
+        };
+
+        // Apply subject placeholder substitution after resolving feature placeholders
         subject = ApplyPlaceholders(subject, placeholders);
-        body    = ApplyPlaceholders(body,    placeholders);
 
-        var htmlBody = WrapInBaseLayout(body, isArabic);
+        var html = ApplyPlaceholders(layout, layoutPlaceholders);
 
-        return (subject, htmlBody);
+        return (subject, html);
     }
 
-    private async Task<Dictionary<string, EmailTemplate>> LoadTemplatesAsync(CancellationToken ct)
+    // ─── File loading with 12-hour cache ────────────────────────────────────
+
+    private async Task<string> LoadFileAsync(string relativePath, CancellationToken ct)
     {
-        if (cache.TryGetValue(CacheKey, out Dictionary<string, EmailTemplate>? cached) && cached is not null)
+        if (cache.TryGetValue(relativePath, out string? cached) && cached is not null)
             return cached;
 
-        var path = Path.Combine(environment.WebRootPath, "resources", "email-templates.json");
-        await using var stream   = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
-        var templates = await JsonSerializer.DeserializeAsync<Dictionary<string, EmailTemplate>>(stream, cancellationToken: ct)
-            ?? [];
+        var fullPath = Path.Combine(environment.ContentRootPath, "EmailTemplates",
+            relativePath.Replace('/', Path.DirectorySeparatorChar));
 
-        cache.Set(CacheKey, templates, TimeSpan.FromHours(12));
-        return templates;
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"Email template file not found: {relativePath}", fullPath);
+
+        var content = await File.ReadAllTextAsync(fullPath, ct);
+        cache.Set(relativePath, content, TimeSpan.FromHours(12));
+        return content;
     }
+
+    private async Task<TemplateMeta> LoadMetaAsync(string templateKey, CancellationToken ct)
+    {
+        var cacheKey = $"email-meta:{templateKey}";
+        if (cache.TryGetValue(cacheKey, out TemplateMeta? cached) && cached is not null)
+            return cached;
+
+        var fullPath = Path.Combine(environment.ContentRootPath, "EmailTemplates",
+            templateKey, "meta.json");
+
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"Email template metadata not found for '{templateKey}'.", fullPath);
+
+        await using var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read,
+                                                FileShare.Read, 4096, useAsync: true);
+        var meta = await JsonSerializer.DeserializeAsync<TemplateMeta>(stream, _jsonOptions, ct)
+            ?? throw new InvalidOperationException($"Failed to deserialize meta.json for template '{templateKey}'.");
+
+        cache.Set(cacheKey, meta, TimeSpan.FromHours(12));
+        return meta;
+    }
+
+    // ─── Placeholder engine ─────────────────────────────────────────────────
 
     private static string ApplyPlaceholders(string template, Dictionary<string, string> placeholders)
     {
         foreach (var (key, value) in placeholders)
-            template = template.Replace($"{{{{{key}}}}}", value, StringComparison.Ordinal);
+            template = template.Replace($"{{{{{key}}}}}", value ?? string.Empty, StringComparison.OrdinalIgnoreCase);
         return template;
     }
 
-    private static string WrapInBaseLayout(string body, bool isArabic)
-    {
-        var dir    = isArabic ? "rtl" : "ltr";
-        var lang   = isArabic ? "ar"  : "en";
-        var align  = isArabic ? "right" : "left";
-        var year   = DateTime.UtcNow.Year;
-        var footer = isArabic
-            ? $"&copy; {year} MyMoney &mdash; جميع الحقوق محفوظة"
-            : $"&copy; {year} MyMoney &mdash; All rights reserved";
+    // ─── Internal model ─────────────────────────────────────────────────────
 
-        return $$"""
-            <!DOCTYPE html>
-            <html lang="{{lang}}" dir="{{dir}}">
-            <head>
-              <meta charset="UTF-8" />
-              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-              <title>MyMoney</title>
-            </head>
-            <body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:40px 16px;">
-                <tr>
-                  <td align="center">
-                    <table width="100%" style="max-width:600px;" cellpadding="0" cellspacing="0">
-                      <!-- Header -->
-                      <tr>
-                        <td style="background:#2563eb;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
-                          <span style="color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">MyMoney</span>
-                        </td>
-                      </tr>
-                      <!-- Card body -->
-                      <tr>
-                        <td style="background:#fff;padding:32px;text-align:{{align}};border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
-                          {{body}}
-                        </td>
-                      </tr>
-                      <!-- Footer -->
-                      <tr>
-                        <td style="background:#f9fafb;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none;padding:20px 32px;text-align:center;color:#9ca3af;font-size:13px;">
-                          {{footer}}
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </body>
-            </html>
-            """;
-    }
-
-    private sealed record EmailTemplate(
+    private sealed record TemplateMeta(
         string SubjectEn,
         string SubjectAr,
-        string BodyEn,
-        string BodyAr);
+        string PreviewEn,
+        string PreviewAr);
 }

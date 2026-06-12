@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+  <title>{{Subject}}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; }
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+    img { border: 0; display: block; height: auto; line-height: 100%; outline: none;
+          text-decoration: none; -ms-interpolation-mode: bicubic; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important;
+                                 font-size: inherit !important; font-weight: inherit !important; }
+    u + #body a { color: inherit; text-decoration: none; font-size: inherit; font-weight: inherit; }
+    #MessageViewBody a { color: inherit; text-decoration: none; font-size: inherit; font-weight: inherit; }
+
+    /* ── Typography ── */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto,
+                   'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* ── Layout ── */
+    .email-wrapper  { background: #f1f5f9; padding: 48px 16px; }
+    .email-outer    { max-width: 600px; margin: 0 auto; }
+
+    /* Header */
+    .email-header {
+      background: #0f172a;
+      border-radius: 16px 16px 0 0;
+      padding: 24px 40px;
+    }
+
+    /* Accent bar */
+    .email-accent-bar {
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
+    }
+
+    /* Body card */
+    .email-body {
+      background: #ffffff;
+      padding: 40px;
+      border-left: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+    }
+
+    /* Footer */
+    .email-footer {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      padding: 24px 40px;
+      text-align: center;
+    }
+
+    /* ── Components ── */
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 28px 0;
+    }
+
+    /* Info card */
+    .info-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 24px 0;
+    }
+
+    /* CTA Button */
+    .btn-primary {
+      display: inline-block;
+      background: #3b82f6;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 36px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
+      line-height: 1;
+      mso-padding-alt: 0;
+    }
+    .btn-danger {
+      display: inline-block;
+      background: #ef4444;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 36px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
+      line-height: 1;
+    }
+
+    /* Alert boxes */
+    .alert-warning {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+    .alert-info {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+
+    /* Icon badge */
+    .icon-badge {
+      display: inline-block;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      text-align: center;
+      font-size: 26px;
+      line-height: 64px;
+    }
+    .icon-badge-success  { background: #ecfdf5; }
+    .icon-badge-warning  { background: #fffbeb; }
+    .icon-badge-blue     { background: #eff6ff; }
+
+    /* Feature item */
+    .feature-icon {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 17px;
+      line-height: 36px;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+      .email-wrapper  { padding: 24px 12px !important; }
+      .email-header   { padding: 20px 24px !important; border-radius: 12px 12px 0 0 !important; }
+      .email-body     { padding: 28px 24px !important; }
+      .email-footer   { padding: 20px 24px !important; border-radius: 0 0 12px 12px !important; }
+      .btn-primary,
+      .btn-danger     { display: block !important; text-align: center !important;
+                        padding: 16px 24px !important; }
+      .mobile-stack   { display: block !important; width: 100% !important; }
+      .mobile-hide    { display: none !important; }
+    }
+  </style>
+</head>
+<body id="body" style="margin:0;padding:0;background:#f1f5f9;">
+
+  <!-- Gmail preview / preheader text -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;
+              font-size:1px;color:#f1f5f9;line-height:1px;">{{PreviewText}}
+    &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+    &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+    &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+
+  <!-- Outer table wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background:#f1f5f9;">
+    <tr>
+      <td class="email-wrapper" style="padding:48px 16px;">
+
+        <!-- Container -->
+        <table role="presentation" class="email-outer" width="100%"
+               style="max-width:600px;margin:0 auto;" cellpadding="0" cellspacing="0" border="0">
+
+          <!-- ┌─────────────────────────────────────┐ -->
+          <!-- │              HEADER                  │ -->
+          <!-- └─────────────────────────────────────┘ -->
+          <tr>
+            <td class="email-header"
+                style="background:#0f172a;border-radius:16px 16px 0 0;padding:24px 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td valign="middle">
+                    <!-- Logo wordmark -->
+                    <span style="font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
+                                 font-size:21px;font-weight:800;color:#ffffff;letter-spacing:-0.8px;
+                                 text-decoration:none;">
+                      My<span style="color:#60a5fa;">Money</span>
+                    </span>
+                  </td>
+                  <td valign="middle" align="right" class="mobile-hide">
+                    <span style="font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
+                                 font-size:11px;font-weight:500;color:#475569;letter-spacing:1.5px;
+                                 text-transform:uppercase;">Personal Finance</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Gradient accent bar -->
+          <tr>
+            <td class="email-accent-bar"
+                style="height:4px;background:linear-gradient(90deg,#3b82f6 0%,#6366f1 50%,#8b5cf6 100%);
+                       font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+
+          <!-- ┌─────────────────────────────────────┐ -->
+          <!-- │             BODY CARD                │ -->
+          <!-- └─────────────────────────────────────┘ -->
+          <tr>
+            <td class="email-body"
+                style="background:#ffffff;padding:40px;
+                       border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0;">
+              {{Content}}
+            </td>
+          </tr>
+
+          <!-- ┌─────────────────────────────────────┐ -->
+          <!-- │              FOOTER                  │ -->
+          <!-- └─────────────────────────────────────┘ -->
+          <tr>
+            <td class="email-footer"
+                style="background:#f8fafc;border:1px solid #e2e8f0;border-top:none;
+                       border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;">
+              <p style="margin:0 0 6px;
+                        font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
+                        font-size:13px;color:#64748b;line-height:1.5;">
+                You received this email because you have a MyMoney account.
+              </p>
+              <p style="margin:0;
+                        font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
+                        font-size:12px;color:#94a3b8;">
+                &copy; {{CurrentYear}} MyMoney &mdash; All rights reserved
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Container -->
+
+      </td>
+    </tr>
+  </table>
+  <!-- /Outer wrapper -->
+
+</body>
+</html>
