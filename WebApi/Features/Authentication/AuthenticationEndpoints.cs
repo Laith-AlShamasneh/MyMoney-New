@@ -18,6 +18,12 @@ public static class AuthenticationEndpoints
 
         group.MapPost("/login", LoginAsync)
              .AddEndpointFilter<ValidationFilter<LoginRequest>>();
+
+        group.MapPost("/confirm-email", ConfirmEmailAsync)
+             .AddEndpointFilter<ValidationFilter<ConfirmEmailRequest>>();
+
+        group.MapPost("/resend-confirmation-email", ResendConfirmationEmailAsync)
+             .AddEndpointFilter<ValidationFilter<ResendConfirmationEmailRequest>>();
     }
 
     private static async Task<IResult> RegisterAsync(
@@ -35,6 +41,24 @@ public static class AuthenticationEndpoints
         CancellationToken ct)
     {
         var result = await authService.LoginAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> ConfirmEmailAsync(
+        ConfirmEmailRequest request,
+        IAuthService        authService,
+        CancellationToken   ct)
+    {
+        var result = await authService.ConfirmEmailAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> ResendConfirmationEmailAsync(
+        ResendConfirmationEmailRequest request,
+        IAuthService                   authService,
+        CancellationToken              ct)
+    {
+        var result = await authService.ResendConfirmationEmailAsync(request, ct);
         return result.ToHttpResponse();
     }
 }

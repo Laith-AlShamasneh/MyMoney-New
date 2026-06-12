@@ -64,4 +64,36 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
 
         await db.ExecuteAsync("MyMoney.usp_Authentication_UpdateLogin", p, ct);
     }
+
+    public async Task SaveConfirmationTokenAsync(SaveConfirmationTokenDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId",       input.UserId,       DbType.Int64);
+        p.Add("@TokenHash",    input.TokenHash,    DbType.String);
+        p.Add("@ExpiresAtUtc", input.ExpiresAtUtc, DbType.DateTime2);
+        p.Add("@CreatedByIp",  input.CreatedByIp,  DbType.String);
+
+        await db.ExecuteAsync("MyMoney.usp_Authentication_SaveConfirmationToken", p, ct);
+    }
+
+    public async Task<ConfirmEmailDbResult> ConfirmEmailAsync(ConfirmEmailDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@TokenHash", input.TokenHash, DbType.String);
+        p.Add("@UsedByIp",  input.UsedByIp,  DbType.String);
+
+        return await db.QuerySingleAsync<ConfirmEmailDbResult>(
+            "MyMoney.usp_Authentication_ConfirmEmail", p, ct)
+            ?? new ConfirmEmailDbResult { ResultCode = 1 };
+    }
+
+    public async Task<UserConfirmationStatusDbResult?> GetUserConfirmationStatusAsync(
+        string email, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@Email", email, DbType.String);
+
+        return await db.QuerySingleAsync<UserConfirmationStatusDbResult>(
+            "MyMoney.usp_Authentication_GetUserConfirmationStatus", p, ct);
+    }
 }

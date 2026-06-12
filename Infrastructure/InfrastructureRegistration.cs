@@ -58,6 +58,7 @@ public static class InfrastructureRegistration
         // 7. Background jobs
         services.AddScoped<IBackgroundJobService, BackgroundJobService>();
         services.AddScoped<IJobHandler, WelcomeEmailHandler>();
+        services.AddScoped<IJobHandler, EmailConfirmationHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
 
         // 8. Email

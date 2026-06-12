@@ -61,6 +61,12 @@ public static class MessageKeys
         public const string PasswordResetSuccess    = "Authentication.PasswordResetSuccess";
         public const string UserLoginSuccess        = "Authentication.UserLoginSuccess";
         public const string UserRegisteredSuccess   = "Authentication.UserRegisteredSuccess";
+
+        // Email confirmation
+        public const string ConfirmationTokenRequired  = "Authentication.ConfirmationTokenRequired";
+        public const string EmailConfirmed             = "Authentication.EmailConfirmed";
+        public const string EmailAlreadyConfirmed      = "Authentication.EmailAlreadyConfirmed";
+        public const string ConfirmationEmailSent      = "Authentication.ConfirmationEmailSent";
     }
 
     public static class Transaction
