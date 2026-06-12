@@ -27,7 +27,24 @@ builder.Services.AddValidatorsFromAssembly(
     typeof(Application.Common.Extensions.ServiceCollectionExtensions).Assembly,
     ServiceLifetime.Scoped);
 
-// ── 4. Cross-cutting ──────────────────────────────────────────────────────────
+// ── 4. CORS ───────────────────────────────────────────────────────────────────
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+// ── 5. Cross-cutting ──────────────────────────────────────────────────────────
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -62,6 +79,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseExceptionHandler(opt => { });
+
+app.UseCors("FrontendPolicy");
 
 app.UseMiddleware<RequestLoggingMiddleware>();
 
