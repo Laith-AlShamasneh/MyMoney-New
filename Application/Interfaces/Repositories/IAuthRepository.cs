@@ -14,6 +14,9 @@ public interface IAuthRepository
     Task<ConfirmEmailDbResult>               ConfirmEmailAsync(ConfirmEmailDbInput input, CancellationToken ct = default);
     Task<UserConfirmationStatusDbResult?>    GetUserConfirmationStatusAsync(string email, CancellationToken ct = default);
 
+    Task<ChangePasswordUserDbResult?> GetUserForChangePasswordAsync(long userId, CancellationToken ct = default);
+    Task<ChangePasswordDbResult>      ChangePasswordAsync(ChangePasswordDbInput input, CancellationToken ct = default);
+
     Task<ForgotPasswordDbResult?>    GetUserForPasswordResetAsync(string email, CancellationToken ct = default);
     Task                             SavePasswordResetTokenAsync(SavePasswordResetTokenDbInput input, CancellationToken ct = default);
     Task<ValidateResetTokenDbResult> ValidatePasswordResetTokenAsync(string tokenHash, CancellationToken ct = default);

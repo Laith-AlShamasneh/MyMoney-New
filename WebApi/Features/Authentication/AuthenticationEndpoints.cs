@@ -25,6 +25,10 @@ public static class AuthenticationEndpoints
         group.MapPost("/resend-confirmation-email", ResendConfirmationEmailAsync)
              .AddEndpointFilter<ValidationFilter<ResendConfirmationEmailRequest>>();
 
+        group.MapPost("/change-password", ChangePasswordAsync)
+             .RequireAuthorization()
+             .AddEndpointFilter<ValidationFilter<ChangePasswordRequest>>();
+
         group.MapPost("/forgot-password", ForgotPasswordAsync)
              .AddEndpointFilter<ValidationFilter<ForgotPasswordRequest>>();
 
@@ -68,6 +72,15 @@ public static class AuthenticationEndpoints
         CancellationToken              ct)
     {
         var result = await authService.ResendConfirmationEmailAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        IAuthService          authService,
+        CancellationToken     ct)
+    {
+        var result = await authService.ChangePasswordAsync(request, ct);
         return result.ToHttpResponse();
     }
 

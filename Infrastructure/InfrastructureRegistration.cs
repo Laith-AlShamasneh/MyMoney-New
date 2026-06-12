@@ -60,6 +60,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, WelcomeEmailHandler>();
         services.AddScoped<IJobHandler, EmailConfirmationHandler>();
         services.AddScoped<IJobHandler, PasswordResetEmailHandler>();
+        services.AddScoped<IJobHandler, PasswordChangedEmailHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
 
         // 8. Email

@@ -62,6 +62,12 @@ public static class MessageKeys
         public const string UserLoginSuccess        = "Authentication.UserLoginSuccess";
         public const string UserRegisteredSuccess   = "Authentication.UserRegisteredSuccess";
 
+        // Change password
+        public const string CurrentPasswordRequired    = "Authentication.CurrentPasswordRequired";
+        public const string CurrentPasswordIncorrect   = "Authentication.CurrentPasswordIncorrect";
+        public const string NewPasswordSameAsCurrent   = "Authentication.NewPasswordSameAsCurrent";
+        public const string PasswordChanged            = "Authentication.PasswordChanged";
+
         // Email confirmation
         public const string ConfirmationTokenRequired  = "Authentication.ConfirmationTokenRequired";
         public const string EmailConfirmed             = "Authentication.EmailConfirmed";

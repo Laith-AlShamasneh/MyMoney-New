@@ -157,8 +157,7 @@ internal sealed class AuthService(
     }
 
     public async Task<ServiceResult<LoginResponse>> LoginAsync(
-        LoginRequest      request,
-        CancellationToken ct = default)
+        LoginRequest request, CancellationToken ct = default)
     {
         // 1. Load user record — NULL means email does not exist
         var user = await authRepository.GetByEmailForLoginAsync(request.Email, ct);
@@ -353,6 +352,63 @@ internal sealed class AuthService(
             ct: ct);
 
         return ServiceResultFactory.Success(true, InternalResponseCodes.OK, successMsg);
+    }
+
+    public async Task<ServiceResult<bool>> ChangePasswordAsync(
+        ChangePasswordRequest request, CancellationToken ct = default)
+    {
+        // 1. Load the authenticated user's record — keyed by JWT claim, never by request body
+        var user = await authRepository.GetUserForChangePasswordAsync(userContext.UserId, ct);
+
+        if (user is null || !user.IsActive)
+            return ServiceResultFactory.Failure<bool>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Common.Unauthorized, ct));
+
+        // 2. Verify the supplied current password against the stored BCrypt hash
+        if (!passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            return ServiceResultFactory.Failure<bool>(
+                InternalResponseCodes.BadRequest,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.CurrentPasswordIncorrect, ct));
+
+        // 3. Prevent reuse — new password must differ from the current one
+        if (passwordHasher.Verify(request.NewPassword, user.PasswordHash))
+            return ServiceResultFactory.Failure<bool>(
+                InternalResponseCodes.BadRequest,
+                await messageProvider.GetMessagesAsync(MessageKeys.Authentication.NewPasswordSameAsCurrent, ct));
+
+        // 4. Hash the new password and persist atomically; revoke all refresh tokens
+        var newHash  = passwordHasher.Hash(request.NewPassword);
+        var dbResult = await authRepository.ChangePasswordAsync(new ChangePasswordDbInput
+        {
+            UserId          = user.UserId,
+            NewPasswordHash = newHash,
+            ChangedByIp     = userContext.IpAddress
+        }, ct);
+
+        if (dbResult.ResultCode != 0)
+            return ServiceResultFactory.Failure<bool>(
+                InternalResponseCodes.Unauthorized,
+                await messageProvider.GetMessagesAsync(MessageKeys.Common.Unauthorized, ct));
+
+        // 5. Enqueue security notification email via durable background job (Rule 16)
+        var isArabic    = userContext.Language == SystemLanguages.Arabic;
+        var displayName = isArabic && !string.IsNullOrWhiteSpace(user.DisplayNameAr)
+            ? user.DisplayNameAr
+            : user.DisplayNameEn;
+
+        var changeTime = DateTime.UtcNow.ToString("dd MMM yyyy HH:mm 'UTC'");
+
+        await backgroundJobService.EnqueueAsync(
+            jobType:  JobTypes.PasswordChangedEmail,
+            payload:  new PasswordChangedEmailPayload(userContext.Email, displayName, changeTime, userContext.Language),
+            priority: 1,   // High — security notification
+            ct:       ct);
+
+        return ServiceResultFactory.Success(
+            true,
+            InternalResponseCodes.OK,
+            await messageProvider.GetMessagesAsync(MessageKeys.Authentication.PasswordChanged, ct));
     }
 
     public async Task<ServiceResult<bool>> ForgotPasswordAsync(

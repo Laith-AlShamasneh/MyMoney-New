@@ -97,6 +97,29 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
             "MyMoney.usp_Authentication_GetUserConfirmationStatus", p, ct);
     }
 
+    public async Task<ChangePasswordUserDbResult?> GetUserForChangePasswordAsync(
+        long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId", userId, DbType.Int64);
+
+        return await db.QuerySingleAsync<ChangePasswordUserDbResult>(
+            "MyMoney.usp_Authentication_GetUserForChangePassword", p, ct);
+    }
+
+    public async Task<ChangePasswordDbResult> ChangePasswordAsync(
+        ChangePasswordDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId",          input.UserId,          DbType.Int64);
+        p.Add("@NewPasswordHash", input.NewPasswordHash, DbType.String);
+        p.Add("@ChangedByIp",     input.ChangedByIp,     DbType.String);
+
+        return await db.QuerySingleAsync<ChangePasswordDbResult>(
+            "MyMoney.usp_Authentication_ChangePassword", p, ct)
+            ?? new ChangePasswordDbResult { ResultCode = 1 };
+    }
+
     public async Task<ForgotPasswordDbResult?> GetUserForPasswordResetAsync(
         string email, CancellationToken ct = default)
     {
