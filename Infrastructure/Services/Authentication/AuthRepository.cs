@@ -96,4 +96,50 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
         return await db.QuerySingleAsync<UserConfirmationStatusDbResult>(
             "MyMoney.usp_Authentication_GetUserConfirmationStatus", p, ct);
     }
+
+    public async Task<ForgotPasswordDbResult?> GetUserForPasswordResetAsync(
+        string email, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@Email", email, DbType.String);
+
+        return await db.QuerySingleAsync<ForgotPasswordDbResult>(
+            "MyMoney.usp_Authentication_GetUserForPasswordReset", p, ct);
+    }
+
+    public async Task SavePasswordResetTokenAsync(
+        SavePasswordResetTokenDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId",       input.UserId,       DbType.Int64);
+        p.Add("@TokenHash",    input.TokenHash,    DbType.String);
+        p.Add("@ExpiresAtUtc", input.ExpiresAtUtc, DbType.DateTime2);
+        p.Add("@CreatedByIp",  input.CreatedByIp,  DbType.String);
+
+        await db.ExecuteAsync("MyMoney.usp_Authentication_SavePasswordResetToken", p, ct);
+    }
+
+    public async Task<ValidateResetTokenDbResult> ValidatePasswordResetTokenAsync(
+        string tokenHash, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@TokenHash", tokenHash, DbType.String);
+
+        return await db.QuerySingleAsync<ValidateResetTokenDbResult>(
+            "MyMoney.usp_Authentication_ValidatePasswordResetToken", p, ct)
+            ?? new ValidateResetTokenDbResult { ResultCode = 1 };
+    }
+
+    public async Task<ResetPasswordDbResult> ResetPasswordAsync(
+        ResetPasswordDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@TokenHash",    input.TokenHash,    DbType.String);
+        p.Add("@PasswordHash", input.PasswordHash, DbType.String);
+        p.Add("@UsedByIp",     input.UsedByIp,     DbType.String);
+
+        return await db.QuerySingleAsync<ResetPasswordDbResult>(
+            "MyMoney.usp_Authentication_ResetPassword", p, ct)
+            ?? new ResetPasswordDbResult { ResultCode = 1 };
+    }
 }

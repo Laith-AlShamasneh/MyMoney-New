@@ -67,6 +67,9 @@ public static class MessageKeys
         public const string EmailConfirmed             = "Authentication.EmailConfirmed";
         public const string EmailAlreadyConfirmed      = "Authentication.EmailAlreadyConfirmed";
         public const string ConfirmationEmailSent      = "Authentication.ConfirmationEmailSent";
+
+        // Password reset
+        public const string ResetTokenValid            = "Authentication.ResetTokenValid";
     }
 
     public static class Transaction

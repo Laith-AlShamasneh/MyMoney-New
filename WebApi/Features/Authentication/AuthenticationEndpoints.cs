@@ -24,6 +24,15 @@ public static class AuthenticationEndpoints
 
         group.MapPost("/resend-confirmation-email", ResendConfirmationEmailAsync)
              .AddEndpointFilter<ValidationFilter<ResendConfirmationEmailRequest>>();
+
+        group.MapPost("/forgot-password", ForgotPasswordAsync)
+             .AddEndpointFilter<ValidationFilter<ForgotPasswordRequest>>();
+
+        group.MapPost("/validate-reset-password-token", ValidateResetTokenAsync)
+             .AddEndpointFilter<ValidationFilter<ValidateResetTokenRequest>>();
+
+        group.MapPost("/reset-password", ResetPasswordAsync)
+             .AddEndpointFilter<ValidationFilter<ResetPasswordRequest>>();
     }
 
     private static async Task<IResult> RegisterAsync(
@@ -59,6 +68,33 @@ public static class AuthenticationEndpoints
         CancellationToken              ct)
     {
         var result = await authService.ResendConfirmationEmailAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> ForgotPasswordAsync(
+        ForgotPasswordRequest request,
+        IAuthService          authService,
+        CancellationToken     ct)
+    {
+        var result = await authService.ForgotPasswordAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> ValidateResetTokenAsync(
+        ValidateResetTokenRequest request,
+        IAuthService              authService,
+        CancellationToken         ct)
+    {
+        var result = await authService.ValidateResetTokenAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        IAuthService         authService,
+        CancellationToken    ct)
+    {
+        var result = await authService.ResetPasswordAsync(request, ct);
         return result.ToHttpResponse();
     }
 }

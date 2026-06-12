@@ -53,6 +53,8 @@
     "Authentication.EmailConfirmed":             "Email confirmed successfully. You can now log in.",
     "Authentication.EmailAlreadyConfirmed":      "Your email address is already confirmed.",
     "Authentication.ConfirmationEmailSent":      "If your email is registered and not yet confirmed, a confirmation link has been sent.",
+    "Authentication.ResetTokenRequired":         "Reset token is required.",
+    "Authentication.ResetTokenValid":            "Token is valid. You may now set a new password.",
 
     "Transaction.AmountRequired":         "Amount is required.",
     "Transaction.AmountMustBePositive":   "Amount must be greater than zero.",
@@ -159,6 +161,8 @@
     "Authentication.EmailConfirmed":             "تم تأكيد بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
     "Authentication.EmailAlreadyConfirmed":      "بريدك الإلكتروني مؤكد بالفعل.",
     "Authentication.ConfirmationEmailSent":      "إذا كان بريدك الإلكتروني مسجلاً وغير مؤكد، فقد تم إرسال رابط التأكيد.",
+    "Authentication.ResetTokenRequired":         "رمز إعادة التعيين مطلوب.",
+    "Authentication.ResetTokenValid":            "الرمز صالح. يمكنك الآن تعيين كلمة مرور جديدة.",
 
     "Transaction.AmountRequired":         "المبلغ مطلوب.",
     "Transaction.AmountMustBePositive":   "يجب أن يكون المبلغ أكبر من صفر.",

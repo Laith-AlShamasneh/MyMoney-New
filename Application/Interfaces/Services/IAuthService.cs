@@ -9,4 +9,7 @@ public interface IAuthService
     Task<ServiceResult<LoginResponse>>    LoginAsync(LoginRequest request, CancellationToken ct = default);
     Task<ServiceResult<bool>>             ConfirmEmailAsync(ConfirmEmailRequest request, CancellationToken ct = default);
     Task<ServiceResult<bool>>             ResendConfirmationEmailAsync(ResendConfirmationEmailRequest request, CancellationToken ct = default);
+    Task<ServiceResult<bool>>             ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken ct = default);
+    Task<ServiceResult<bool>>             ValidateResetTokenAsync(ValidateResetTokenRequest request, CancellationToken ct = default);
+    Task<ServiceResult<bool>>             ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default);
 }

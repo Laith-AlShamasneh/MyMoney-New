@@ -354,4 +354,102 @@ internal sealed class AuthService(
 
         return ServiceResultFactory.Success(true, InternalResponseCodes.OK, successMsg);
     }
+
+    public async Task<ServiceResult<bool>> ForgotPasswordAsync(
+        ForgotPasswordRequest request, CancellationToken ct = default)
+    {
+        // No-enumeration: always return the same success response
+        var successMsg = await messageProvider.GetMessagesAsync(MessageKeys.Authentication.ResetEmailSent, ct);
+
+        var user = await authRepository.GetUserForPasswordResetAsync(request.Email, ct);
+
+        // User not found or inactive — silently return success (no user enumeration)
+        if (user is null || !user.IsActive)
+            return ServiceResultFactory.Success(true, InternalResponseCodes.OK, successMsg);
+
+        // Generate raw token (sent to user), store only SHA-256 hash (Rule 17)
+        var rawToken    = tokenHasher.GenerateRawToken();
+        var hashedToken = tokenHasher.Hash(rawToken);
+        var expiresAt   = DateTime.UtcNow.AddMinutes(authOptions.Value.PasswordResetExpiryMinutes);
+
+        await authRepository.SavePasswordResetTokenAsync(new SavePasswordResetTokenDbInput
+        {
+            UserId       = user.UserId,
+            TokenHash    = hashedToken,
+            ExpiresAtUtc = expiresAt,
+            CreatedByIp  = userContext.IpAddress
+        }, ct);
+
+        var resetLink = $"{authOptions.Value.ResetPasswordBaseUrl}?token={Uri.EscapeDataString(rawToken)}";
+
+        var isArabic    = userContext.Language == SystemLanguages.Arabic;
+        var displayName = isArabic && !string.IsNullOrWhiteSpace(user.DisplayNameAr)
+            ? user.DisplayNameAr
+            : user.DisplayNameEn;
+
+        // Enqueue password reset email at high priority via durable background job (Rule 16)
+        await backgroundJobService.EnqueueAsync(
+            jobType:  JobTypes.PasswordResetEmail,
+            payload:  new PasswordResetEmailPayload(request.Email, displayName, resetLink, userContext.Language),
+            priority: 1,   // High
+            ct:       ct);
+
+        return ServiceResultFactory.Success(true, InternalResponseCodes.OK, successMsg);
+    }
+
+    public async Task<ServiceResult<bool>> ValidateResetTokenAsync(
+        ValidateResetTokenRequest request, CancellationToken ct = default)
+    {
+        var tokenHash = tokenHasher.Hash(request.Token);
+
+        var dbResult = await authRepository.ValidatePasswordResetTokenAsync(tokenHash, ct);
+
+        return dbResult.ResultCode switch
+        {
+            0 => ServiceResultFactory.Success(
+                    true,
+                    InternalResponseCodes.OK,
+                    await messageProvider.GetMessagesAsync(MessageKeys.Authentication.ResetTokenValid, ct)),
+
+            2 => ServiceResultFactory.Failure<bool>(
+                    InternalResponseCodes.BadRequest,
+                    await messageProvider.GetMessagesAsync(MessageKeys.Authentication.TokenExpired, ct)),
+
+            // 1=NotFound, 3=AlreadyUsed, 4=UserInactive — all map to InvalidResetToken (no leak)
+            _ => ServiceResultFactory.Failure<bool>(
+                    InternalResponseCodes.BadRequest,
+                    await messageProvider.GetMessagesAsync(MessageKeys.Authentication.InvalidResetToken, ct))
+        };
+    }
+
+    public async Task<ServiceResult<bool>> ResetPasswordAsync(
+        ResetPasswordRequest request, CancellationToken ct = default)
+    {
+        var tokenHash    = tokenHasher.Hash(request.Token);
+        var passwordHash = passwordHasher.Hash(request.NewPassword);
+
+        var dbResult = await authRepository.ResetPasswordAsync(new ResetPasswordDbInput
+        {
+            TokenHash    = tokenHash,
+            PasswordHash = passwordHash,
+            UsedByIp     = userContext.IpAddress
+        }, ct);
+
+        return dbResult.ResultCode switch
+        {
+            0 => ServiceResultFactory.Success(
+                    true,
+                    InternalResponseCodes.OK,
+                    await messageProvider.GetMessagesAsync(MessageKeys.Authentication.PasswordResetSuccess, ct)),
+
+            2 => ServiceResultFactory.Failure<bool>(
+                    InternalResponseCodes.BadRequest,
+                    await messageProvider.GetMessagesAsync(MessageKeys.Authentication.TokenExpired, ct)),
+
+            // 1=NotFound, 3=AlreadyUsed, 4=UserInactive — all map to InvalidResetToken (no leak)
+            _ => ServiceResultFactory.Failure<bool>(
+                    InternalResponseCodes.BadRequest,
+                    await messageProvider.GetMessagesAsync(MessageKeys.Authentication.InvalidResetToken, ct))
+        };
+    }
 }
