@@ -1,7 +1,7 @@
 namespace Application.Features.Profile.DbModels;
 
 public sealed record GetSessionsDbResult(
-    long     Id,
+    long     TokenId,
     string   CreatedByIp,
     DateTime CreatedOnUtc,
     DateTime ExpiresOnUtc,
