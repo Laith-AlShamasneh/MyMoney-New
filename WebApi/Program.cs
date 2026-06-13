@@ -1,5 +1,6 @@
 using Application.Common.Extensions;
 using WebApi.Features.Authentication;
+using WebApi.Features.Dashboard;
 using WebApi.Features.Profile;
 using FluentValidation;
 using Infrastructure;
@@ -91,5 +92,6 @@ app.UseAuthorization();
 // ── 8. Endpoints ──────────────────────────────────────────────────────────────
 app.MapAuthenticationEndpoints();
 app.MapProfileEndpoints();
+app.MapDashboardEndpoints();
 
 app.Run();

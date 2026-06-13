@@ -13,6 +13,7 @@ using Infrastructure.Services.Caching;
 using Infrastructure.Services.Email;
 using Infrastructure.Services.Email.Options;
 using Infrastructure.Services.Localization;
+using Infrastructure.Services.Dashboard;
 using Infrastructure.Services.Profile;
 using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Options;
@@ -41,6 +42,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IBackgroundJobRepository, BackgroundJobRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
+        services.AddScoped<IDashboardRepository, DashboardRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
