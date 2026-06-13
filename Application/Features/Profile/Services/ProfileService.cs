@@ -208,7 +208,7 @@ internal sealed class ProfileService(
 
         var items = sessions
             .Select(s => new SessionItem(
-                Id:               s.Id,
+                Id:               s.TokenId,
                 IpAddress:        s.CreatedByIp,
                 CreatedOnUtc:     s.CreatedOnUtc,
                 ExpiresOnUtc:     s.ExpiresOnUtc,
