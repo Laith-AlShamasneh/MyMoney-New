@@ -23,4 +23,6 @@ public interface IAuthRepository
     Task<ResetPasswordDbResult>      ResetPasswordAsync(ResetPasswordDbInput input, CancellationToken ct = default);
 
     Task<RefreshTokenDbResult> RefreshTokenAsync(RefreshTokenDbInput input, CancellationToken ct = default);
+
+    Task LogoutAsync(LogoutDbInput input, CancellationToken ct = default);
 }

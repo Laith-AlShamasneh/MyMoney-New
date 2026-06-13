@@ -11,7 +11,7 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        Id,
+        TokenId,
         CreatedByIp,
         CreatedOnUtc,
         ExpiresOnUtc,

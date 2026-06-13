@@ -76,6 +76,9 @@ public static class MessageKeys
 
         // Password reset
         public const string ResetTokenValid            = "Authentication.ResetTokenValid";
+
+        // Logout
+        public const string LogoutSuccess              = "Authentication.LogoutSuccess";
     }
 
     public static class Transaction

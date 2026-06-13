@@ -180,4 +180,13 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
             "MyMoney.usp_Authentication_RefreshToken", p, ct)
             ?? new RefreshTokenDbResult { ResultCode = 1 };
     }
+
+    public async Task LogoutAsync(LogoutDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@TokenHash",   input.TokenHash,   DbType.String);
+        p.Add("@RevokedByIp", input.RevokedByIp, DbType.String);
+
+        await db.ExecuteAsync("MyMoney.usp_Authentication_Logout", p, ct);
+    }
 }

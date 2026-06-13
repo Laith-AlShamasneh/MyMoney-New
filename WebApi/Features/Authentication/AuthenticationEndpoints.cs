@@ -40,6 +40,8 @@ public static class AuthenticationEndpoints
 
         group.MapPost("/refresh-token", RefreshTokenAsync)
              .AddEndpointFilter<ValidationFilter<RefreshTokenRequest>>();
+
+        group.MapPost("/logout", LogoutAsync);
     }
 
     private static async Task<IResult> RegisterAsync(
@@ -120,6 +122,15 @@ public static class AuthenticationEndpoints
         CancellationToken   ct)
     {
         var result = await authService.RefreshTokenAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> LogoutAsync(
+        LogoutRequest     request,
+        IAuthService      authService,
+        CancellationToken ct)
+    {
+        var result = await authService.LogoutAsync(request, ct);
         return result.ToHttpResponse();
     }
 }

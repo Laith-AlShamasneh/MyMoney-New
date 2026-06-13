@@ -18,7 +18,7 @@ BEGIN
     SET    RevokedOnUtc  = GETUTCDATE(),
            RevokedByIp   = @RevokedByIp,
            ReasonRevoked = 'UserRevoked'
-    WHERE  Id          = @TokenId
+    WHERE  TokenId     = @TokenId
       AND  UserId      = @UserId
       AND  RevokedOnUtc IS NULL
       AND  ExpiresOnUtc > GETUTCDATE();

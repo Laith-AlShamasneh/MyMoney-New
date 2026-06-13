@@ -578,4 +578,21 @@ internal sealed class AuthService(
             InternalResponseCodes.OK,
             await messageProvider.GetMessagesAsync(MessageKeys.Authentication.TokenRefreshed, ct));
     }
+
+    public async Task<ServiceResult<bool>> LogoutAsync(
+        LogoutRequest request, CancellationToken ct = default)
+    {
+        if (!string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            var tokenHash = tokenHasher.Hash(request.RefreshToken);
+            await authRepository.LogoutAsync(new LogoutDbInput
+            {
+                TokenHash   = tokenHash,
+                RevokedByIp = userContext.IpAddress
+            }, ct);
+        }
+
+        var msg = await messageProvider.GetMessagesAsync(MessageKeys.Authentication.LogoutSuccess, ct);
+        return ServiceResultFactory.Success(true, InternalResponseCodes.OK, msg);
+    }
 }

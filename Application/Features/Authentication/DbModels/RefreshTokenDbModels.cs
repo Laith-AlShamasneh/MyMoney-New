@@ -1,5 +1,11 @@
 namespace Application.Features.Authentication.DbModels;
 
+public sealed class LogoutDbInput
+{
+    public string  TokenHash   { get; init; } = null!;
+    public string? RevokedByIp { get; init; }
+}
+
 public sealed class RefreshTokenDbInput
 {
     public string   OldTokenHash    { get; init; } = null!;

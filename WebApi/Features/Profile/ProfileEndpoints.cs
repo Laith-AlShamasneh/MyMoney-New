@@ -15,33 +15,34 @@ public static class ProfileEndpoints
                        .RequireAuthorization();
 
         // ── Profile CRUD ─────────────────────────────────────────────────────
-        group.MapGet("/", GetProfileAsync);
+        group.MapPost("/get", GetProfileAsync);
 
-        group.MapPut("/", UpdateProfileAsync)
+        group.MapPost("/update", UpdateProfileAsync)
              .AddEndpointFilter<ValidationFilter<UpdateProfileRequest>>();
 
-        group.MapPatch("/picture", UpdateProfilePictureAsync)
+        group.MapPost("/picture/update", UpdateProfilePictureAsync)
              .DisableAntiforgery()
              .AddEndpointFilter<ValidationFilter<UpdateProfilePictureRequest>>();
 
-        group.MapDelete("/picture", RemoveProfilePictureAsync);
+        group.MapPost("/picture/remove", RemoveProfilePictureAsync);
 
         // ── Sessions ─────────────────────────────────────────────────────────
-        group.MapGet("/sessions", GetSessionsAsync);
+        group.MapPost("/sessions/list", GetSessionsAsync);
 
-        group.MapDelete("/sessions/{id:long}", RevokeSessionAsync);
+        group.MapPost("/sessions/revoke", RevokeSessionAsync)
+             .AddEndpointFilter<ValidationFilter<RevokeSessionRequest>>();
 
-        group.MapDelete("/sessions/others", RevokeAllOtherSessionsAsync);
+        group.MapPost("/sessions/revoke-others", RevokeAllOtherSessionsAsync);
 
         // ── Email change ─────────────────────────────────────────────────────
         group.MapPost("/email-change/request", RequestEmailChangeAsync)
              .AddEndpointFilter<ValidationFilter<RequestEmailChangeRequest>>();
 
-        // Email change confirm is public — user clicks link in email (no JWT)
-        app.MapGet("/api/profile/email-change/confirm", ConfirmEmailChangeAsync)
+        // Email change confirm is public — user arrives from email link, JS page POSTs the token
+        app.MapPost("/api/profile/email-change/confirm", ConfirmEmailChangeAsync)
            .WithTags("Profile");
 
-        group.MapDelete("/email-change", CancelEmailChangeAsync);
+        group.MapPost("/email-change/cancel", CancelEmailChangeAsync);
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
@@ -85,18 +86,18 @@ public static class ProfileEndpoints
         IProfileService   profileService,
         CancellationToken ct)
     {
-        // Current refresh token passed via header to avoid query-string logging
+        // Current refresh token passed via header to avoid request-body logging
         var currentToken = httpContext.Request.Headers["X-Refresh-Token"].FirstOrDefault();
         var result = await profileService.GetSessionsAsync(currentToken, ct);
         return result.ToHttpResponse();
     }
 
     private static async Task<IResult> RevokeSessionAsync(
-        long              id,
-        IProfileService   profileService,
-        CancellationToken ct)
+        RevokeSessionRequest request,
+        IProfileService      profileService,
+        CancellationToken    ct)
     {
-        var result = await profileService.RevokeSessionAsync(id, ct);
+        var result = await profileService.RevokeSessionAsync(request.SessionId, ct);
         return result.ToHttpResponse();
     }
 
@@ -123,14 +124,14 @@ public static class ProfileEndpoints
     }
 
     private static async Task<IResult> ConfirmEmailChangeAsync(
-        [FromQuery] string token,
-        IProfileService    profileService,
-        CancellationToken  ct)
+        ConfirmEmailChangeRequest request,
+        IProfileService           profileService,
+        CancellationToken         ct)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(request?.Token))
             return Results.BadRequest(new { success = false, message = "Token is required." });
 
-        var result = await profileService.ConfirmEmailChangeAsync(new ConfirmEmailChangeRequest(token), ct);
+        var result = await profileService.ConfirmEmailChangeAsync(request, ct);
         return result.ToHttpResponse();
     }
 
