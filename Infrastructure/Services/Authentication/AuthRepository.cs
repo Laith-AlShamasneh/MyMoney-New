@@ -189,4 +189,49 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
 
         await db.ExecuteAsync("MyMoney.usp_Authentication_Logout", p, ct);
     }
+
+    // ─── Email Change ──────────────────────────────────────────────────────────
+
+    public async Task<GetProfileForEmailChangeDbResult?> GetProfileForEmailChangeAsync(
+        long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId", userId, DbType.Int64);
+
+        return await db.QuerySingleAsync<GetProfileForEmailChangeDbResult>(
+            "MyMoney.usp_Profile_GetProfileForEmailChange", p, ct);
+    }
+
+    public async Task RequestEmailChangeAsync(
+        RequestEmailChangeDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId",       input.UserId,       DbType.Int64);
+        p.Add("@NewEmail",     input.NewEmail,     DbType.String);
+        p.Add("@TokenHash",    input.TokenHash,    DbType.String);
+        p.Add("@ExpiresAtUtc", input.ExpiresAtUtc, DbType.DateTime2);
+        p.Add("@CreatedByIp",  input.CreatedByIp,  DbType.String);
+
+        await db.ExecuteAsync("MyMoney.usp_Profile_RequestEmailChange", p, ct);
+    }
+
+    public async Task<ConfirmEmailChangeDbResult> ConfirmEmailChangeAsync(
+        ConfirmEmailChangeDbInput input, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@TokenHash", input.TokenHash, DbType.String);
+        p.Add("@UsedByIp",  input.UsedByIp,  DbType.String);
+
+        return await db.QuerySingleAsync<ConfirmEmailChangeDbResult>(
+            "MyMoney.usp_Profile_ConfirmEmailChange", p, ct)
+            ?? new ConfirmEmailChangeDbResult(1, null, null, null, null, null);
+    }
+
+    public async Task CancelEmailChangeAsync(long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId", userId, DbType.Int64);
+
+        await db.ExecuteAsync("MyMoney.usp_Profile_CancelEmailChange", p, ct);
+    }
 }

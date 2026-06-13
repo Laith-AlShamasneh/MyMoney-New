@@ -34,15 +34,6 @@ public static class ProfileEndpoints
 
         group.MapPost("/sessions/revoke-others", RevokeAllOtherSessionsAsync);
 
-        // ── Email change ─────────────────────────────────────────────────────
-        group.MapPost("/email-change/request", RequestEmailChangeAsync)
-             .AddEndpointFilter<ValidationFilter<RequestEmailChangeRequest>>();
-
-        // Email change confirm is public — user arrives from email link, JS page POSTs the token
-        app.MapPost("/api/profile/email-change/confirm", ConfirmEmailChangeAsync)
-           .WithTags("Profile");
-
-        group.MapPost("/email-change/cancel", CancelEmailChangeAsync);
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────
@@ -114,32 +105,4 @@ public static class ProfileEndpoints
         return result.ToHttpResponse();
     }
 
-    private static async Task<IResult> RequestEmailChangeAsync(
-        RequestEmailChangeRequest request,
-        IProfileService           profileService,
-        CancellationToken         ct)
-    {
-        var result = await profileService.RequestEmailChangeAsync(request, ct);
-        return result.ToHttpResponse();
-    }
-
-    private static async Task<IResult> ConfirmEmailChangeAsync(
-        ConfirmEmailChangeRequest request,
-        IProfileService           profileService,
-        CancellationToken         ct)
-    {
-        if (string.IsNullOrWhiteSpace(request?.Token))
-            return Results.BadRequest(new { success = false, message = "Token is required." });
-
-        var result = await profileService.ConfirmEmailChangeAsync(request, ct);
-        return result.ToHttpResponse();
-    }
-
-    private static async Task<IResult> CancelEmailChangeAsync(
-        IProfileService   profileService,
-        CancellationToken ct)
-    {
-        var result = await profileService.CancelEmailChangeAsync(ct);
-        return result.ToHttpResponse();
-    }
 }

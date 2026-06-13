@@ -5,6 +5,11 @@ namespace Application.Interfaces.Repositories;
 public interface IAuthRepository
 {
     Task<bool>              CheckEmailExistsAsync(string email, CancellationToken ct = default);
+
+    Task<GetProfileForEmailChangeDbResult?> GetProfileForEmailChangeAsync(long userId, CancellationToken ct = default);
+    Task                                    RequestEmailChangeAsync(RequestEmailChangeDbInput input, CancellationToken ct = default);
+    Task<ConfirmEmailChangeDbResult>        ConfirmEmailChangeAsync(ConfirmEmailChangeDbInput input, CancellationToken ct = default);
+    Task                                    CancelEmailChangeAsync(long userId, CancellationToken ct = default);
     Task<RegisterDbResult?> RegisterAsync(RegisterDbInput input, CancellationToken ct = default);
     Task                    SaveRefreshTokenAsync(SaveRefreshTokenDbInput input, CancellationToken ct = default);
     Task<LoginDbResult?>    GetByEmailForLoginAsync(string email, CancellationToken ct = default);

@@ -18,10 +18,4 @@ public interface IProfileService
     Task<ServiceResult<bool>> RevokeSessionAsync(long sessionId, CancellationToken ct = default);
 
     Task<ServiceResult<bool>> RevokeAllOtherSessionsAsync(string currentRefreshToken, CancellationToken ct = default);
-
-    Task<ServiceResult<bool>> RequestEmailChangeAsync(RequestEmailChangeRequest request, CancellationToken ct = default);
-
-    Task<ServiceResult<bool>> ConfirmEmailChangeAsync(ConfirmEmailChangeRequest request, CancellationToken ct = default);
-
-    Task<ServiceResult<bool>> CancelEmailChangeAsync(CancellationToken ct = default);
 }

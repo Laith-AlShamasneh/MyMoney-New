@@ -1,11 +1,7 @@
-using Application.Common.Constants;
-using Application.Common.Options;
-using Application.Features.Email.Jobs;
 using Application.Features.Profile.DbModels;
 using Application.Features.Profile.DTOs;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
-using Microsoft.Extensions.Options;
 using Shared.Constants;
 using Shared.Enums.System;
 using Shared.Results;
@@ -13,15 +9,12 @@ using Shared.Results;
 namespace Application.Features.Profile.Services;
 
 internal sealed class ProfileService(
-    IProfileRepository       profileRepository,
-    IPasswordHasher          passwordHasher,
-    ITokenHasher             tokenHasher,
-    IFileService             fileService,
-    IStorageUtility          storageUtility,
-    IUserContext             userContext,
-    IMessageProvider         messageProvider,
-    IBackgroundJobService    backgroundJobService,
-    IOptions<AuthenticationOptions> authOptions) : IProfileService
+    IProfileRepository profileRepository,
+    ITokenHasher       tokenHasher,
+    IFileService       fileService,
+    IStorageUtility    storageUtility,
+    IUserContext       userContext,
+    IMessageProvider   messageProvider) : IProfileService
 {
     private bool IsArabic => userContext.Language == SystemLanguages.Arabic;
 
@@ -268,131 +261,9 @@ internal sealed class ProfileService(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // REQUEST EMAIL CHANGE
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public async Task<ServiceResult<bool>> RequestEmailChangeAsync(
-        RequestEmailChangeRequest request, CancellationToken ct = default)
-    {
-        var profile = await profileRepository.GetProfileForEmailChangeAsync(userContext.UserId, ct);
-
-        if (profile is null || !profile.IsActive)
-            return ServiceResultFactory.Failure<bool>(
-                InternalResponseCodes.Unauthorized,
-                await messageProvider.GetMessagesAsync(MessageKeys.Common.Unauthorized, ct));
-
-        if (!passwordHasher.Verify(request.CurrentPassword, profile.PasswordHash))
-            return ServiceResultFactory.Failure<bool>(
-                InternalResponseCodes.BadRequest,
-                await messageProvider.GetMessagesAsync(MessageKeys.Profile.CurrentPasswordIncorrect, ct));
-
-        var newEmail = request.NewEmail.Trim().ToLowerInvariant();
-
-        if (newEmail.Equals(profile.Email, StringComparison.OrdinalIgnoreCase))
-            return ServiceResultFactory.Failure<bool>(
-                InternalResponseCodes.BadRequest,
-                await messageProvider.GetMessagesAsync(MessageKeys.Profile.EmailSameAsCurrent, ct));
-
-        var emailTaken = await profileRepository.CheckEmailExistsAsync(newEmail, ct);
-        if (emailTaken)
-            return ServiceResultFactory.Failure<bool>(
-                InternalResponseCodes.Conflict,
-                await messageProvider.GetMessagesAsync(MessageKeys.Profile.EmailAlreadyInUse, ct));
-
-        var rawToken    = tokenHasher.GenerateRawToken();
-        var hashedToken = tokenHasher.Hash(rawToken);
-        var expiresAt   = DateTime.UtcNow.AddHours(authOptions.Value.EmailConfirmationExpiryHours);
-
-        await profileRepository.RequestEmailChangeAsync(new RequestEmailChangeDbInput
-        {
-            UserId       = userContext.UserId,
-            NewEmail     = newEmail,
-            TokenHash    = hashedToken,
-            ExpiresAtUtc = expiresAt,
-            CreatedByIp  = userContext.IpAddress
-        }, ct);
-
-        var displayName      = LocalizedDisplayName(profile.DisplayNameEn, profile.DisplayNameAr);
-        var confirmationLink = BuildEmailChangeLink(authOptions.Value, rawToken);
-
-        await backgroundJobService.EnqueueAsync(
-            jobType:  JobTypes.EmailChangeRequested,
-            payload:  new EmailChangeRequestedPayload(newEmail, displayName, confirmationLink, profile.Email, userContext.Language),
-            priority: 1,
-            ct:       ct);
-
-        return ServiceResultFactory.Success(
-            true,
-            InternalResponseCodes.OK,
-            await messageProvider.GetMessagesAsync(MessageKeys.Profile.EmailChangeRequested, ct));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // CONFIRM EMAIL CHANGE
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public async Task<ServiceResult<bool>> ConfirmEmailChangeAsync(
-        ConfirmEmailChangeRequest request, CancellationToken ct = default)
-    {
-        var tokenHash = tokenHasher.Hash(request.Token);
-
-        var dbResult = await profileRepository.ConfirmEmailChangeAsync(new ConfirmEmailChangeDbInput
-        {
-            TokenHash = tokenHash,
-            UsedByIp  = userContext.IpAddress
-        }, ct);
-
-        if (dbResult.ResultCode == 0 && dbResult.OldEmail is not null && dbResult.NewEmail is not null)
-        {
-            var displayName = LocalizedDisplayName(dbResult.DisplayNameEn!, dbResult.DisplayNameAr);
-            var changeTime  = DateTime.UtcNow.ToString("dd MMM yyyy HH:mm 'UTC'");
-
-            await backgroundJobService.EnqueueAsync(
-                jobType:  JobTypes.EmailChanged,
-                payload:  new EmailChangedPayload(dbResult.OldEmail, displayName, dbResult.NewEmail, changeTime, userContext.Language),
-                priority: 1,
-                ct:       ct);
-
-            return ServiceResultFactory.Success(
-                true,
-                InternalResponseCodes.OK,
-                await messageProvider.GetMessagesAsync(MessageKeys.Profile.EmailChangeConfirmed, ct));
-        }
-
-        return dbResult.ResultCode == 2
-            ? ServiceResultFactory.Failure<bool>(
-                InternalResponseCodes.BadRequest,
-                await messageProvider.GetMessagesAsync(MessageKeys.Profile.EmailChangeTokenExpired, ct))
-            : ServiceResultFactory.Failure<bool>(
-                InternalResponseCodes.BadRequest,
-                await messageProvider.GetMessagesAsync(MessageKeys.Profile.EmailChangeInvalidToken, ct));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // CANCEL EMAIL CHANGE
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public async Task<ServiceResult<bool>> CancelEmailChangeAsync(CancellationToken ct = default)
-    {
-        await profileRepository.CancelEmailChangeAsync(userContext.UserId, ct);
-
-        return ServiceResultFactory.Success(
-            true,
-            InternalResponseCodes.OK,
-            await messageProvider.GetMessagesAsync(MessageKeys.Profile.EmailChangeCancelled, ct));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
     private static string? NullIfEmpty(string? s) =>
         string.IsNullOrWhiteSpace(s) ? null : s;
-
-    private static string BuildEmailChangeLink(AuthenticationOptions opts, string rawToken)
-    {
-        var baseUrl = opts.ConfirmEmailBaseUrl;
-        var emailChangeUrl = baseUrl.Replace("confirm-email", "confirm-email-change", StringComparison.OrdinalIgnoreCase);
-        return $"{emailChangeUrl}?token={Uri.EscapeDataString(rawToken)}";
-    }
 }

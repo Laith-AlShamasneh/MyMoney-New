@@ -1,6 +1,7 @@
 using Application.Features.Authentication.DTOs;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Constants;
 using WebApi.Common.Extensions;
 using WebApi.Common.Filters;
 
@@ -38,10 +39,21 @@ public static class AuthenticationEndpoints
         group.MapPost("/reset-password", ResetPasswordAsync)
              .AddEndpointFilter<ValidationFilter<ResetPasswordRequest>>();
 
-        group.MapPost("/refresh-token", RefreshTokenAsync)
-             .AddEndpointFilter<ValidationFilter<RefreshTokenRequest>>();
+        group.MapPost("/refresh-token", RefreshTokenAsync);
 
         group.MapPost("/logout", LogoutAsync);
+
+        // ── Email change ──────────────────────────────────────────────────────
+        group.MapPost("/email-change/request", RequestEmailChangeAsync)
+             .RequireAuthorization()
+             .AddEndpointFilter<ValidationFilter<RequestEmailChangeRequest>>();
+
+        // Confirm is public — user arrives from email link, JS page POSTs the token
+        app.MapPost("/api/authentication/email-change/confirm", ConfirmEmailChangeAsync)
+           .WithTags("Authentication");
+
+        group.MapPost("/email-change/cancel", CancelEmailChangeAsync)
+             .RequireAuthorization();
     }
 
     private static async Task<IResult> RegisterAsync(
@@ -118,10 +130,19 @@ public static class AuthenticationEndpoints
 
     private static async Task<IResult> RefreshTokenAsync(
         RefreshTokenRequest request,
+        HttpContext         httpContext,
         IAuthService        authService,
         CancellationToken   ct)
     {
-        var result = await authService.RefreshTokenAsync(request, ct);
+        // Accept refresh token from X-Refresh-Token header (preferred) or request body (backward compat)
+        var token = !string.IsNullOrWhiteSpace(request.RefreshToken)
+            ? request.RefreshToken
+            : httpContext.Request.Headers["X-Refresh-Token"].FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(token))
+            return Results.BadRequest(new { success = false, message = MessageKeys.Authentication.RefreshTokenRequired });
+
+        var result = await authService.RefreshTokenAsync(request with { RefreshToken = token }, ct);
         return result.ToHttpResponse();
     }
 
@@ -131,6 +152,35 @@ public static class AuthenticationEndpoints
         CancellationToken ct)
     {
         var result = await authService.LogoutAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> RequestEmailChangeAsync(
+        RequestEmailChangeRequest request,
+        IAuthService              authService,
+        CancellationToken         ct)
+    {
+        var result = await authService.RequestEmailChangeAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> ConfirmEmailChangeAsync(
+        ConfirmEmailChangeRequest request,
+        IAuthService              authService,
+        CancellationToken         ct)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Token))
+            return Results.BadRequest(new { success = false, message = "Token is required." });
+
+        var result = await authService.ConfirmEmailChangeAsync(request, ct);
+        return result.ToHttpResponse();
+    }
+
+    private static async Task<IResult> CancelEmailChangeAsync(
+        IAuthService      authService,
+        CancellationToken ct)
+    {
+        var result = await authService.CancelEmailChangeAsync(ct);
         return result.ToHttpResponse();
     }
 }

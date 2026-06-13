@@ -8,7 +8,7 @@ public sealed class RefreshTokenValidator : AbstractValidator<RefreshTokenReques
 {
     public RefreshTokenValidator()
     {
-        RuleFor(x => x.RefreshToken)
-            .NotEmpty().WithMessage(MessageKeys.Authentication.RefreshTokenRequired);
+        /* Token may come from the X-Refresh-Token header instead of the body.
+           Presence validation is handled in the endpoint handler after merging both sources. */
     }
 }
