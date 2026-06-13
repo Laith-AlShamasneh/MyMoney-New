@@ -135,6 +135,12 @@ public static class MessageKeys
         public const string InvalidProfilePictureFormat = "Profile.InvalidProfilePictureFormat";
         public const string ProfilePictureTooLarge      = "Profile.ProfilePictureTooLarge";
 
+        // Email change validation
+        public const string NewEmailRequired            = "Profile.NewEmailRequired";
+        public const string NewEmailInvalid             = "Profile.NewEmailInvalid";
+        public const string NewEmailTooLong             = "Profile.NewEmailTooLong";
+        public const string EmailChangeTokenRequired    = "Profile.EmailChangeTokenRequired";
+
         // Business
         public const string NotFound                   = "Profile.NotFound";
         public const string Updated                    = "Profile.Updated";
@@ -143,6 +149,23 @@ public static class MessageKeys
         public const string NewPasswordSameAsCurrent   = "Profile.NewPasswordSameAsCurrent";
         public const string ProfilePictureUpdated      = "Profile.ProfilePictureUpdated";
         public const string ProfilePictureDeleted      = "Profile.ProfilePictureDeleted";
+        public const string GetProfileSuccess          = "Profile.GetProfileSuccess";
+
+        // Email change business
+        public const string EmailChangeRequested       = "Profile.EmailChangeRequested";
+        public const string EmailChangeConfirmed       = "Profile.EmailChangeConfirmed";
+        public const string EmailChangeCancelled       = "Profile.EmailChangeCancelled";
+        public const string NoPendingEmailChange       = "Profile.NoPendingEmailChange";
+        public const string EmailChangeTokenExpired    = "Profile.EmailChangeTokenExpired";
+        public const string EmailChangeInvalidToken    = "Profile.EmailChangeInvalidToken";
+        public const string EmailAlreadyInUse          = "Profile.EmailAlreadyInUse";
+        public const string EmailSameAsCurrent         = "Profile.EmailSameAsCurrent";
+
+        // Session management business
+        public const string GetSessionsSuccess         = "Profile.GetSessionsSuccess";
+        public const string SessionRevoked             = "Profile.SessionRevoked";
+        public const string AllOtherSessionsRevoked    = "Profile.AllOtherSessionsRevoked";
+        public const string SessionNotFound            = "Profile.SessionNotFound";
     }
 
     public static class BackgroundJobs

@@ -111,9 +111,10 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
         ChangePasswordDbInput input, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",          input.UserId,          DbType.Int64);
-        p.Add("@NewPasswordHash", input.NewPasswordHash, DbType.String);
-        p.Add("@ChangedByIp",     input.ChangedByIp,     DbType.String);
+        p.Add("@UserId",            input.UserId,            DbType.Int64);
+        p.Add("@NewPasswordHash",   input.NewPasswordHash,   DbType.String);
+        p.Add("@ChangedByIp",       input.ChangedByIp,       DbType.String);
+        p.Add("@CurrentTokenHash",  input.CurrentTokenHash,  DbType.String);
 
         return await db.QuerySingleAsync<ChangePasswordDbResult>(
             "MyMoney.usp_Authentication_ChangePassword", p, ct)

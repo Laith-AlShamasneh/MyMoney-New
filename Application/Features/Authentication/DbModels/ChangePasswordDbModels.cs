@@ -11,9 +11,10 @@ public sealed class ChangePasswordUserDbResult
 
 public sealed class ChangePasswordDbInput
 {
-    public long    UserId          { get; init; }
-    public string  NewPasswordHash { get; init; } = null!;
-    public string? ChangedByIp     { get; init; }
+    public long    UserId             { get; init; }
+    public string  NewPasswordHash    { get; init; } = null!;
+    public string? ChangedByIp        { get; init; }
+    public string? CurrentTokenHash   { get; init; }
 }
 
 public sealed class ChangePasswordDbResult

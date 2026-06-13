@@ -1,4 +1,5 @@
 ﻿using Application.Features.Authentication.Services;
+using Application.Features.Profile.Services;
 using Application.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,6 +10,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IProfileService, ProfileService>();
 
         return services;
     }

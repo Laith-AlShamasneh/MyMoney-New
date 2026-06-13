@@ -377,13 +377,19 @@ internal sealed class AuthService(
                 InternalResponseCodes.BadRequest,
                 await messageProvider.GetMessagesAsync(MessageKeys.Authentication.NewPasswordSameAsCurrent, ct));
 
-        // 4. Hash the new password and persist atomically; revoke all refresh tokens
-        var newHash  = passwordHasher.Hash(request.NewPassword);
+        // 4. Hash the new password. If the caller passes the current refresh token,
+        //    hash it so the SP can keep that session alive and revoke all others.
+        var newHash           = passwordHasher.Hash(request.NewPassword);
+        var currentTokenHash  = request.CurrentRefreshToken is not null
+            ? tokenHasher.Hash(request.CurrentRefreshToken)
+            : (string?)null;
+
         var dbResult = await authRepository.ChangePasswordAsync(new ChangePasswordDbInput
         {
-            UserId          = user.UserId,
-            NewPasswordHash = newHash,
-            ChangedByIp     = userContext.IpAddress
+            UserId           = user.UserId,
+            NewPasswordHash  = newHash,
+            ChangedByIp      = userContext.IpAddress,
+            CurrentTokenHash = currentTokenHash
         }, ct);
 
         if (dbResult.ResultCode != 0)

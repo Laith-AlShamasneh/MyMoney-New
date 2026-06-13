@@ -108,6 +108,26 @@
     "Profile.NewPasswordSameAsCurrent":   "New password must be different from the current password.",
     "Profile.ProfilePictureUpdated":      "Profile picture updated successfully.",
     "Profile.ProfilePictureDeleted":      "Profile picture removed successfully.",
+    "Profile.GetProfileSuccess":          "Profile loaded successfully.",
+
+    "Profile.NewEmailRequired":           "New email address is required.",
+    "Profile.NewEmailInvalid":            "Please enter a valid email address.",
+    "Profile.NewEmailTooLong":            "Email address cannot exceed 254 characters.",
+    "Profile.EmailChangeTokenRequired":   "Email change token is required.",
+
+    "Profile.EmailChangeRequested":       "A confirmation link has been sent to your new email address. Please click the link to confirm.",
+    "Profile.EmailChangeConfirmed":       "Your email address has been changed successfully. Please sign in again.",
+    "Profile.EmailChangeCancelled":       "Email change request cancelled.",
+    "Profile.NoPendingEmailChange":       "No pending email change request was found.",
+    "Profile.EmailChangeTokenExpired":    "This email change link has expired. Please request a new one.",
+    "Profile.EmailChangeInvalidToken":    "This email change link is invalid or has already been used.",
+    "Profile.EmailAlreadyInUse":          "This email address is already registered to another account.",
+    "Profile.EmailSameAsCurrent":         "The new email must be different from your current email.",
+
+    "Profile.GetSessionsSuccess":         "Active sessions loaded successfully.",
+    "Profile.SessionRevoked":             "Session revoked successfully.",
+    "Profile.AllOtherSessionsRevoked":    "All other sessions have been revoked.",
+    "Profile.SessionNotFound":            "Session not found or already expired.",
 
     "BackgroundJobs.JobEnqueueFailed": "Failed to queue the background task. Please try again."
   },
@@ -220,6 +240,26 @@
     "Profile.NewPasswordSameAsCurrent":   "يجب أن تكون كلمة المرور الجديدة مختلفة عن الحالية.",
     "Profile.ProfilePictureUpdated":      "تم تحديث صورة الملف الشخصي بنجاح.",
     "Profile.ProfilePictureDeleted":      "تم حذف صورة الملف الشخصي بنجاح.",
+    "Profile.GetProfileSuccess":          "تم تحميل الملف الشخصي بنجاح.",
+
+    "Profile.NewEmailRequired":           "عنوان البريد الإلكتروني الجديد مطلوب.",
+    "Profile.NewEmailInvalid":            "يرجى إدخال بريد إلكتروني صحيح.",
+    "Profile.NewEmailTooLong":            "لا يمكن أن يتجاوز عنوان البريد الإلكتروني 254 حرفاً.",
+    "Profile.EmailChangeTokenRequired":   "رمز تغيير البريد الإلكتروني مطلوب.",
+
+    "Profile.EmailChangeRequested":       "تم إرسال رابط تأكيد إلى عنوان بريدك الإلكتروني الجديد. يرجى النقر على الرابط للتأكيد.",
+    "Profile.EmailChangeConfirmed":       "تم تغيير عنوان بريدك الإلكتروني بنجاح. يرجى تسجيل الدخول مجدداً.",
+    "Profile.EmailChangeCancelled":       "تم إلغاء طلب تغيير البريد الإلكتروني.",
+    "Profile.NoPendingEmailChange":       "لا يوجد طلب معلق لتغيير البريد الإلكتروني.",
+    "Profile.EmailChangeTokenExpired":    "انتهت صلاحية رابط تغيير البريد الإلكتروني. يرجى طلب رابط جديد.",
+    "Profile.EmailChangeInvalidToken":    "رابط تغيير البريد الإلكتروني غير صالح أو تم استخدامه مسبقاً.",
+    "Profile.EmailAlreadyInUse":          "هذا البريد الإلكتروني مسجّل بالفعل لحساب آخر.",
+    "Profile.EmailSameAsCurrent":         "يجب أن يكون البريد الإلكتروني الجديد مختلفاً عن بريدك الحالي.",
+
+    "Profile.GetSessionsSuccess":         "تم تحميل الجلسات النشطة بنجاح.",
+    "Profile.SessionRevoked":             "تم إنهاء الجلسة بنجاح.",
+    "Profile.AllOtherSessionsRevoked":    "تم إنهاء جميع الجلسات الأخرى.",
+    "Profile.SessionNotFound":            "الجلسة غير موجودة أو منتهية الصلاحية.",
 
     "BackgroundJobs.JobEnqueueFailed": "فشل في إضافة المهمة للطابور. يرجى المحاولة مجدداً."
   }
