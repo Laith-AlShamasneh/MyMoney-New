@@ -127,22 +127,33 @@ internal sealed class CategoryAnalysisReportGenerator(IDbExecutor db) : IReportG
         ws.Row(row).Height = 28;
         row += 2;
 
-        void Add(string label, object value, bool isAmount = false)
+        void AddInt(string label, int value)
         {
             ws.Cell(row, 1).Value = label;
             ws.Cell(row, 2).Value = value;
             ws.Range(row, 2, row, 3).Merge();
             ExcelStyles.ApplySummaryLabelStyle(ws.Cell(row, 1));
             ExcelStyles.ApplySummaryValueStyle(ws.Cell(row, 2));
-            if (isAmount) ExcelStyles.ApplyAmountFormat(ws.Cell(row, 2));
             ws.Row(row).Height = 20;
             row++;
         }
 
-        Add(ar ? "الفئات النشطة"     : "Active Categories",   summary.UniqueCategories);
-        Add(ar ? "إجمالي المعاملات" : "Total Transactions",   summary.TotalTransactions);
-        Add(ar ? "إجمالي الدخل"     : "Total Income",         summary.TotalIncome,   isAmount: true);
-        Add(ar ? "إجمالي المصروفات" : "Total Expenses",       summary.TotalExpenses, isAmount: true);
+        void AddAmount(string label, decimal value)
+        {
+            ws.Cell(row, 1).Value = label;
+            ws.Cell(row, 2).Value = value;
+            ws.Range(row, 2, row, 3).Merge();
+            ExcelStyles.ApplySummaryLabelStyle(ws.Cell(row, 1));
+            ExcelStyles.ApplySummaryValueStyle(ws.Cell(row, 2));
+            ExcelStyles.ApplyAmountFormat(ws.Cell(row, 2));
+            ws.Row(row).Height = 20;
+            row++;
+        }
+
+        AddInt(ar ? "الفئات النشطة"     : "Active Categories",   summary.UniqueCategories);
+        AddInt(ar ? "إجمالي المعاملات" : "Total Transactions",   summary.TotalTransactions);
+        AddAmount(ar ? "إجمالي الدخل"     : "Total Income",   summary.TotalIncome);
+        AddAmount(ar ? "إجمالي المصروفات" : "Total Expenses", summary.TotalExpenses);
 
         ws.Column(1).Width = 25;
         ws.Column(2).Width = 16;
