@@ -1,5 +1,6 @@
 using Application.Common.Options;
 using Application.Interfaces.Database;
+using Dapper;
 using Application.Interfaces.Jobs;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
@@ -29,6 +30,9 @@ public static class InfrastructureRegistration
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
+        // 0. Dapper type handlers
+        SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
+
         // 1. Options
         services.Configure<JwtOptions>(config.GetSection("Jwt"));
         services.Configure<StorageOptions>(config.GetSection("Storage"));
