@@ -9,4 +9,6 @@ public static class JobTypes
     public const string MonthlyReport          = "MonthlyReport";
     public const string EmailChangeRequested   = "EmailChangeRequested";
     public const string EmailChanged           = "EmailChanged";
+    public const string GenerateReport         = "GenerateReport";
+    public const string ReportCompletedEmail   = "ReportCompletedEmail";
 }

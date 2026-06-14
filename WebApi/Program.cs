@@ -3,6 +3,7 @@ using WebApi.Features.Authentication;
 using WebApi.Features.Category;
 using WebApi.Features.Dashboard;
 using WebApi.Features.Profile;
+using WebApi.Features.Report;
 using WebApi.Features.Transaction;
 using FluentValidation;
 using Infrastructure;
@@ -97,5 +98,6 @@ app.MapProfileEndpoints();
 app.MapDashboardEndpoints();
 app.MapTransactionEndpoints();
 app.MapCategoryEndpoints();
+app.MapReportEndpoints();
 
 app.Run();

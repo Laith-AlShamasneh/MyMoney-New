@@ -2,6 +2,7 @@
 using Application.Features.Category.Services;
 using Application.Features.Dashboard.Services;
 using Application.Features.Profile.Services;
+using Application.Features.Reports;
 using Application.Features.Transaction.Services;
 using Application.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IReportService, ReportService>();
 
         return services;
     }

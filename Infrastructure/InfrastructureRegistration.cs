@@ -3,11 +3,13 @@ using Application.Interfaces.Database;
 using Dapper;
 using Application.Interfaces.Jobs;
 using Application.Interfaces.Repositories;
+using Application.Interfaces.Reports;
 using Application.Interfaces.Services;
 using Infrastructure.Database;
 using Infrastructure.Jobs;
 using Infrastructure.Jobs.Handlers;
 using Infrastructure.Jobs.Options;
+using Infrastructure.Reports.Generators;
 using Infrastructure.Services.Authentication;
 using Infrastructure.Services.Authentication.Options;
 using Infrastructure.Services.Caching;
@@ -17,6 +19,7 @@ using Infrastructure.Services.Localization;
 using Infrastructure.Services.Category;
 using Infrastructure.Services.Dashboard;
 using Infrastructure.Services.Profile;
+using Infrastructure.Services.Reports;
 using Infrastructure.Services.Transaction;
 using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Options;
@@ -51,6 +54,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IDashboardRepository, DashboardRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -75,7 +79,16 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, PasswordChangedEmailHandler>();
         services.AddScoped<IJobHandler, EmailChangeRequestedHandler>();
         services.AddScoped<IJobHandler, EmailChangedHandler>();
+        services.AddScoped<IJobHandler, GenerateReportHandler>();
+        services.AddScoped<IJobHandler, ReportCompletedEmailHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
+
+        // 7b. Report generators
+        services.AddScoped<IReportGenerator, FinancialSummaryReportGenerator>();
+        services.AddScoped<IReportGenerator, TransactionDetailReportGenerator>();
+        services.AddScoped<IReportGenerator, IncomeAnalysisReportGenerator>();
+        services.AddScoped<IReportGenerator, ExpenseAnalysisReportGenerator>();
+        services.AddScoped<IReportGenerator, CategoryAnalysisReportGenerator>();
 
         // 8. Email
         services.AddSingleton<IEmailService, SmtpEmailService>();

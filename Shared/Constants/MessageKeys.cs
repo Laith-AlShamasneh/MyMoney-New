@@ -178,4 +178,26 @@ public static class MessageKeys
     {
         public const string JobEnqueueFailed = "BackgroundJobs.JobEnqueueFailed";
     }
+
+    public static class Reports
+    {
+        // Validation
+        public const string ReportTypeRequired    = "Reports.ReportTypeRequired";
+        public const string InvalidReportType     = "Reports.InvalidReportType";
+        public const string LanguageRequired      = "Reports.LanguageRequired";
+        public const string InvalidLanguage       = "Reports.InvalidLanguage";
+        public const string DateFromRequired      = "Reports.DateFromRequired";
+        public const string DateToRequired        = "Reports.DateToRequired";
+        public const string InvalidDateRange      = "Reports.InvalidDateRange";
+        public const string DateRangeTooLarge     = "Reports.DateRangeTooLarge";
+
+        // Business
+        public const string TypesLoaded          = "Reports.TypesLoaded";
+        public const string Generated            = "Reports.Generated";
+        public const string ListLoaded           = "Reports.ListLoaded";
+        public const string NotFound             = "Reports.NotFound";
+        public const string NotReady             = "Reports.NotReady";
+        public const string Deleted              = "Reports.Deleted";
+        public const string DownloadReady        = "Reports.DownloadReady";
+    }
 }
