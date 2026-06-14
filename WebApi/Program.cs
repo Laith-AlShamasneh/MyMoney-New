@@ -1,7 +1,9 @@
 using Application.Common.Extensions;
 using WebApi.Features.Authentication;
+using WebApi.Features.Category;
 using WebApi.Features.Dashboard;
 using WebApi.Features.Profile;
+using WebApi.Features.Transaction;
 using FluentValidation;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -93,5 +95,7 @@ app.UseAuthorization();
 app.MapAuthenticationEndpoints();
 app.MapProfileEndpoints();
 app.MapDashboardEndpoints();
+app.MapTransactionEndpoints();
+app.MapCategoryEndpoints();
 
 app.Run();

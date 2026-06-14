@@ -98,12 +98,15 @@ public static class MessageKeys
         public const string InvalidSortDirection    = "Transaction.InvalidSortDirection";
         public const string AmountRangeInvalid      = "Transaction.AmountRangeInvalid";
         public const string DateRangeInvalid        = "Transaction.DateRangeInvalid";
+        public const string InvalidTransactionId    = "Transaction.InvalidTransactionId";
 
         // Business
-        public const string NotFound    = "Transaction.NotFound";
-        public const string Created     = "Transaction.Created";
-        public const string Updated     = "Transaction.Updated";
-        public const string Deleted     = "Transaction.Deleted";
+        public const string NotFound         = "Transaction.NotFound";
+        public const string Created          = "Transaction.Created";
+        public const string Updated          = "Transaction.Updated";
+        public const string Deleted          = "Transaction.Deleted";
+        public const string SearchSuccess    = "Transaction.SearchSuccess";
+        public const string AnalyticsLoaded  = "Transaction.AnalyticsLoaded";
     }
 
     public static class Category

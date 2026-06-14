@@ -79,6 +79,9 @@
     "Transaction.Created":                "Transaction recorded successfully.",
     "Transaction.Updated":                "Transaction updated successfully.",
     "Transaction.Deleted":                "Transaction deleted successfully.",
+    "Transaction.SearchSuccess":          "Transactions loaded successfully.",
+    "Transaction.AnalyticsLoaded":        "Analytics loaded successfully.",
+    "Transaction.InvalidTransactionId":   "Invalid transaction ID.",
 
     "Category.NotFound":           "Category not found.",
     "Category.LoadedSuccessfully": "Categories loaded successfully.",
@@ -212,6 +215,9 @@
     "Transaction.Created":                "تم تسجيل المعاملة بنجاح.",
     "Transaction.Updated":                "تم تعديل المعاملة بنجاح.",
     "Transaction.Deleted":                "تم حذف المعاملة بنجاح.",
+    "Transaction.SearchSuccess":          "تم تحميل المعاملات بنجاح.",
+    "Transaction.AnalyticsLoaded":        "تم تحميل التحليلات بنجاح.",
+    "Transaction.InvalidTransactionId":   "معرّف المعاملة غير صالح.",
 
     "Category.NotFound":           "الفئة غير موجودة.",
     "Category.LoadedSuccessfully": "تم تحميل الفئات بنجاح.",
