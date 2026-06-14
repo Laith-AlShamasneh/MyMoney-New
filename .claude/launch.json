@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "MyMoney-FE",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "E:/Development/Frontend/MyMoney-FE"],
+      "port": 5501,
+      "autoPort": true
+    }
+  ]
+}
