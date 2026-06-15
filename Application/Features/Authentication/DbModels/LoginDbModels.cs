@@ -15,8 +15,9 @@ public sealed class LoginDbResult
     public DateTime? LockoutEndDateUtc   { get; init; }
     public int       FailedLoginAttempts { get; init; }
     public int       RoleId              { get; init; }
-    public string    RoleNameEn          { get; init; } = null!;
-    public string    RoleNameAr          { get; init; } = null!;
+    public string    RoleNameEn               { get; init; } = null!;
+    public string    RoleNameAr               { get; init; } = null!;
+    public DateTime? OnboardingCompletedAtUtc { get; init; }
 }
 
 public sealed class LoginUpdateDbModel

@@ -26,5 +26,6 @@ public sealed record RegisterResponse(
     string                AccessToken,
     string                RefreshToken,
     DateTime              AccessTokenExpiresAt,
-    DateTime              RefreshTokenExpiresAt
+    DateTime              RefreshTokenExpiresAt,
+    bool                  HasCompletedOnboarding
 );

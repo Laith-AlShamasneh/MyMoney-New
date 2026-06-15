@@ -23,6 +23,7 @@ public sealed class RefreshTokenDbResult
     public string? DisplayNameAr  { get; init; }
     public string? ProfilePicture { get; init; }
     public int     RoleId         { get; init; }
-    public string? RoleNameEn     { get; init; }
-    public string? RoleNameAr     { get; init; }
+    public string?   RoleNameEn               { get; init; }
+    public string?   RoleNameAr               { get; init; }
+    public DateTime? OnboardingCompletedAtUtc { get; init; }
 }

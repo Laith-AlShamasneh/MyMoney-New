@@ -12,6 +12,7 @@ using Infrastructure.Jobs.Options;
 using Infrastructure.Reports.Generators;
 using Infrastructure.Services.Authentication;
 using Infrastructure.Services.Authentication.Options;
+using Infrastructure.Services.Onboarding;
 using Infrastructure.Services.Caching;
 using Infrastructure.Services.Email;
 using Infrastructure.Services.Email.Options;
@@ -49,6 +50,7 @@ public static class InfrastructureRegistration
 
         // 3. Repositories
         services.AddScoped<IAuthRepository, AuthRepository>();
+        services.AddScoped<IOnboardingRepository, OnboardingRepository>();
         services.AddScoped<IBackgroundJobRepository, BackgroundJobRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IDashboardRepository, DashboardRepository>();

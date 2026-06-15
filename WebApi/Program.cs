@@ -2,6 +2,7 @@ using Application.Common.Extensions;
 using WebApi.Features.Authentication;
 using WebApi.Features.Category;
 using WebApi.Features.Dashboard;
+using WebApi.Features.Onboarding;
 using WebApi.Features.Profile;
 using WebApi.Features.Report;
 using WebApi.Features.Transaction;
@@ -99,5 +100,6 @@ app.MapDashboardEndpoints();
 app.MapTransactionEndpoints();
 app.MapCategoryEndpoints();
 app.MapReportEndpoints();
+app.MapOnboardingEndpoints();
 
 app.Run();

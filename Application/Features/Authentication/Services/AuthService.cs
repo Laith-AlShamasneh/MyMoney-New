@@ -9,20 +9,22 @@ using Microsoft.Extensions.Options;
 using Shared.Constants;
 using Shared.Enums.System;
 using Shared.Results;
+using Application.Features.Onboarding.DTOs;
 
 namespace Application.Features.Authentication.Services;
 
 internal sealed class AuthService(
-    IAuthRepository              authRepository,
-    IPasswordHasher              passwordHasher,
-    IJwtService                  jwtService,
-    ITokenHasher                 tokenHasher,
-    IFileService                 fileService,
-    IStorageUtility              storageUtility,
-    IUserContext                 userContext,
-    IMessageProvider             messageProvider,
-    IBackgroundJobService        backgroundJobService,
-    IOptions<AuthenticationOptions> authOptions) : IAuthService
+    IAuthRepository                 authRepository,
+    IPasswordHasher                 passwordHasher,
+    IJwtService                     jwtService,
+    ITokenHasher                    tokenHasher,
+    IFileService                    fileService,
+    IStorageUtility                 storageUtility,
+    IUserContext                    userContext,
+    IMessageProvider                messageProvider,
+    IBackgroundJobService           backgroundJobService,
+    IOptions<AuthenticationOptions> authOptions,
+    IOnboardingService              onboardingService) : IAuthService
 {
     private const int RefreshTokenExpiryDays = 7;
 
@@ -78,6 +80,9 @@ internal sealed class AuthService(
             var detailMsg = await messageProvider.GetMessagesAsync(MessageKeys.Authentication.EmailAlreadyInUse, ct);
             return ServiceResultFactory.Failure<RegisterResponse>(InternalResponseCodes.Conflict, failMsg, [detailMsg]);
         }
+
+        // 3.5 Initialise onboarding for the new user (non-critical — registration succeeds even on failure)
+        try { await onboardingService.InitializeAsync(dbResult.UserId, ct); } catch { /* silently ignored */ }
 
         // 4. Generate tokens
         var jwtModel = new JwtTokenResponse(
@@ -144,14 +149,15 @@ internal sealed class AuthService(
 
         var successMsg = await messageProvider.GetMessagesAsync(MessageKeys.Authentication.UserRegisteredSuccess, ct);
         var response   = new RegisterResponse(
-            Email:                 dbResult.Email,
-            DisplayName:           displayName,
-            ProfileImageUrl:       profileImageUrl,
-            Roles:                 [roleName],
-            AccessToken:           accessToken,
-            RefreshToken:          rawRefreshToken,
-            AccessTokenExpiresAt:  accessTokenExpiresAt,
-            RefreshTokenExpiresAt: refreshTokenExpiresAt);
+            Email:                  dbResult.Email,
+            DisplayName:            displayName,
+            ProfileImageUrl:        profileImageUrl,
+            Roles:                  [roleName],
+            AccessToken:            accessToken,
+            RefreshToken:           rawRefreshToken,
+            AccessTokenExpiresAt:   accessTokenExpiresAt,
+            RefreshTokenExpiresAt:  refreshTokenExpiresAt,
+            HasCompletedOnboarding: false);
 
         return ServiceResultFactory.Success(response, InternalResponseCodes.Created, successMsg);
     }
@@ -262,14 +268,15 @@ internal sealed class AuthService(
         }
 
         var loginResponse = new LoginResponse(
-            Email:                 user.Email,
-            DisplayName:           displayName,
-            ProfileImageUrl:       profileImageUrl,
-            Roles:                 [roleName],
-            AccessToken:           accessToken,
-            RefreshToken:          rawRefreshToken,
-            AccessTokenExpiresAt:  accessTokenExpiresAt,
-            RefreshTokenExpiresAt: refreshTokenExpiresAt);
+            Email:                  user.Email,
+            DisplayName:            displayName,
+            ProfileImageUrl:        profileImageUrl,
+            Roles:                  [roleName],
+            AccessToken:            accessToken,
+            RefreshToken:           rawRefreshToken,
+            AccessTokenExpiresAt:   accessTokenExpiresAt,
+            RefreshTokenExpiresAt:  refreshTokenExpiresAt,
+            HasCompletedOnboarding: user.OnboardingCompletedAtUtc.HasValue);
 
         return ServiceResultFactory.Success(
             loginResponse,
@@ -564,14 +571,15 @@ internal sealed class AuthService(
         }
 
         var response = new LoginResponse(
-            Email:                 dbResult.Email!,
-            DisplayName:           displayName,
-            ProfileImageUrl:       profileImageUrl,
-            Roles:                 [roleName],
-            AccessToken:           accessToken,
-            RefreshToken:          newRaw,
-            AccessTokenExpiresAt:  accessTokenExpiresAt,
-            RefreshTokenExpiresAt: newExpiry);
+            Email:                  dbResult.Email!,
+            DisplayName:            displayName,
+            ProfileImageUrl:        profileImageUrl,
+            Roles:                  [roleName],
+            AccessToken:            accessToken,
+            RefreshToken:           newRaw,
+            AccessTokenExpiresAt:   accessTokenExpiresAt,
+            RefreshTokenExpiresAt:  newExpiry,
+            HasCompletedOnboarding: dbResult.OnboardingCompletedAtUtc.HasValue);
 
         return ServiceResultFactory.Success(
             response,
