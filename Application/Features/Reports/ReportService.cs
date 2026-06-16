@@ -16,7 +16,8 @@ internal sealed class ReportService(
     IBackgroundJobService backgroundJobService,
     IFileService         fileService,
     IUserContext         userContext,
-    IMessageProvider     messageProvider) : IReportService
+    IMessageProvider     messageProvider,
+    INotificationPublisher notificationPublisher) : IReportService
 {
     private static readonly TimeSpan ReportExpiry = TimeSpan.FromDays(7);
 
@@ -66,6 +67,19 @@ internal sealed class ReportService(
             maxAttempts: 3,
             ct:          ct);
 
+        //await notificationPublisher.PublishAsync(
+        //    templateCode: NotificationCodes.ReportReady,
+        //    userId: userContext.UserId,
+        //    parameters: new Dictionary<string, string>
+        //    {
+        //        { "ReportType", type.Key }
+        //    },
+        //    payload: new
+        //    {
+        //        ReportId = reportId,
+        //        Type = type.Key
+        //    },
+        //    ct: ct);
         var msg = await messageProvider.GetMessagesAsync(MessageKeys.Reports.Generated, ct);
         return ServiceResultFactory.Success(new GenerateReportResponse(reportId), InternalResponseCodes.Created, msg);
     }

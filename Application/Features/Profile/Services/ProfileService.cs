@@ -1,3 +1,5 @@
+using Application.Common.Constants;
+using Application.Features.Notifications.Services;
 using Application.Features.Profile.DbModels;
 using Application.Features.Profile.DTOs;
 using Application.Interfaces.Repositories;
@@ -14,7 +16,8 @@ internal sealed class ProfileService(
     IFileService       fileService,
     IStorageUtility    storageUtility,
     IUserContext       userContext,
-    IMessageProvider   messageProvider) : IProfileService
+    IMessageProvider   messageProvider,
+    INotificationPublisher notificationPublisher) : IProfileService
 {
     private bool IsArabic => userContext.Language == SystemLanguages.Arabic;
 
@@ -154,6 +157,8 @@ internal sealed class ProfileService(
             fileName,
             isInternalStorage: true,
             baseUrl: userContext.RequestBaseUrl);
+
+        await notificationPublisher.PublishAsync(NotificationCodes.ProfilePictureChanged, userContext.UserId, ct: ct);
 
         return ServiceResultFactory.Success(
             (string?)profileUrl,
