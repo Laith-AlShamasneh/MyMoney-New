@@ -8,6 +8,10 @@ public sealed class UpdateTransactionValidator : AbstractValidator<UpdateTransac
 {
     public UpdateTransactionValidator()
     {
+        RuleFor(x => x.Id)
+            .GreaterThan(0)
+            .WithMessage(MessageKeys.Transaction.InvalidTransactionId);
+
         RuleFor(x => x.TransactionTypeId)
             .InclusiveBetween(1, 2)
             .WithMessage(MessageKeys.Transaction.InvalidTransactionType);

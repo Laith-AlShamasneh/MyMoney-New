@@ -33,3 +33,5 @@ public sealed record ReportDto(
     bool      CanDelete);
 
 public sealed record GenerateReportResponse(long ReportId);
+
+public sealed record DeleteReportRequest(long Id);

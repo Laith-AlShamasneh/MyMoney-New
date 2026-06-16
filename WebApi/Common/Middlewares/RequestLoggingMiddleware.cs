@@ -21,8 +21,11 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next)
         else if (request.ContentLength > 0 && request.ContentLength < MaxBodyLength)
         {
             // Redact sensitive endpoints
-            if (path.Contains("/start", StringComparison.OrdinalIgnoreCase)
-             || path.Contains("/login", StringComparison.OrdinalIgnoreCase))
+            if (path.Contains("/login",           StringComparison.OrdinalIgnoreCase)
+             || path.Contains("/register",        StringComparison.OrdinalIgnoreCase)
+             || path.Contains("/change-password", StringComparison.OrdinalIgnoreCase)
+             || path.Contains("/reset-password",  StringComparison.OrdinalIgnoreCase)
+             || path.Contains("/forgot-password", StringComparison.OrdinalIgnoreCase))
             {
                 body = "[REDACTED SENSITIVE DATA]";
             }

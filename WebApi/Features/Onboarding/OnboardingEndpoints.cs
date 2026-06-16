@@ -1,6 +1,7 @@
 using Application.Features.Onboarding.DTOs;
 using Application.Interfaces.Services;
 using WebApi.Common.Extensions;
+using WebApi.Common.Filters;
 
 namespace WebApi.Features.Onboarding;
 
@@ -12,8 +13,9 @@ public static class OnboardingEndpoints
                        .WithTags("Onboarding")
                        .RequireAuthorization();
 
-        group.MapGet("/state",   GetStateAsync);
-        group.MapPost("/advance", AdvanceStepAsync);
+        group.MapPost("/state",   GetStateAsync);
+        group.MapPost("/advance", AdvanceStepAsync)
+             .AddEndpointFilter<ValidationFilter<AdvanceStepRequest>>();
         group.MapPost("/skip",    SkipAsync);
     }
 
@@ -30,9 +32,6 @@ public static class OnboardingEndpoints
         IOnboardingService onboardingService,
         CancellationToken  ct)
     {
-        if (string.IsNullOrWhiteSpace(request.StepKey))
-            return Results.BadRequest("stepKey is required.");
-
         var result = await onboardingService.AdvanceStepAsync(request, ct);
         return result.ToHttpResponse();
     }

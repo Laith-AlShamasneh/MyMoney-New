@@ -63,6 +63,10 @@ public record CategoryBreakdownDto(
 
 public record TrendPointDto(int Year, int Month, decimal Income, decimal Expenses);
 
+// ── Get single ───────────────────────────────────────────────────────────────
+
+public record GetTransactionRequest(long Id);
+
 // ── Single transaction ────────────────────────────────────────────────────────
 
 public record TransactionDetailResponse(
@@ -94,9 +98,14 @@ public record CreateTransactionResponse(long TransactionId);
 // ── Update ────────────────────────────────────────────────────────────────────
 
 public record UpdateTransactionRequest(
+    long     Id,
     int      CategoryId,
     int      TransactionTypeId,
     decimal  Amount,
     string?  Description,
     string   TransactionDate,
     string?  Notes);
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+
+public record DeleteTransactionRequest(long Id);

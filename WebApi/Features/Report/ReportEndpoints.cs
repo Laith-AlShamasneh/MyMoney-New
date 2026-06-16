@@ -13,7 +13,7 @@ public static class ReportEndpoints
                        .WithTags("Reports")
                        .RequireAuthorization();
 
-        group.MapGet("types", async (
+        group.MapPost("types", async (
             IReportService    service,
             CancellationToken ct) =>
         {
@@ -31,7 +31,7 @@ public static class ReportEndpoints
         })
         .AddEndpointFilter<ValidationFilter<GenerateReportRequest>>();
 
-        group.MapGet("list", async (
+        group.MapPost("list", async (
             IReportService    service,
             CancellationToken ct) =>
         {
@@ -39,6 +39,7 @@ public static class ReportEndpoints
             return result.ToHttpResponse();
         });
 
+        // Must remain GET — binary file streaming via Results.File()
         group.MapGet("download/{id:long}", async (
             long              id,
             IReportService    service,
@@ -52,13 +53,14 @@ public static class ReportEndpoints
             return Results.File(content, contentType, fileName);
         });
 
-        group.MapDelete("delete/{id:long}", async (
-            long              id,
-            IReportService    service,
-            CancellationToken ct) =>
+        group.MapPost("delete", async (
+            DeleteReportRequest request,
+            IReportService      service,
+            CancellationToken   ct) =>
         {
-            var result = await service.DeleteAsync(id, ct);
+            var result = await service.DeleteAsync(request.Id, ct);
             return result.ToHttpResponse();
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<DeleteReportRequest>>();
     }
 }

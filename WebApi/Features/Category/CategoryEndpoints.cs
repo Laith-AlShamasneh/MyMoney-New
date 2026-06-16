@@ -1,3 +1,4 @@
+using Application.Features.Category.DTOs;
 using Application.Interfaces.Services;
 using WebApi.Common.Extensions;
 
@@ -11,12 +12,12 @@ public static class CategoryEndpoints
                        .WithTags("Categories")
                        .RequireAuthorization();
 
-        group.MapGet("get/list", async (
-            int?              typeId,
-            ICategoryService  service,
-            CancellationToken ct) =>
+        group.MapPost("get/list", async (
+            GetCategoriesRequest request,
+            ICategoryService     service,
+            CancellationToken    ct) =>
         {
-            byte? typeIdByte = typeId.HasValue ? (byte?)typeId.Value : null;
+            byte? typeIdByte = request.TypeId.HasValue ? (byte?)request.TypeId.Value : null;
             var result = await service.GetListAsync(typeIdByte, ct);
             return result.ToHttpResponse();
         });

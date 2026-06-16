@@ -97,10 +97,7 @@ public static class ProfileEndpoints
         IProfileService   profileService,
         CancellationToken ct)
     {
-        var currentToken = httpContext.Request.Headers["X-Refresh-Token"].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(currentToken))
-            return Results.BadRequest(new { success = false, message = "X-Refresh-Token header is required." });
-
+        var currentToken = httpContext.Request.Headers["X-Refresh-Token"].FirstOrDefault() ?? string.Empty;
         var result = await profileService.RevokeAllOtherSessionsAsync(currentToken, ct);
         return result.ToHttpResponse();
     }

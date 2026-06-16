@@ -32,14 +32,15 @@ public static class TransactionEndpoints
             return result.ToHttpResponse();
         });
 
-        group.MapGet("get/{id:long}", async (
-            long                id,
-            ITransactionService service,
-            CancellationToken   ct) =>
+        group.MapPost("get", async (
+            GetTransactionRequest request,
+            ITransactionService   service,
+            CancellationToken     ct) =>
         {
-            var result = await service.GetByIdAsync(id, ct);
+            var result = await service.GetByIdAsync(request.Id, ct);
             return result.ToHttpResponse();
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<GetTransactionRequest>>();
 
         group.MapPost("create", async (
             CreateTransactionRequest request,
@@ -51,24 +52,24 @@ public static class TransactionEndpoints
         })
         .AddEndpointFilter<ValidationFilter<CreateTransactionRequest>>();
 
-        group.MapPut("update/{id:long}", async (
-            long                     id,
+        group.MapPost("update", async (
             UpdateTransactionRequest request,
             ITransactionService      service,
             CancellationToken        ct) =>
         {
-            var result = await service.UpdateAsync(id, request, ct);
+            var result = await service.UpdateAsync(request.Id, request, ct);
             return result.ToHttpResponse();
         })
         .AddEndpointFilter<ValidationFilter<UpdateTransactionRequest>>();
 
-        group.MapDelete("delete/{id:long}", async (
-            long                id,
-            ITransactionService service,
-            CancellationToken   ct) =>
+        group.MapPost("delete", async (
+            DeleteTransactionRequest request,
+            ITransactionService      service,
+            CancellationToken        ct) =>
         {
-            var result = await service.DeleteAsync(id, ct);
+            var result = await service.DeleteAsync(request.Id, ct);
             return result.ToHttpResponse();
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<DeleteTransactionRequest>>();
     }
 }

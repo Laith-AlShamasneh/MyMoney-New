@@ -1,7 +1,6 @@
 using Application.Features.Authentication.DTOs;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Constants;
 using WebApi.Common.Extensions;
 using WebApi.Common.Filters;
 
@@ -50,7 +49,8 @@ public static class AuthenticationEndpoints
 
         // Confirm is public — user arrives from email link, JS page POSTs the token
         app.MapPost("/api/authentication/email-change/confirm", ConfirmEmailChangeAsync)
-           .WithTags("Authentication");
+           .WithTags("Authentication")
+           .AddEndpointFilter<ValidationFilter<ConfirmEmailChangeRequest>>();
 
         group.MapPost("/email-change/cancel", CancelEmailChangeAsync)
              .RequireAuthorization();
@@ -139,10 +139,7 @@ public static class AuthenticationEndpoints
             ? request.RefreshToken
             : httpContext.Request.Headers["X-Refresh-Token"].FirstOrDefault();
 
-        if (string.IsNullOrWhiteSpace(token))
-            return Results.BadRequest(new { success = false, message = MessageKeys.Authentication.RefreshTokenRequired });
-
-        var result = await authService.RefreshTokenAsync(request with { RefreshToken = token }, ct);
+        var result = await authService.RefreshTokenAsync(request with { RefreshToken = token ?? string.Empty }, ct);
         return result.ToHttpResponse();
     }
 
@@ -169,9 +166,6 @@ public static class AuthenticationEndpoints
         IAuthService              authService,
         CancellationToken         ct)
     {
-        if (string.IsNullOrWhiteSpace(request?.Token))
-            return Results.BadRequest(new { success = false, message = "Token is required." });
-
         var result = await authService.ConfirmEmailChangeAsync(request, ct);
         return result.ToHttpResponse();
     }

@@ -1,5 +1,7 @@
 namespace Application.Features.Category.DTOs;
 
+public record GetCategoriesRequest(int? TypeId);
+
 public record CategoryResponse(
     int    CategoryId,
     string NameEn,
