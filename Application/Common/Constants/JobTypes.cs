@@ -11,4 +11,7 @@ public static class JobTypes
     public const string EmailChanged           = "EmailChanged";
     public const string GenerateReport         = "GenerateReport";
     public const string ReportCompletedEmail   = "ReportCompletedEmail";
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+    public const string CreateNotification = "CreateNotification";
 }

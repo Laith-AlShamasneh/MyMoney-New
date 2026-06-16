@@ -1,6 +1,8 @@
 ﻿using Application.Features.Authentication.Services;
 using Application.Features.Category.Services;
 using Application.Features.Dashboard.Services;
+using Application.Features.Notifications;
+using Application.Features.Notifications.Services;
 using Application.Features.Onboarding.Services;
 using Application.Features.Profile.Services;
 using Application.Features.Reports;
@@ -21,6 +23,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<INotificationPublisher, NotificationPublisher>();
 
         return services;
     }

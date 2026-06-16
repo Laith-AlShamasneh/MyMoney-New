@@ -20,6 +20,7 @@ using Infrastructure.Services.Localization;
 using Infrastructure.Services.Category;
 using Infrastructure.Services.Dashboard;
 using Infrastructure.Services.Profile;
+using Infrastructure.Services.Notifications;
 using Infrastructure.Services.Reports;
 using Infrastructure.Services.Transaction;
 using Infrastructure.Services.Storage;
@@ -57,6 +58,7 @@ public static class InfrastructureRegistration
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -83,7 +85,9 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, EmailChangedHandler>();
         services.AddScoped<IJobHandler, GenerateReportHandler>();
         services.AddScoped<IJobHandler, ReportCompletedEmailHandler>();
+        services.AddScoped<IJobHandler, CreateNotificationHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
+        services.AddHostedService<NotificationCleanupService>();
 
         // 7b. Report generators
         services.AddScoped<IReportGenerator, FinancialSummaryReportGenerator>();

@@ -174,6 +174,26 @@ public static class MessageKeys
         public const string SessionNotFound            = "Profile.SessionNotFound";
     }
 
+    public static class Notifications
+    {
+        // Service responses
+        public const string ListLoaded         = "Notifications.ListLoaded";
+        public const string UnreadCountLoaded  = "Notifications.UnreadCountLoaded";
+        public const string MarkedAsRead       = "Notifications.MarkedAsRead";
+        public const string AllMarkedAsRead    = "Notifications.AllMarkedAsRead";
+        public const string Archived           = "Notifications.Archived";
+        public const string Dismissed          = "Notifications.Dismissed";
+        public const string Deleted            = "Notifications.Deleted";
+        public const string NotFound           = "Notifications.NotFound";
+        public const string PreferencesLoaded  = "Notifications.PreferencesLoaded";
+        public const string PreferencesUpdated = "Notifications.PreferencesUpdated";
+
+        // Validation
+        public const string InvalidNotificationId = "Notifications.InvalidNotificationId";
+        public const string InvalidPageSize       = "Notifications.InvalidPageSize";
+        public const string InvalidPageNumber     = "Notifications.InvalidPageNumber";
+    }
+
     public static class BackgroundJobs
     {
         public const string JobEnqueueFailed = "BackgroundJobs.JobEnqueueFailed";

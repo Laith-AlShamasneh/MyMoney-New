@@ -23,6 +23,7 @@ internal sealed class AuthService(
     IUserContext                    userContext,
     IMessageProvider                messageProvider,
     IBackgroundJobService           backgroundJobService,
+    INotificationPublisher          notificationPublisher,
     IOptions<AuthenticationOptions> authOptions,
     IOnboardingService              onboardingService) : IAuthService
 {
@@ -146,6 +147,8 @@ internal sealed class AuthService(
             jobType: JobTypes.EmailConfirmation,
             payload: new EmailConfirmationPayload(dbResult.Email, displayName, confirmationLink, userContext.Language),
             ct: ct);
+
+        await notificationPublisher.PublishAsync(NotificationCodes.Welcome, dbResult.UserId, ct: ct);
 
         var successMsg = await messageProvider.GetMessagesAsync(MessageKeys.Authentication.UserRegisteredSuccess, ct);
         var response   = new RegisterResponse(
@@ -418,6 +421,12 @@ internal sealed class AuthService(
             priority: 1,   // High — security notification
             ct:       ct);
 
+        await notificationPublisher.PublishAsync(
+            NotificationCodes.PasswordChanged,
+            userContext.UserId,
+            parameters: new Dictionary<string, string> { { "ChangedAt", changeTime } },
+            ct: ct);
+
         return ServiceResultFactory.Success(
             true,
             InternalResponseCodes.OK,
@@ -689,6 +698,12 @@ internal sealed class AuthService(
                 payload:  new EmailChangedPayload(dbResult.OldEmail, displayName, dbResult.NewEmail, changeTime, userContext.Language),
                 priority: 1,
                 ct:       ct);
+
+            await notificationPublisher.PublishAsync(
+                NotificationCodes.EmailChanged,
+                dbResult.UserId!.Value,
+                parameters: new Dictionary<string, string> { { "ChangedAt", changeTime } },
+                ct: ct);
 
             return ServiceResultFactory.Success(
                 true,

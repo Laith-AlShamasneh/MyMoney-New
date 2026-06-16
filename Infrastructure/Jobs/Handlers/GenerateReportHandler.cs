@@ -13,7 +13,8 @@ internal sealed class GenerateReportHandler(
     IEnumerable<IReportGenerator>  generators,
     IFileService                   fileService,
     IStorageUtility                storageUtility,
-    IBackgroundJobService          backgroundJobService) : JobHandlerBase<GenerateReportPayload>
+    IBackgroundJobService          backgroundJobService,
+    INotificationPublisher         notificationPublisher) : JobHandlerBase<GenerateReportPayload>
 {
     public override string JobType => JobTypes.GenerateReport;
 
@@ -46,6 +47,16 @@ internal sealed class GenerateReportHandler(
             var types = await reportRepository.GetTypesAsync(ct);
             var type  = types.FirstOrDefault(t => t.Key == payload.ReportTypeKey);
 
+            await notificationPublisher.PublishAsync(
+                NotificationCodes.ReportReady,
+                payload.UserId,
+                parameters: new Dictionary<string, string>
+                {
+                    { "ReportType", payload.Language == "ar" ? (type?.NameAr ?? payload.ReportTypeKey) : (type?.NameEn ?? payload.ReportTypeKey) }
+                },
+                payload: new { reportId = payload.ReportId },
+                ct: ct);
+
             await backgroundJobService.EnqueueAsync(
                 JobTypes.ReportCompletedEmail,
                 new ReportCompletedEmailPayload(
@@ -66,6 +77,13 @@ internal sealed class GenerateReportHandler(
                 ? ex.Message[..1000]
                 : ex.Message;
             await reportRepository.FailAsync(payload.ReportId, message, ct);
+
+            try
+            {
+                await notificationPublisher.PublishAsync(NotificationCodes.ReportFailed, payload.UserId, ct: ct);
+            }
+            catch { /* notification failure must not mask the original exception */ }
+
             throw;
         }
     }
