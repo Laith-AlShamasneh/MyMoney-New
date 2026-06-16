@@ -40,11 +40,12 @@ GO
 INSERT INTO [MyMoney].[OnboardingSteps]
     ([StepKey], [NameEn], [NameAr], [SortOrder], [IsRequired], [CanSkip], [PagePath])
 VALUES
-    ('welcome',           N'Welcome to MyMoney',          N'مرحباً في ماي ماني',       1, 1, 0, '/pages/dashboard/index.html'),
-    ('add_category',      N'Create a Category',           N'أضف تصنيفاً',              2, 0, 1, '/pages/dashboard/settings.html'),
-    ('first_transaction', N'Add Your First Transaction',  N'أضف معاملتك الأولى',       3, 0, 1, '/pages/transactions/index.html'),
-    ('explore_dashboard', N'Explore the Dashboard',       N'استكشف لوحة التحكم',       4, 1, 0, '/pages/dashboard/index.html'),
-    ('complete',          N'Setup Complete',              N'اكتمل الإعداد',             5, 1, 0, '/pages/dashboard/index.html');
+    ('welcome',                        N'Welcome to MyMoney',             N'مرحباً في ماي ماني',       1, 1, 0, '/pages/dashboard/index.html'),
+    ('explore_and_create_transaction', N'Explore and Create Transaction', N'اكتشف و اضف المعاملات',    2, 0, 1, '/pages/transactions/index.html'),
+    ('generate_reports',               N'Generate Reports',               N'انشئ التقارير',            3, 0, 1, '/pages/reports/index.html'),
+    ('track_profile',                  N'Track your Profile',             N'تتبع ملفك الشخصي',         4, 1, 0, '/pages/dashboard/profile.html'),
+    ('settings',                       N'Settings',                       N'عدل الاعدادات',            5, 1, 0, '/pages/dashboard/settings.html'),
+    ('complete',                       N'Setup Complete',                 N'اكتمل الإعداد',            6, 1, 0, '/pages/dashboard/index.html');
 GO
 
 -- =============================================================================
@@ -333,7 +334,7 @@ GO
 -- ============================================================
 -- MyMoney.usp_Onboarding_GetState
 -- Returns full onboarding state for a user (get-or-create).
--- Returns one row per OnboardingStep (5 rows total).
+-- Returns one row per OnboardingStep (6 rows total).
 -- ============================================================
 CREATE PROCEDURE [MyMoney].[usp_Onboarding_GetState]
     @UserId BIGINT
