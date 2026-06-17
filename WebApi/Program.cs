@@ -4,6 +4,7 @@ using WebApi.Features.Category;
 using WebApi.Features.Dashboard;
 using WebApi.Features.Onboarding;
 using WebApi.Features.Profile;
+using WebApi.Features.FinancialIntelligence;
 using WebApi.Features.Notifications;
 using WebApi.Features.Report;
 using WebApi.Features.Transaction;
@@ -102,6 +103,7 @@ app.MapTransactionEndpoints();
 app.MapCategoryEndpoints();
 app.MapReportEndpoints();
 app.MapNotificationEndpoints();
+app.MapFinancialIntelligenceEndpoints();
 app.MapOnboardingEndpoints();
 
 app.Run();

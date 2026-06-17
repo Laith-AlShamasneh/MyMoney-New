@@ -28,4 +28,12 @@ public static class NotificationCodes
     // ── System ────────────────────────────────────────────────────────────────
     public const string SystemAnnouncement = "SystemAnnouncement";
     public const string MaintenanceNotice  = "MaintenanceNotice";
+
+    // ── Financial Intelligence ─────────────────────────────────────────────────
+    public const string FILOverspendingAlert   = "FIL_OverspendingAlert";
+    public const string FILSpendingSpike       = "FIL_SpendingSpike";
+    public const string FILUnusualTransaction  = "FIL_UnusualTransaction";
+    public const string FILHighExpenseRatio    = "FIL_HighExpenseRatio";
+    public const string FILAchievement         = "FIL_Achievement";
+    public const string FILMonthlySummary      = "FIL_MonthlySummary";
 }

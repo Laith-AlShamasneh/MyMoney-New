@@ -194,6 +194,35 @@ public static class MessageKeys
         public const string InvalidPageNumber     = "Notifications.InvalidPageNumber";
     }
 
+    public static class FinancialIntelligence
+    {
+        // Insights
+        public const string InsightsLoaded             = "FinancialIntelligence.InsightsLoaded";
+        public const string InsightMarkedRead          = "FinancialIntelligence.InsightMarkedRead";
+        public const string InsightNotFound            = "FinancialIntelligence.InsightNotFound";
+
+        // Patterns
+        public const string PatternsLoaded             = "FinancialIntelligence.PatternsLoaded";
+
+        // Recommendations
+        public const string RecommendationsLoaded      = "FinancialIntelligence.RecommendationsLoaded";
+        public const string RecommendationApplied      = "FinancialIntelligence.RecommendationApplied";
+        public const string RecommendationDismissed    = "FinancialIntelligence.RecommendationDismissed";
+        public const string RecommendationNotFound     = "FinancialIntelligence.RecommendationNotFound";
+
+        // Dashboard
+        public const string DashboardLoaded            = "FinancialIntelligence.DashboardLoaded";
+
+        // Snapshot
+        public const string SnapshotGenerated          = "FinancialIntelligence.SnapshotGenerated";
+
+        // Validation
+        public const string InvalidPageNumber          = "FinancialIntelligence.InvalidPageNumber";
+        public const string InvalidPageSize            = "FinancialIntelligence.InvalidPageSize";
+        public const string InvalidInsightId           = "FinancialIntelligence.InvalidInsightId";
+        public const string InvalidRecommendationId    = "FinancialIntelligence.InvalidRecommendationId";
+    }
+
     public static class BackgroundJobs
     {
         public const string JobEnqueueFailed = "BackgroundJobs.JobEnqueueFailed";

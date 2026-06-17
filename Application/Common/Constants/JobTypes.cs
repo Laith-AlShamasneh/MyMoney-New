@@ -14,4 +14,9 @@ public static class JobTypes
 
     // ── Notifications ─────────────────────────────────────────────────────────
     public const string CreateNotification = "CreateNotification";
+
+    // ── Financial Intelligence Layer ──────────────────────────────────────────
+    public const string DailyFILProcessing   = "DailyFILProcessing";
+    public const string HourlyAnomalyCheck   = "HourlyAnomalyCheck";
+    public const string MonthlyFILProcessing = "MonthlyFILProcessing";
 }
