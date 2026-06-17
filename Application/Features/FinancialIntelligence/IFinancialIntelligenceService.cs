@@ -17,4 +17,5 @@ public interface IFinancialIntelligenceService
     Task ProcessDailyAsync(int year, int month, int day, CancellationToken ct = default);
     Task ProcessMonthlyAsync(int year, int month, CancellationToken ct = default);
     Task ProcessHourlyAnomalyAsync(DateTime fromUtc, CancellationToken ct = default);
+    Task ProcessMinuteAnomalyAsync(DateTime fromUtc, CancellationToken ct = default);
 }

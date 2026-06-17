@@ -13,6 +13,7 @@ internal sealed class FILSchedulerService(
 {
     private static readonly TimeSpan TickInterval = TimeSpan.FromMinutes(1);
 
+    private DateTime _lastMinuteRun  = DateTime.MinValue;
     private DateTime _lastHourlyRun  = DateTime.MinValue;
     private DateTime _lastDailyRun   = DateTime.MinValue;
     private DateTime _lastMonthlyRun = DateTime.MinValue;
@@ -46,9 +47,24 @@ internal sealed class FILSchedulerService(
     private async Task TickAsync(CancellationToken ct)
     {
         var now = DateTime.UtcNow;
+        await MaybeEnqueueMinuteAsync(now, ct);
         await MaybeEnqueueHourlyAsync(now, ct);
         await MaybeEnqueueDailyAsync(now, ct);
         await MaybeEnqueueMonthlyAsync(now, ct);
+    }
+
+    private async Task MaybeEnqueueMinuteAsync(DateTime now, CancellationToken ct)
+    {
+        if ((now - _lastMinuteRun).TotalMinutes < 1) return;
+
+        await EnqueueAsync(
+            JobTypes.MinuteAnomalyCheck,
+            new MinuteAnomalyPayload(now.AddMinutes(-1)),
+            priority: 1,
+            ct);
+
+        _lastMinuteRun = now;
+        logger.LogDebug("FIL: Enqueued minute anomaly check (window ending {Now:u}).", now);
     }
 
     private async Task MaybeEnqueueHourlyAsync(DateTime now, CancellationToken ct)

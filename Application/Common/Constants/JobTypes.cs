@@ -18,5 +18,6 @@ public static class JobTypes
     // ── Financial Intelligence Layer ──────────────────────────────────────────
     public const string DailyFILProcessing   = "DailyFILProcessing";
     public const string HourlyAnomalyCheck   = "HourlyAnomalyCheck";
+    public const string MinuteAnomalyCheck   = "MinuteAnomalyCheck";
     public const string MonthlyFILProcessing = "MonthlyFILProcessing";
 }

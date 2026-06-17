@@ -209,7 +209,13 @@ internal sealed class FinancialIntelligenceService(
         }
     }
 
-    public async Task ProcessHourlyAnomalyAsync(DateTime fromUtc, CancellationToken ct = default)
+    public Task ProcessHourlyAnomalyAsync(DateTime fromUtc, CancellationToken ct = default) =>
+        ProcessAnomalyWindowAsync(fromUtc, ct);
+
+    public Task ProcessMinuteAnomalyAsync(DateTime fromUtc, CancellationToken ct = default) =>
+        ProcessAnomalyWindowAsync(fromUtc, ct);
+
+    private async Task ProcessAnomalyWindowAsync(DateTime fromUtc, CancellationToken ct)
     {
         var largeTx = await filRepository.GetRecentLargeTransactionsAsync(fromUtc, ct);
 
@@ -255,6 +261,7 @@ internal sealed class FinancialIntelligenceService(
                     { "Amount",   tx.Amount.ToString("N2") },
                     { "Multiple", multiple.ToString("F1") }
                 },
+                payload: new { code = NotificationCodes.FILUnusualTransaction },
                 ct: ct);
         }
     }
