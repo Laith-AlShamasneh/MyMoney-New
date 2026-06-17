@@ -19,6 +19,7 @@ internal sealed class FILSchedulerService(
     private DateTime _lastMonthlyRun = DateTime.MinValue;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    
     {
         // Brief startup delay so the app fully initialises before the first tick.
         try { await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken); }

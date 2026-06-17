@@ -90,7 +90,6 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, CreateNotificationHandler>();
         services.AddScoped<IJobHandler, DailyFILJobHandler>();
         services.AddScoped<IJobHandler, HourlyAnomalyJobHandler>();
-        services.AddScoped<IJobHandler, MinuteAnomalyJobHandler>();
         services.AddScoped<IJobHandler, MonthlyFILJobHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
         services.AddHostedService<NotificationCleanupService>();

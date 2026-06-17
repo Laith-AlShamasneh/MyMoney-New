@@ -212,9 +212,6 @@ internal sealed class FinancialIntelligenceService(
     public Task ProcessHourlyAnomalyAsync(DateTime fromUtc, CancellationToken ct = default) =>
         ProcessAnomalyWindowAsync(fromUtc, ct);
 
-    public Task ProcessMinuteAnomalyAsync(DateTime fromUtc, CancellationToken ct = default) =>
-        ProcessAnomalyWindowAsync(fromUtc, ct);
-
     private async Task ProcessAnomalyWindowAsync(DateTime fromUtc, CancellationToken ct)
     {
         var largeTx = await filRepository.GetRecentLargeTransactionsAsync(fromUtc, ct);
