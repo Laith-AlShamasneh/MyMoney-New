@@ -6,7 +6,7 @@ using Infrastructure.Jobs;
 namespace Infrastructure.Jobs.Handlers;
 
 internal sealed class HourlyAnomalyJobHandler(
-    IFinancialIntelligenceService filService) : JobHandlerBase<HourlyAnomalyPayload>
+    IFILBackgroundProcessingService filService) : JobHandlerBase<HourlyAnomalyPayload>
 {
     public override string JobType => JobTypes.HourlyAnomalyCheck;
 

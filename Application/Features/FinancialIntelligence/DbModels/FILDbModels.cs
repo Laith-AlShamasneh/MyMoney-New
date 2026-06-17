@@ -208,17 +208,6 @@ public class LargeTransactionDbResult
     public string  CategoryNameAr { get; set; } = null!;
 }
 
-// ── FIL Dashboard ────────────────────────────────────────────────────────────
-
-public class FILDashboardDbResult
-{
-    public SnapshotDbResult?                      LatestSnapshot   { get; set; }
-    public IReadOnlyList<InsightRowDbResult>      TopInsights      { get; set; } = [];
-    public IReadOnlyList<PatternDbResult>         Patterns         { get; set; } = [];
-    public IReadOnlyList<RecommendationDbResult>  Recommendations  { get; set; } = [];
-    public IReadOnlyList<CategoryAnalyticsDbResult> CategoryTrends { get; set; } = [];
-}
-
 // ── Users for processing ──────────────────────────────────────────────────────
 
 public class ActiveUserDbResult

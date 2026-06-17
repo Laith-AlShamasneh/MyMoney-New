@@ -28,7 +28,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationPublisher, NotificationPublisher>();
-        services.AddScoped<IFinancialIntelligenceService, FinancialIntelligenceService>();
+        // FinancialIntelligenceService implements both the API-facing and the
+        // background-processing interfaces. Register the concrete type once so
+        // both interface resolutions share the same scoped instance.
+        services.AddScoped<FinancialIntelligenceService>();
+        services.AddScoped<IFinancialIntelligenceService>(
+            sp => sp.GetRequiredService<FinancialIntelligenceService>());
+        services.AddScoped<IFILBackgroundProcessingService>(
+            sp => sp.GetRequiredService<FinancialIntelligenceService>());
         services.AddScoped<IFinancialRulesEngine, FinancialRulesEngine>();
 
         return services;

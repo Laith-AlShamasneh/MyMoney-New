@@ -9,7 +9,7 @@ using Shared.Constants;
 using Shared.Enums.Intelligence;
 using Shared.Enums.System;
 using Shared.Results;
-using System.Collections.Generic;
+using System.Text.Json;
 
 namespace Application.Features.FinancialIntelligence.Services;
 
@@ -20,7 +20,7 @@ internal sealed class FinancialIntelligenceService(
     IMessageProvider                      messageProvider,
     IFinancialRulesEngine                 rulesEngine,
     ICacheService                         cacheService,
-    ILogger<FinancialIntelligenceService> logger) : IFinancialIntelligenceService
+    ILogger<FinancialIntelligenceService> logger) : IFinancialIntelligenceService, IFILBackgroundProcessingService
 {
     private const string DashboardCacheKeyPrefix = "fil:dashboard:";
 
@@ -71,6 +71,17 @@ internal sealed class FinancialIntelligenceService(
             null,
             InternalResponseCodes.OK,
             await messageProvider.GetMessagesAsync(MessageKeys.FinancialIntelligence.InsightMarkedRead, ct));
+    }
+
+    public async Task<ServiceResult<object?>> MarkAllInsightsReadAsync(CancellationToken ct = default)
+    {
+        var userId = userContext.UserId;
+        await filRepository.MarkAllInsightsReadAsync(userId, ct);
+        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}");
+        return ServiceResultFactory.Success<object?>(
+            null,
+            InternalResponseCodes.OK,
+            await messageProvider.GetMessagesAsync(MessageKeys.FinancialIntelligence.AllInsightsMarkedRead, ct));
     }
 
     public async Task<ServiceResult<IReadOnlyList<PatternResponse>>> GetPatternsAsync(CancellationToken ct = default)
@@ -262,7 +273,7 @@ internal sealed class FinancialIntelligenceService(
                 TitleAr       = "تم اكتشاف معاملة غير عادية",
                 DescriptionEn = $"A transaction of {tx.Amount:N2} was recorded — {multiple}× your average transaction value.",
                 DescriptionAr = $"تم تسجيل معاملة بقيمة {tx.Amount:N2} — تساوي {multiple}× متوسط معاملاتك.",
-                DataPointJson = System.Text.Json.JsonSerializer.Serialize(new
+                DataPointJson = JsonSerializer.Serialize(new
                 {
                     transactionId = tx.TransactionId,
                     amount        = tx.Amount,
@@ -378,7 +389,7 @@ internal sealed class FinancialIntelligenceService(
                 DescriptionAr     = candidate.DescriptionAr,
                 Severity          = candidate.Severity,
                 RelatedCategoryId = candidate.RelatedCategoryId,
-                DataPointJson     = candidate.DataPointJson,
+                DataPointJson     = candidate.DataPoint is not null ? JsonSerializer.Serialize(candidate.DataPoint) : null,
                 ExpiresAtUtc      = DateTime.UtcNow.AddDays(30)
             };
 
@@ -658,7 +669,7 @@ internal sealed class FinancialIntelligenceService(
             r.Severity,
             SeverityName(r.Severity),
             r.RelatedCategoryId,
-            r.DataPointJson,
+            r.DataPointJson is not null ? JsonSerializer.Deserialize<JsonElement>(r.DataPointJson) : (JsonElement?)null,
             r.IsRead,
             r.GeneratedAtUtc,
             r.ExpiresAtUtc);

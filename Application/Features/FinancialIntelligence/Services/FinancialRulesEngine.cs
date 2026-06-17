@@ -1,6 +1,5 @@
-using System.Text.Json;
-using Application.Features.FinancialIntelligence.Rules;
 using Application.Common.Constants;
+using Application.Features.FinancialIntelligence.Rules;
 using Shared.Enums.Intelligence;
 
 namespace Application.Features.FinancialIntelligence.Services;
@@ -69,7 +68,7 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
             TitleAr        = "نسبة مصروفات مرتفعة",
             DescriptionEn  = $"Your expenses reached {pct}% of your income this month. Consider reviewing your spending.",
             DescriptionAr  = $"بلغت مصروفاتك {pct}% من دخلك هذا الشهر. حاول مراجعة إنفاقك.",
-            DataPointJson  = Serialize(new { ratio = pct, income = snap.TotalIncome, expense = snap.TotalExpense }),
+            DataPoint      = new { ratio = pct, income = snap.TotalIncome, expense = snap.TotalExpense },
             FireNotification = true,
             NotificationCode = NotificationCodes.FILHighExpenseRatio
         });
@@ -100,7 +99,7 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
                 TitleAr           = $"ارتفاع في إنفاق: {curr.NameAr}",
                 DescriptionEn     = $"Your spending on {curr.NameEn} increased by {pct}% compared to last month.",
                 DescriptionAr     = $"ارتفع إنفاقك على {curr.NameAr} بنسبة {pct}% مقارنةً بالشهر الماضي.",
-                DataPointJson     = Serialize(new { categoryId = curr.CategoryId, change = pct, current = curr.TotalSpent, previous = prev.TotalSpent }),
+                DataPoint         = new { categoryId = curr.CategoryId, change = pct, current = curr.TotalSpent, previous = prev.TotalSpent },
                 FireNotification  = true,
                 NotificationCode  = NotificationCodes.FILSpendingSpike,
                 NotificationParameters = new Dictionary<string, string>
@@ -137,7 +136,7 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
                 TitleAr           = $"تنبيه الإنفاق الزائد: {curr.NameAr}",
                 DescriptionEn     = $"Spending on {curr.NameEn} is at {pct}% of your 3-month average.",
                 DescriptionAr     = $"إنفاقك على {curr.NameAr} وصل إلى {pct}% من متوسطك لثلاثة أشهر.",
-                DataPointJson     = Serialize(new { categoryId = curr.CategoryId, usage = pct, current = curr.TotalSpent, rollingAverage = avg }),
+                DataPoint         = new { categoryId = curr.CategoryId, usage = pct, current = curr.TotalSpent, rollingAverage = avg },
                 FireNotification  = usage >= 1.0m,
                 NotificationCode  = NotificationCodes.FILOverspendingAlert,
                 NotificationParameters = new Dictionary<string, string>
@@ -175,7 +174,7 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
                 TitleAr           = $"أحسنت: {curr.NameAr}",
                 DescriptionEn     = $"You reduced spending on {curr.NameEn} by {pct}% compared to last month.",
                 DescriptionAr     = $"لقد قللت إنفاقك على {curr.NameAr} بنسبة {pct}% مقارنةً بالشهر الماضي.",
-                DataPointJson     = Serialize(new { categoryId = curr.CategoryId, reduction = pct }),
+                DataPoint         = new { categoryId = curr.CategoryId, reduction = pct },
                 FireNotification  = true,
                 NotificationCode  = NotificationCodes.FILPositiveBehavior,
                 NotificationParameters = new Dictionary<string, string>
@@ -205,9 +204,11 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
             Severity      = (byte)InsightSeverity.Low,
             TitleEn       = "Consistent Saver",
             TitleAr       = "مدخر ثابت",
+            // Descriptions interpolate the actual constant so they remain accurate if the threshold changes.
             DescriptionEn = $"You've maintained a positive net balance for {ConsistentMonthsRequired} consecutive months. Excellent financial discipline!",
             DescriptionAr = $"حافظت على رصيد صافي إيجابي لمدة {ConsistentMonthsRequired} أشهر متتالية. انضباط مالي ممتاز!",
-            DataPointJson = Serialize(new { months = ConsistentMonthsRequired }),
+            // Embed both the required threshold and the observed positive-month count for observability.
+            DataPoint     = new { threshold = ConsistentMonthsRequired, positiveMonths },
             FireNotification = true,
             NotificationCode = NotificationCodes.FILConsistentSaver,
             NotificationParameters = new Dictionary<string, string>
@@ -267,26 +268,4 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
         });
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static string Serialize(object data) =>
-        JsonSerializer.Serialize(data);
-}
-
-/// <summary>String constants for insight codes (mirror the Code column in FinancialInsights).</summary>
-internal static class InsightCodes
-{
-    public const string HighExpenseRatio   = "HighExpenseRatio";
-    public const string SpendingSpike      = "SpendingSpike";
-    public const string OverspendingAlert  = "OverspendingAlert";
-    public const string PositiveBehavior   = "PositiveBehavior";
-    public const string ConsistentSaver    = "ConsistentSaver";
-    public const string UnusualTransaction = "UnusualTransaction";
-}
-
-/// <summary>String constants for recommendation codes.</summary>
-internal static class RecommendationCodes
-{
-    public const string ReviewTopCategory  = "ReviewTopCategory";
-    public const string SavingsTarget20Pct = "SavingsTarget20Pct";
 }

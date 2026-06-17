@@ -199,6 +199,7 @@ public static class MessageKeys
         // Insights
         public const string InsightsLoaded             = "FinancialIntelligence.InsightsLoaded";
         public const string InsightMarkedRead          = "FinancialIntelligence.InsightMarkedRead";
+        public const string AllInsightsMarkedRead      = "FinancialIntelligence.AllInsightsMarkedRead";
         public const string InsightNotFound            = "FinancialIntelligence.InsightNotFound";
 
         // Patterns

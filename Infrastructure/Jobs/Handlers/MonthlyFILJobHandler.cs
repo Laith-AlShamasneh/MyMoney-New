@@ -6,7 +6,7 @@ using Infrastructure.Jobs;
 namespace Infrastructure.Jobs.Handlers;
 
 internal sealed class MonthlyFILJobHandler(
-    IFinancialIntelligenceService filService) : JobHandlerBase<MonthlyFILPayload>
+    IFILBackgroundProcessingService filService) : JobHandlerBase<MonthlyFILPayload>
 {
     public override string JobType => JobTypes.MonthlyFILProcessing;
 

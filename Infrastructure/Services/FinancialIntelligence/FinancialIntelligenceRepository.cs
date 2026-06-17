@@ -166,6 +166,15 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
         return p.Get<int>("@RowsAffected");
     }
 
+    public async Task<int> MarkAllInsightsReadAsync(long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId",       userId, DbType.Int64);
+        p.Add("@RowsAffected", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        await db.ExecuteAsync("MyMoney.usp_FIL_Insight_MarkAllRead", p, ct);
+        return p.Get<int>("@RowsAffected");
+    }
+
     public async Task<bool> InsightExistsForMonthAsync(
         long userId, string code, int year, int month, int? categoryId, CancellationToken ct = default)
     {

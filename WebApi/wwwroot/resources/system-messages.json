@@ -151,6 +151,7 @@
 
     "FinancialIntelligence.InsightsLoaded":          "Insights loaded successfully.",
     "FinancialIntelligence.InsightMarkedRead":        "Insight marked as read.",
+    "FinancialIntelligence.AllInsightsMarkedRead":    "All insights marked as read.",
     "FinancialIntelligence.InsightNotFound":          "Insight not found.",
     "FinancialIntelligence.PatternsLoaded":           "Spending patterns loaded successfully.",
     "FinancialIntelligence.RecommendationsLoaded":    "Recommendations loaded successfully.",
@@ -316,6 +317,7 @@
 
     "FinancialIntelligence.InsightsLoaded":          "تم تحميل الرؤى المالية بنجاح.",
     "FinancialIntelligence.InsightMarkedRead":        "تم تحديد الرؤية كمقروءة.",
+    "FinancialIntelligence.AllInsightsMarkedRead":    "تم تحديد جميع الرؤى كمقروءة.",
     "FinancialIntelligence.InsightNotFound":          "الرؤية المالية غير موجودة.",
     "FinancialIntelligence.PatternsLoaded":           "تم تحميل أنماط الإنفاق بنجاح.",
     "FinancialIntelligence.RecommendationsLoaded":    "تم تحميل التوصيات بنجاح.",

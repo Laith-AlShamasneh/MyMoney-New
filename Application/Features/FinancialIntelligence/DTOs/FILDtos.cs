@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Application.Features.FinancialIntelligence.DTOs;
@@ -57,7 +58,7 @@ public sealed record InsightResponse(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     int?     RelatedCategoryId,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string?  DataPointJson,
+    JsonElement? DataPointJson,
     bool     IsRead,
     DateTime GeneratedAtUtc,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

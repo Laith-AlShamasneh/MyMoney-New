@@ -13,7 +13,7 @@ public static class FinancialIntelligenceEndpoints
                        .WithTags("FinancialIntelligence")
                        .RequireAuthorization();
 
-        group.MapPost("dashboard", async (
+        group.MapGet("dashboard", async (
             IFinancialIntelligenceService service,
             CancellationToken             ct) =>
         {
@@ -40,6 +40,14 @@ public static class FinancialIntelligenceEndpoints
             return result.ToHttpResponse();
         })
         .AddEndpointFilter<ValidationFilter<MarkInsightReadRequest>>();
+
+        group.MapPost("insights/mark-all-read", async (
+            IFinancialIntelligenceService service,
+            CancellationToken             ct) =>
+        {
+            var result = await service.MarkAllInsightsReadAsync(ct);
+            return result.ToHttpResponse();
+        });
 
         group.MapPost("patterns", async (
             IFinancialIntelligenceService service,

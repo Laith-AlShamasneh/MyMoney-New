@@ -57,7 +57,8 @@ public sealed class InsightCandidate
     public string  DescriptionAr     { get; init; } = null!;
     public byte    Severity          { get; init; }
     public int?    RelatedCategoryId { get; init; }
-    public string? DataPointJson     { get; init; }
+    // Raw domain object — serialized to JSON at the service boundary, not inside the rules engine.
+    public object? DataPoint         { get; init; }
     /// <summary>True if this candidate should also fire an in-app notification.</summary>
     public bool    FireNotification  { get; init; }
     public string? NotificationCode  { get; init; }

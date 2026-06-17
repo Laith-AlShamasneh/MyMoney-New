@@ -13,7 +13,6 @@ internal sealed class FILSchedulerService(
 {
     private static readonly TimeSpan TickInterval = TimeSpan.FromMinutes(1);
 
-    private DateTime _lastMinuteRun  = DateTime.MinValue;
     private DateTime _lastHourlyRun  = DateTime.MinValue;
     private DateTime _lastDailyRun   = DateTime.MinValue;
     private DateTime _lastMonthlyRun = DateTime.MinValue;
