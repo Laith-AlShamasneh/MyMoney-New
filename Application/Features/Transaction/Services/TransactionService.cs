@@ -1,8 +1,11 @@
+using Application.Common.Constants;
+using Application.Features.FinancialIntelligence.Jobs;
 using Application.Features.Transaction.DbModels;
 using Application.Features.Transaction.DTOs;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Shared.Constants;
+using Shared.Enums.Finance;
 using Shared.Enums.System;
 using Shared.Results;
 
@@ -11,7 +14,8 @@ namespace Application.Features.Transaction.Services;
 internal sealed class TransactionService(
     ITransactionRepository transactionRepository,
     IUserContext           userContext,
-    IMessageProvider       messageProvider) : ITransactionService
+    IMessageProvider       messageProvider,
+    IBackgroundJobService  backgroundJobService) : ITransactionService
 {
     public async Task<ServiceResult<TransactionSearchResponse>> SearchAsync(
         SearchTransactionsRequest request,
