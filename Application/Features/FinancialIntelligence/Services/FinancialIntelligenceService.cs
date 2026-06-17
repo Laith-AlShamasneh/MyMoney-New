@@ -4,6 +4,7 @@ using Application.Features.FinancialIntelligence.DTOs;
 using Application.Features.FinancialIntelligence.Rules;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
+using Microsoft.Extensions.Logging;
 using Shared.Constants;
 using Shared.Enums.Intelligence;
 using Shared.Enums.System;
@@ -12,11 +13,12 @@ using Shared.Results;
 namespace Application.Features.FinancialIntelligence.Services;
 
 internal sealed class FinancialIntelligenceService(
-    IFinancialIntelligenceRepository filRepository,
-    INotificationPublisher           notificationPublisher,
-    IUserContext                     userContext,
-    IMessageProvider                 messageProvider,
-    IFinancialRulesEngine            rulesEngine) : IFinancialIntelligenceService
+    IFinancialIntelligenceRepository      filRepository,
+    INotificationPublisher                notificationPublisher,
+    IUserContext                          userContext,
+    IMessageProvider                      messageProvider,
+    IFinancialRulesEngine                 rulesEngine,
+    ILogger<FinancialIntelligenceService> logger) : IFinancialIntelligenceService
 {
     private bool IsArabic => userContext.Language == SystemLanguages.Arabic;
 
@@ -145,20 +147,22 @@ internal sealed class FinancialIntelligenceService(
         var isArabic = IsArabic;
 
         // Load all dashboard data in parallel — each is an independent read.
-        var snapshotTask     = filRepository.GetLatestSnapshotAsync(userId, ct);
-        var insightsTask     = filRepository.GetInsightsAsync(new GetInsightsDbModel { UserId = userId, IsRead = false, PageNumber = 1, PageSize = 5 }, ct);
-        var patternsTask     = filRepository.GetPatternsAsync(userId, ct);
-        var recommendTask    = filRepository.GetRecommendationsAsync(new GetRecommendationsDbModel { UserId = userId, PageNumber = 1, PageSize = 5 }, ct);
+        var snapshotTask        = filRepository.GetLatestSnapshotAsync(userId, ct);
+        var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, months: 3, ct);
+        var insightsTask        = filRepository.GetInsightsAsync(new GetInsightsDbModel { UserId = userId, IsRead = false, PageNumber = 1, PageSize = 5 }, ct);
+        var patternsTask        = filRepository.GetPatternsAsync(userId, ct);
+        var recommendTask       = filRepository.GetRecommendationsAsync(new GetRecommendationsDbModel { UserId = userId, PageNumber = 1, PageSize = 5 }, ct);
 
-        await Task.WhenAll(snapshotTask, insightsTask, patternsTask, recommendTask);
+        await Task.WhenAll(snapshotTask, recentSnapshotsTask, insightsTask, patternsTask, recommendTask);
 
-        var snapshot     = snapshotTask.Result;
-        var latestMonth  = snapshot is not null
+        var snapshot    = snapshotTask.Result;
+        var latestMonth = snapshot is not null
             ? await filRepository.GetCategoryAnalyticsAsync(userId, snapshot.SnapshotDate.Year, snapshot.SnapshotDate.Month, ct)
             : [];
 
         var response = new FILDashboardResponse(
             LatestSnapshot:  snapshot is not null ? MapSnapshot(snapshot) : null,
+            HealthScore:     ComputeHealthScore(snapshot, recentSnapshotsTask.Result),
             TopInsights:     insightsTask.Result.Items.Select(r => MapInsight(r, isArabic)).ToList(),
             Patterns:        patternsTask.Result.Select(p => MapPattern(p, isArabic)).ToList(),
             Recommendations: recommendTask.Result.Items.Select(r => MapRecommendation(r, isArabic)).ToList(),
@@ -183,9 +187,11 @@ internal sealed class FinancialIntelligenceService(
             {
                 await ProcessUserDailyAsync(user.UserId, year, month, ct);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Isolate per-user failures: one user's error must not stop others.
+                logger.LogError(ex,
+                    "FIL daily processing failed for user {UserId} — {Year}-{Month:D2}",
+                    user.UserId, year, month);
             }
         }
 
@@ -202,9 +208,11 @@ internal sealed class FinancialIntelligenceService(
             {
                 await ProcessUserMonthlyAsync(user.UserId, year, month, ct);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Isolate per-user failures.
+                logger.LogError(ex,
+                    "FIL monthly processing failed for user {UserId} — {Year}-{Month:D2}",
+                    user.UserId, year, month);
             }
         }
     }
@@ -218,9 +226,10 @@ internal sealed class FinancialIntelligenceService(
 
         foreach (var tx in largeTx)
         {
+            // One UnusualTransaction insight per user per month — categoryId is not part of the key.
             var alreadyExists = await filRepository.InsightExistsForMonthAsync(
                 tx.UserId, InsightCodes.UnusualTransaction,
-                fromUtc.Year, fromUtc.Month, ct);
+                fromUtc.Year, fromUtc.Month, categoryId: null, ct);
 
             if (alreadyExists) continue;
 
@@ -303,34 +312,37 @@ internal sealed class FinancialIntelligenceService(
             await filRepository.UpsertCategoryAnalyticsAsync(userId, categoryRows, ct);
 
         // 3. Build rules context.
-        var recentSnapshots  = await filRepository.GetRecentSnapshotsAsync(userId, months: 3, ct);
-        var currentCats      = categoryRows;
-        var prevMonth        = month == 1 ? 12 : month - 1;
-        var prevYear         = month == 1 ? year - 1 : year;
-        var previousCats     = await filRepository.GetCategoryAnalyticsAsync(userId, prevYear, prevMonth, ct);
+        var recentSnapshots = await filRepository.GetRecentSnapshotsAsync(userId, months: 3, ct);
+        var currentCats     = categoryRows;
+        var prevMonth       = month == 1 ? 12 : month - 1;
+        var prevYear        = month == 1 ? year - 1 : year;
+        var previousCats    = await filRepository.GetCategoryAnalyticsAsync(userId, prevYear, prevMonth, ct);
 
         var context = BuildRulesContext(userId, year, month, recentSnapshots, currentCats, previousCats);
 
         // 4. Evaluate rules and persist new insights.
+        // Category-scoped codes (SpendingSpike, OverspendingAlert) are deduped by Code + CategoryId;
+        // non-category codes are deduped by Code alone (categoryId = null).
         var insightCandidates = rulesEngine.EvaluateInsights(context);
         foreach (var candidate in insightCandidates)
         {
-            var exists = await filRepository.InsightExistsForMonthAsync(userId, candidate.Code, year, month, ct);
+            var exists = await filRepository.InsightExistsForMonthAsync(
+                userId, candidate.Code, year, month, candidate.RelatedCategoryId, ct);
             if (exists) continue;
 
             var dbModel = new CreateInsightDbModel
             {
-                UserId           = userId,
-                Type             = candidate.Type,
-                Code             = candidate.Code,
-                TitleEn          = candidate.TitleEn,
-                TitleAr          = candidate.TitleAr,
-                DescriptionEn    = candidate.DescriptionEn,
-                DescriptionAr    = candidate.DescriptionAr,
-                Severity         = candidate.Severity,
+                UserId            = userId,
+                Type              = candidate.Type,
+                Code              = candidate.Code,
+                TitleEn           = candidate.TitleEn,
+                TitleAr           = candidate.TitleAr,
+                DescriptionEn     = candidate.DescriptionEn,
+                DescriptionAr     = candidate.DescriptionAr,
+                Severity          = candidate.Severity,
                 RelatedCategoryId = candidate.RelatedCategoryId,
-                DataPointJson    = candidate.DataPointJson,
-                ExpiresAtUtc     = DateTime.UtcNow.AddDays(30)
+                DataPointJson     = candidate.DataPointJson,
+                ExpiresAtUtc      = DateTime.UtcNow.AddDays(30)
             };
 
             await filRepository.CreateInsightAsync(dbModel, ct);
@@ -375,32 +387,32 @@ internal sealed class FinancialIntelligenceService(
     // ═════════════════════════════════════════════════════════════════════════
 
     private static FinancialRulesContext BuildRulesContext(
-        long                                    userId,
-        int                                     year,
-        int                                     month,
-        IReadOnlyList<SnapshotDbResult>         recentSnapshots,
+        long                                     userId,
+        int                                      year,
+        int                                      month,
+        IReadOnlyList<SnapshotDbResult>          recentSnapshots,
         IReadOnlyList<CategoryAnalyticsDbResult> currentCats,
         IReadOnlyList<CategoryAnalyticsDbResult> previousCats)
     {
         static SnapshotData Map(SnapshotDbResult r) => new()
         {
-            Year                   = r.SnapshotDate.Year,
-            Month                  = r.SnapshotDate.Month,
-            TotalIncome            = r.TotalIncome,
-            TotalExpense           = r.TotalExpense,
-            NetBalance             = r.NetBalance,
-            AverageDailySpend      = r.AverageDailySpend,
+            Year                    = r.SnapshotDate.Year,
+            Month                   = r.SnapshotDate.Month,
+            TotalIncome             = r.TotalIncome,
+            TotalExpense            = r.TotalExpense,
+            NetBalance              = r.NetBalance,
+            AverageDailySpend       = r.AverageDailySpend,
             AverageTransactionValue = r.AverageTransactionValue,
-            TransactionCount       = r.TransactionCount
+            TransactionCount        = r.TransactionCount
         };
 
         static CategoryPeriodData MapCat(CategoryAnalyticsDbResult r) => new()
         {
-            CategoryId    = r.CategoryId,
-            NameEn        = r.CategoryNameEn,
-            NameAr        = r.CategoryNameAr,
-            TotalSpent    = r.TotalSpent,
-            TxCount       = r.TransactionCount,
+            CategoryId     = r.CategoryId,
+            NameEn         = r.CategoryNameEn,
+            NameAr         = r.CategoryNameAr,
+            TotalSpent     = r.TotalSpent,
+            TxCount        = r.TransactionCount,
             PercentOfTotal = r.PercentageOfTotal
         };
 
@@ -421,6 +433,152 @@ internal sealed class FinancialIntelligenceService(
     }
 
     // ═════════════════════════════════════════════════════════════════════════
+    // Financial health score
+    // ═════════════════════════════════════════════════════════════════════════
+
+    // Scores the user's financial health 0–100 from four independent factors.
+    // Returns null when there is no transaction data to base a score on.
+    private static FinancialHealthScore? ComputeHealthScore(
+        SnapshotDbResult?               currentSnapshot,
+        IReadOnlyList<SnapshotDbResult> recentSnapshots)
+    {
+        if (currentSnapshot is null || currentSnapshot.TransactionCount == 0)
+            return null;
+
+        var factors = new List<HealthScoreFactor>(4);
+        var score   = 0;
+
+        score += ScoreSavingsRate(currentSnapshot, factors);
+        score += ScoreExpenseRatio(currentSnapshot, factors);
+        score += ScoreSpendingTrend(recentSnapshots, factors);
+        score += ScoreBalanceStreak(recentSnapshots, currentSnapshot, factors);
+
+        score = Math.Clamp(score, 0, 100);
+
+        var rating = score switch
+        {
+            >= 80 => "Healthy",
+            >= 60 => "Good",
+            >= 35 => "AtRisk",
+            _     => "Poor"
+        };
+
+        return new FinancialHealthScore(score, rating, [.. factors]);
+    }
+
+    // Savings rate = NetBalance / TotalIncome. Higher savings → more points (max 30).
+    private static int ScoreSavingsRate(SnapshotDbResult snap, List<HealthScoreFactor> out_)
+    {
+        const int Max = 30;
+
+        if (snap.TotalIncome <= 0)
+        {
+            out_.Add(new HealthScoreFactor("SavingsRate", 0, Max, 0m));
+            return 0;
+        }
+
+        var rate = snap.NetBalance / snap.TotalIncome;
+        var pts  = rate >= 0.20m ? Max :
+                   rate >= 0.10m ? 20  :
+                   rate >= 0.00m ? 10  : 0;
+
+        out_.Add(new HealthScoreFactor("SavingsRate", pts, Max, Math.Round(rate * 100, 1)));
+        return pts;
+    }
+
+    // Expense ratio = TotalExpense / TotalIncome. Lower ratio → more points (max 30).
+    private static int ScoreExpenseRatio(SnapshotDbResult snap, List<HealthScoreFactor> out_)
+    {
+        const int Max = 30;
+
+        if (snap.TotalIncome <= 0)
+        {
+            var pts_ = snap.TotalExpense == 0 ? 15 : 0;
+            out_.Add(new HealthScoreFactor("ExpenseRatio", pts_, Max, 0m));
+            return pts_;
+        }
+
+        var ratio = snap.TotalExpense / snap.TotalIncome;
+        var pts   = ratio <= 0.60m ? Max :
+                    ratio <= 0.70m ? 25  :
+                    ratio <= 0.80m ? 15  :
+                    ratio <= 0.90m ? 8   : 0;
+
+        out_.Add(new HealthScoreFactor("ExpenseRatio", pts, Max, Math.Round(ratio * 100, 1)));
+        return pts;
+    }
+
+    // Spending trend: counts months where expenses rose >5% over the prior month.
+    // Fewer rising months → more points (max 20). Neutral 10 pts when < 2 months of history.
+    private static int ScoreSpendingTrend(
+        IReadOnlyList<SnapshotDbResult> recentSnapshots,
+        List<HealthScoreFactor>         out_)
+    {
+        const int Max     = 20;
+        const int Neutral = 10;
+
+        if (recentSnapshots.Count < 2)
+        {
+            out_.Add(new HealthScoreFactor("SpendingTrend", Neutral, Max, 0m));
+            return Neutral;
+        }
+
+        var ordered = recentSnapshots
+            .OrderBy(s => s.SnapshotDate)
+            .ToArray();
+
+        var risingMonths = 0;
+        for (var i = 1; i < ordered.Length; i++)
+        {
+            if (ordered[i - 1].TotalExpense == 0) continue;
+            var change = (ordered[i].TotalExpense - ordered[i - 1].TotalExpense)
+                         / ordered[i - 1].TotalExpense;
+            if (change > 0.05m) risingMonths++;
+        }
+
+        var pts = risingMonths == 0 ? Max :
+                  risingMonths == 1 ? 12  : 5;
+
+        out_.Add(new HealthScoreFactor("SpendingTrend", pts, Max, (decimal)risingMonths));
+        return pts;
+    }
+
+    // Balance streak: counts recent months with positive NetBalance. More positive → more points (max 20).
+    private static int ScoreBalanceStreak(
+        IReadOnlyList<SnapshotDbResult> recentSnapshots,
+        SnapshotDbResult                currentSnapshot,
+        List<HealthScoreFactor>         out_)
+    {
+        const int Max = 20;
+
+        if (recentSnapshots.Count == 0)
+        {
+            var singlePts = currentSnapshot.NetBalance > 0 ? 15 : 0;
+            out_.Add(new HealthScoreFactor("BalanceStreak", singlePts, Max,
+                currentSnapshot.NetBalance > 0 ? 1m : 0m));
+            return singlePts;
+        }
+
+        var positiveCount = recentSnapshots.Count(s => s.NetBalance > 0);
+        var total         = recentSnapshots.Count;
+
+        var pts = (total, positiveCount) switch
+        {
+            (>= 3, 3) => Max,
+            (>= 3, 2) => 13,
+            (>= 3, 1) => 6,
+            (>= 3, _) => 0,
+            (2, 2)    => Max,
+            (2, 1)    => 10,
+            (2, _)    => 0,
+            _         => recentSnapshots[0].NetBalance > 0 ? 15 : 0
+        };
+
+        out_.Add(new HealthScoreFactor("BalanceStreak", pts, Max, (decimal)positiveCount));
+        return pts;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
     // Mappers
     // ═════════════════════════════════════════════════════════════════════════
 
@@ -433,7 +591,7 @@ internal sealed class FinancialIntelligenceService(
             r.Type,
             TypeName(r.Type),
             r.Code,
-            isArabic ? r.TitleAr      : r.TitleEn,
+            isArabic ? r.TitleAr       : r.TitleEn,
             isArabic ? r.DescriptionAr : r.DescriptionEn,
             r.Severity,
             SeverityName(r.Severity),

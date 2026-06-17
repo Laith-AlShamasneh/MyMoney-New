@@ -161,13 +161,14 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     }
 
     public async Task<bool> InsightExistsForMonthAsync(
-        long userId, string code, int year, int month, CancellationToken ct = default)
+        long userId, string code, int year, int month, int? categoryId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
-        p.Add("@Code",   code,   DbType.String);
-        p.Add("@Year",   year,   DbType.Int32);
-        p.Add("@Month",  month,  DbType.Int32);
+        p.Add("@UserId",     userId,     DbType.Int64);
+        p.Add("@Code",       code,       DbType.String);
+        p.Add("@Year",       year,       DbType.Int32);
+        p.Add("@Month",      month,      DbType.Int32);
+        p.Add("@CategoryId", categoryId, DbType.Int32);
         var result = await db.ExecuteScalarAsync<int>("MyMoney.usp_FIL_Insight_ExistsForMonth", p, ct);
         return result > 0;
     }

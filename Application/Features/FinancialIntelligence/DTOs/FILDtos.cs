@@ -108,9 +108,31 @@ public sealed record RecommendationListResponse(
 
 public sealed record FILDashboardResponse(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    SnapshotResponse?                      LatestSnapshot,
-    IReadOnlyList<InsightResponse>         TopInsights,
-    IReadOnlyList<PatternResponse>         Patterns,
-    IReadOnlyList<RecommendationResponse>  Recommendations,
+    SnapshotResponse?                        LatestSnapshot,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    FinancialHealthScore?                    HealthScore,
+    IReadOnlyList<InsightResponse>           TopInsights,
+    IReadOnlyList<PatternResponse>           Patterns,
+    IReadOnlyList<RecommendationResponse>    Recommendations,
     IReadOnlyList<CategoryAnalyticsResponse> CategoryTrends
+);
+
+// Rating values: "Healthy" (≥80), "Good" (≥60), "AtRisk" (≥35), "Poor" (<35).
+// Frontend CSS class: "fil-score-" + rating.ToLower() where "AtRisk" → "fil-score-atrisk".
+public sealed record FinancialHealthScore(
+    int                              Score,
+    string                           Rating,
+    IReadOnlyList<HealthScoreFactor> Factors
+);
+
+// Value semantics per FactorKey:
+//   SavingsRate  — savings rate as a percentage (e.g. 15.3 = 15.3%)
+//   ExpenseRatio — expense-to-income ratio as a percentage
+//   SpendingTrend — count of months where expenses rose >5% over the prior month (0–2)
+//   BalanceStreak — count of recent months with positive NetBalance (0–3)
+public sealed record HealthScoreFactor(
+    string  FactorKey,
+    int     Score,
+    int     MaxScore,
+    decimal Value
 );

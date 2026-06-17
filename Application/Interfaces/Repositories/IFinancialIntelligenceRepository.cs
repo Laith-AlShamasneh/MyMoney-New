@@ -19,7 +19,7 @@ public interface IFinancialIntelligenceRepository
     Task<long>                                    CreateInsightAsync(CreateInsightDbModel model, CancellationToken ct = default);
     Task<GetInsightsDbResult>                     GetInsightsAsync(GetInsightsDbModel model, CancellationToken ct = default);
     Task<int>                                     MarkInsightReadAsync(long userId, long insightId, CancellationToken ct = default);
-    Task<bool>                                    InsightExistsForMonthAsync(long userId, string code, int year, int month, CancellationToken ct = default);
+    Task<bool>                                    InsightExistsForMonthAsync(long userId, string code, int year, int month, int? categoryId, CancellationToken ct = default);
     Task                                          CleanupExpiredInsightsAsync(CancellationToken ct = default);
 
     // ── Spending Patterns ─────────────────────────────────────────────────────
