@@ -337,6 +337,7 @@ internal sealed class FinancialIntelligenceService(
                     candidate.NotificationCode,
                     userId,
                     parameters: candidate.NotificationParameters,
+                    payload: new { code = candidate.NotificationCode },
                     ct: ct);
             }
         }
