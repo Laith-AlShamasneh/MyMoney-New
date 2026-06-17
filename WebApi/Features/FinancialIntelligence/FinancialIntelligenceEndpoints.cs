@@ -13,7 +13,7 @@ public static class FinancialIntelligenceEndpoints
                        .WithTags("FinancialIntelligence")
                        .RequireAuthorization();
 
-        group.MapGet("dashboard", async (
+        group.MapPost("dashboard", async (
             IFinancialIntelligenceService service,
             CancellationToken             ct) =>
         {
