@@ -9,6 +9,7 @@ using Shared.Constants;
 using Shared.Enums.Intelligence;
 using Shared.Enums.System;
 using Shared.Results;
+using System.Collections.Generic;
 
 namespace Application.Features.FinancialIntelligence.Services;
 
@@ -18,8 +19,11 @@ internal sealed class FinancialIntelligenceService(
     IUserContext                          userContext,
     IMessageProvider                      messageProvider,
     IFinancialRulesEngine                 rulesEngine,
+    ICacheService                         cacheService,
     ILogger<FinancialIntelligenceService> logger) : IFinancialIntelligenceService
 {
+    private const string DashboardCacheKeyPrefix = "fil:dashboard:";
+
     private bool IsArabic => userContext.Language == SystemLanguages.Arabic;
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -146,6 +150,14 @@ internal sealed class FinancialIntelligenceService(
         var userId   = userContext.UserId;
         var isArabic = IsArabic;
 
+        var cacheKey = $"{DashboardCacheKeyPrefix}{userId}";
+        var cached   = await cacheService.GetAsync<FILDashboardResponse>(cacheKey);
+        if (cached is not null)
+        {
+            var cachedMsg = await messageProvider.GetMessagesAsync(MessageKeys.FinancialIntelligence.DashboardLoaded, ct);
+            return ServiceResultFactory.Success(cached, InternalResponseCodes.OK, cachedMsg);
+        }
+
         // Load all dashboard data in parallel — each is an independent read.
         var snapshotTask        = filRepository.GetLatestSnapshotAsync(userId, ct);
         var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, months: 3, ct);
@@ -168,6 +180,8 @@ internal sealed class FinancialIntelligenceService(
             Recommendations: recommendTask.Result.Items.Select(r => MapRecommendation(r, isArabic)).ToList(),
             CategoryTrends:  latestMonth.Select(c => MapCategoryAnalytics(c, isArabic)).ToList()
         );
+
+        await cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(60));
 
         var msg = await messageProvider.GetMessagesAsync(MessageKeys.FinancialIntelligence.DashboardLoaded, ct);
         return ServiceResultFactory.Success(response, InternalResponseCodes.OK, msg);
@@ -196,6 +210,7 @@ internal sealed class FinancialIntelligenceService(
         }
 
         await filRepository.CleanupExpiredInsightsAsync(ct);
+        await filRepository.CleanupExpiredRecommendationsAsync(ct);
     }
 
     public async Task ProcessMonthlyAsync(int year, int month, CancellationToken ct = default)
@@ -267,11 +282,15 @@ internal sealed class FinancialIntelligenceService(
                     tx.UserId,
                     parameters: new Dictionary<string, string>
                     {
-                        { "Amount",   tx.Amount.ToString("N2") },
-                        { "Multiple", multiple.ToString("F1") }
+                        { "Amount",          tx.Amount.ToString("N2") },
+                        { "Multiple",        multiple.ToString("F1") },
+                        { "CategoryNameEn",  tx.CategoryNameEn },
+                        { "CategoryNameAr",  tx.CategoryNameAr }
                     },
                     payload: new { code = NotificationCodes.FILUnusualTransaction },
                     ct: ct);
+
+                await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{tx.UserId}");
             }
         }
     }
@@ -301,6 +320,8 @@ internal sealed class FinancialIntelligenceService(
             TransactionCount        = computed.TransactionCount,
             TopCategoryId           = computed.TopCategoryId
         }, ct);
+
+        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}");
     }
 
     private async Task ProcessUserMonthlyAsync(long userId, int year, int month, CancellationToken ct)
@@ -315,14 +336,26 @@ internal sealed class FinancialIntelligenceService(
         if (categoryRows.Count > 0)
             await filRepository.UpsertCategoryAnalyticsAsync(userId, categoryRows, ct);
 
-        // 3. Build rules context.
-        var recentSnapshots = await filRepository.GetRecentSnapshotsAsync(userId, months: 3, ct);
-        var currentCats     = categoryRows;
-        var prevMonth       = month == 1 ? 12 : month - 1;
-        var prevYear        = month == 1 ? year - 1 : year;
-        var previousCats    = await filRepository.GetCategoryAnalyticsAsync(userId, prevYear, prevMonth, ct);
+        // 3. Build rules context — load 3 prior months of category data in parallel
+        //    so EvaluateOverspendingAlert has a genuine rolling 3-month baseline.
+        var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, months: 3, ct);
 
-        var context = BuildRulesContext(userId, year, month, recentSnapshots, currentCats, previousCats);
+        var (pm1, py1) = PriorMonth(year,  month,  1);
+        var (pm2, py2) = PriorMonth(py1,   pm1,    1);
+        var (pm3, py3) = PriorMonth(py2,   pm2,    1);
+
+        var prevCatsTask  = filRepository.GetCategoryAnalyticsAsync(userId, py1, pm1, ct);
+        var prevCats2Task = filRepository.GetCategoryAnalyticsAsync(userId, py2, pm2, ct);
+        var prevCats3Task = filRepository.GetCategoryAnalyticsAsync(userId, py3, pm3, ct);
+
+        await Task.WhenAll(recentSnapshotsTask, prevCatsTask, prevCats2Task, prevCats3Task);
+
+        var recentSnapshots   = recentSnapshotsTask.Result;
+        var currentCats       = categoryRows;
+        var previousCats      = prevCatsTask.Result;
+        var rollingAverages   = BuildCategoryRollingAverages(prevCatsTask.Result, prevCats2Task.Result, prevCats3Task.Result);
+
+        var context = BuildRulesContext(userId, year, month, recentSnapshots, currentCats, previousCats, rollingAverages);
 
         // 4. Evaluate rules and persist new insights.
         // Category-scoped codes (SpendingSpike, OverspendingAlert) are deduped by Code + CategoryId;
@@ -385,6 +418,8 @@ internal sealed class FinancialIntelligenceService(
                 ExpiresAtUtc        = DateTime.UtcNow.AddDays(60)
             }, ct);
         }
+
+        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}");
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -397,7 +432,8 @@ internal sealed class FinancialIntelligenceService(
         int                                      month,
         IReadOnlyList<SnapshotDbResult>          recentSnapshots,
         IReadOnlyList<CategoryAnalyticsDbResult> currentCats,
-        IReadOnlyList<CategoryAnalyticsDbResult> previousCats)
+        IReadOnlyList<CategoryAnalyticsDbResult> previousCats,
+        IReadOnlyDictionary<int, decimal>        categoryRollingAverages)
     {
         static SnapshotData Map(SnapshotDbResult r) => new()
         {
@@ -426,15 +462,36 @@ internal sealed class FinancialIntelligenceService(
 
         return new FinancialRulesContext
         {
-            UserId               = userId,
-            Year                 = year,
-            Month                = month,
-            CurrentSnapshot      = current  is not null ? Map(current)  : null,
-            PreviousSnapshot     = previous is not null ? Map(previous) : null,
-            RecentSnapshots      = recentSnapshots.Select(Map).ToList(),
-            CurrentCategoryData  = currentCats.Select(MapCat).ToList(),
-            PreviousCategoryData = previousCats.Select(MapCat).ToList()
+            UserId                  = userId,
+            Year                    = year,
+            Month                   = month,
+            CurrentSnapshot         = current  is not null ? Map(current)  : null,
+            PreviousSnapshot        = previous is not null ? Map(previous) : null,
+            RecentSnapshots         = recentSnapshots.Select(Map).ToList(),
+            CurrentCategoryData     = currentCats.Select(MapCat).ToList(),
+            PreviousCategoryData    = previousCats.Select(MapCat).ToList(),
+            CategoryRollingAverages = categoryRollingAverages
         };
+    }
+
+    // Returns the (month, year) that is n months before (year, month).
+    private static (int month, int year) PriorMonth(int year, int month, int n)
+    {
+        var m = month - n;
+        var y = year;
+        while (m < 1)  { m += 12; y--; }
+        return (m, y);
+    }
+
+    // Builds a CategoryId → average TotalSpent map across all provided prior-month lists.
+    private static IReadOnlyDictionary<int, decimal> BuildCategoryRollingAverages(
+        params IReadOnlyList<CategoryAnalyticsDbResult>[] priorMonths)
+    {
+        return priorMonths
+            .SelectMany(m => m)
+            .Where(c => c.TotalSpent > 0)
+            .GroupBy(c => c.CategoryId)
+            .ToDictionary(g => g.Key, g => g.Average(c => c.TotalSpent));
     }
 
     // ═════════════════════════════════════════════════════════════════════════

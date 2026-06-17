@@ -34,6 +34,8 @@ public static class NotificationCodes
     public const string FILSpendingSpike       = "FIL_SpendingSpike";
     public const string FILUnusualTransaction  = "FIL_UnusualTransaction";
     public const string FILHighExpenseRatio    = "FIL_HighExpenseRatio";
-    public const string FILAchievement         = "FIL_Achievement";
+    public const string FILAchievement         = "FIL_Achievement";      // kept for backward compat
+    public const string FILPositiveBehavior    = "FIL_PositiveBehavior";
+    public const string FILConsistentSaver     = "FIL_ConsistentSaver";
     public const string FILMonthlySummary      = "FIL_MonthlySummary";
 }

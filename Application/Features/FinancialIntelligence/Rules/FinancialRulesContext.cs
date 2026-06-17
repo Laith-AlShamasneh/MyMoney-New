@@ -14,8 +14,12 @@ public sealed class FinancialRulesContext
     public SnapshotData?                     PreviousSnapshot     { get; init; }
     public IReadOnlyList<SnapshotData>       RecentSnapshots      { get; init; } = [];
 
-    public IReadOnlyList<CategoryPeriodData> CurrentCategoryData  { get; init; } = [];
-    public IReadOnlyList<CategoryPeriodData> PreviousCategoryData { get; init; } = [];
+    public IReadOnlyList<CategoryPeriodData>      CurrentCategoryData     { get; init; } = [];
+    public IReadOnlyList<CategoryPeriodData>      PreviousCategoryData    { get; init; } = [];
+
+    // Pre-computed average of the 3 prior months per category (CategoryId → avg TotalSpent).
+    // Used by EvaluateOverspendingAlert for a genuine rolling baseline.
+    public IReadOnlyDictionary<int, decimal>      CategoryRollingAverages { get; init; } = new Dictionary<int, decimal>();
 }
 
 public sealed class SnapshotData

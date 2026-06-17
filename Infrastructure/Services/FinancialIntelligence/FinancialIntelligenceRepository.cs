@@ -3,6 +3,7 @@ using Application.Interfaces.Database;
 using Application.Interfaces.Repositories;
 using Dapper;
 using System.Data;
+using System.Text.Json;
 
 namespace Infrastructure.Services.FinancialIntelligence;
 
@@ -75,22 +76,27 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
         IReadOnlyList<CategoryAnalyticsDbResult> rows,
         CancellationToken                        ct = default)
     {
-        foreach (var row in rows)
-        {
-            var p = new DynamicParameters();
-            p.Add("@UserId",              userId,                  DbType.Int64);
-            p.Add("@CategoryId",          row.CategoryId,          DbType.Int32);
-            p.Add("@PeriodStart",         row.PeriodStart,         DbType.Date);
-            p.Add("@PeriodEnd",           row.PeriodEnd,           DbType.Date);
-            p.Add("@TotalSpent",          row.TotalSpent,          DbType.Decimal);
-            p.Add("@TransactionCount",    row.TransactionCount,    DbType.Int32);
-            p.Add("@AverageSpent",        row.AverageSpent,        DbType.Decimal);
-            p.Add("@PercentageOfTotal",   row.PercentageOfTotal,   DbType.Decimal);
-            p.Add("@TrendDirection",      row.TrendDirection,      DbType.Byte);
-            p.Add("@PreviousPeriodTotal", row.PreviousPeriodTotal, DbType.Decimal);
-            p.Add("@ChangePercentage",    row.ChangePercentage,    DbType.Decimal);
-            await db.ExecuteAsync("MyMoney.usp_FIL_CategoryAnalytics_Upsert", p, ct);
-        }
+        if (rows.Count == 0) return;
+
+        var json = JsonSerializer.Serialize(
+            rows.Select(r => new
+            {
+                categoryId          = r.CategoryId,
+                periodStart         = r.PeriodStart.ToString("yyyy-MM-dd"),
+                periodEnd           = r.PeriodEnd.ToString("yyyy-MM-dd"),
+                totalSpent          = r.TotalSpent,
+                transactionCount    = r.TransactionCount,
+                averageSpent        = r.AverageSpent,
+                percentageOfTotal   = r.PercentageOfTotal,
+                trendDirection      = r.TrendDirection,
+                previousPeriodTotal = r.PreviousPeriodTotal,
+                changePercentage    = r.ChangePercentage
+            }));
+
+        var p = new DynamicParameters();
+        p.Add("@UserId",           userId, DbType.Int64);
+        p.Add("@CategoryDataJson", json,   DbType.String);
+        await db.ExecuteAsync("MyMoney.usp_FIL_CategoryAnalytics_BulkUpsert", p, ct);
     }
 
     public async Task<IReadOnlyList<CategoryAnalyticsDbResult>> GetCategoryAnalyticsAsync(
@@ -281,6 +287,11 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
         p.Add("@Month",  month,  DbType.Int32);
         var result = await db.ExecuteScalarAsync<int>("MyMoney.usp_FIL_Recommendation_ExistsForMonth", p, ct);
         return result > 0;
+    }
+
+    public async Task CleanupExpiredRecommendationsAsync(CancellationToken ct = default)
+    {
+        await db.ExecuteAsync("MyMoney.usp_FIL_Recommendation_Cleanup", new DynamicParameters(), ct);
     }
 
     // ── Large-transaction detection ───────────────────────────────────────────

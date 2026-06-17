@@ -32,6 +32,7 @@ public interface IFinancialIntelligenceRepository
     Task<int>                                     MarkRecommendationAppliedAsync(long userId, long recommendationId, CancellationToken ct = default);
     Task<int>                                     DismissRecommendationAsync(long userId, long recommendationId, CancellationToken ct = default);
     Task<bool>                                    RecommendationExistsForMonthAsync(long userId, string code, int year, int month, CancellationToken ct = default);
+    Task                                          CleanupExpiredRecommendationsAsync(CancellationToken ct = default);
 
     // ── Large-transaction detection ───────────────────────────────────────────
     Task<IReadOnlyList<LargeTransactionDbResult>> GetRecentLargeTransactionsAsync(DateTime fromUtc, CancellationToken ct = default);

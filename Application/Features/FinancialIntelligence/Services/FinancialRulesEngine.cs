@@ -105,8 +105,9 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
                 NotificationCode  = NotificationCodes.FILSpendingSpike,
                 NotificationParameters = new Dictionary<string, string>
                 {
-                    { "CategoryName", curr.NameEn },
-                    { "ChangePercent", pct.ToString("F1") }
+                    { "CategoryNameEn", curr.NameEn },
+                    { "CategoryNameAr", curr.NameAr },
+                    { "ChangePercent",  pct.ToString("F1") }
                 }
             });
         }
@@ -115,15 +116,11 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
     private static void EvaluateOverspendingAlert(FinancialRulesContext ctx, List<InsightCandidate> out_)
     {
         if (ctx.RecentSnapshots.Count < 2) return;
-
-        // Rolling 3-month average expense per category
-        var rollingLookup = ctx.PreviousCategoryData
-            .GroupBy(c => c.CategoryId)
-            .ToDictionary(g => g.Key, g => g.Average(x => x.TotalSpent));
+        if (ctx.CategoryRollingAverages.Count == 0) return;
 
         foreach (var curr in ctx.CurrentCategoryData)
         {
-            if (!rollingLookup.TryGetValue(curr.CategoryId, out var avg)) continue;
+            if (!ctx.CategoryRollingAverages.TryGetValue(curr.CategoryId, out var avg)) continue;
             if (avg <= 0) continue;
 
             var usage = curr.TotalSpent / avg;
@@ -138,15 +135,16 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
                 RelatedCategoryId = curr.CategoryId,
                 TitleEn           = $"Overspending Alert: {curr.NameEn}",
                 TitleAr           = $"تنبيه الإنفاق الزائد: {curr.NameAr}",
-                DescriptionEn     = $"Spending on {curr.NameEn} is at {pct}% of your monthly average.",
-                DescriptionAr     = $"إنفاقك على {curr.NameAr} وصل إلى {pct}% من متوسطك الشهري.",
-                DataPointJson     = Serialize(new { categoryId = curr.CategoryId, usage = pct, current = curr.TotalSpent, average = avg }),
+                DescriptionEn     = $"Spending on {curr.NameEn} is at {pct}% of your 3-month average.",
+                DescriptionAr     = $"إنفاقك على {curr.NameAr} وصل إلى {pct}% من متوسطك لثلاثة أشهر.",
+                DataPointJson     = Serialize(new { categoryId = curr.CategoryId, usage = pct, current = curr.TotalSpent, rollingAverage = avg }),
                 FireNotification  = usage >= 1.0m,
                 NotificationCode  = NotificationCodes.FILOverspendingAlert,
                 NotificationParameters = new Dictionary<string, string>
                 {
-                    { "CategoryName", curr.NameEn },
-                    { "UsagePercent", pct.ToString("F1") }
+                    { "CategoryNameEn", curr.NameEn },
+                    { "CategoryNameAr", curr.NameAr },
+                    { "UsagePercent",   pct.ToString("F1") }
                 }
             });
         }
@@ -179,10 +177,11 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
                 DescriptionAr     = $"لقد قللت إنفاقك على {curr.NameAr} بنسبة {pct}% مقارنةً بالشهر الماضي.",
                 DataPointJson     = Serialize(new { categoryId = curr.CategoryId, reduction = pct }),
                 FireNotification  = true,
-                NotificationCode  = NotificationCodes.FILAchievement,
+                NotificationCode  = NotificationCodes.FILPositiveBehavior,
                 NotificationParameters = new Dictionary<string, string>
                 {
-                    { "CategoryName", curr.NameEn },
+                    { "CategoryNameEn",  curr.NameEn },
+                    { "CategoryNameAr",  curr.NameAr },
                     { "ReductionPercent", pct.ToString("F1") }
                 }
             });
@@ -210,7 +209,11 @@ internal sealed class FinancialRulesEngine : IFinancialRulesEngine
             DescriptionAr = $"حافظت على رصيد صافي إيجابي لمدة {ConsistentMonthsRequired} أشهر متتالية. انضباط مالي ممتاز!",
             DataPointJson = Serialize(new { months = ConsistentMonthsRequired }),
             FireNotification = true,
-            NotificationCode = NotificationCodes.FILAchievement
+            NotificationCode = NotificationCodes.FILConsistentSaver,
+            NotificationParameters = new Dictionary<string, string>
+            {
+                { "MonthCount", ConsistentMonthsRequired.ToString() }
+            }
         });
     }
 
