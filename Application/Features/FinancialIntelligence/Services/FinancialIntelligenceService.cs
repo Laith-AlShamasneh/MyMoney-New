@@ -257,18 +257,22 @@ internal sealed class FinancialIntelligenceService(
                 ExpiresAtUtc = DateTime.UtcNow.AddDays(7)
             };
 
-            await filRepository.CreateInsightAsync(dbModel, ct);
+            var newId = await filRepository.CreateInsightAsync(dbModel, ct);
 
-            await notificationPublisher.PublishAsync(
-                NotificationCodes.FILUnusualTransaction,
-                tx.UserId,
-                parameters: new Dictionary<string, string>
-                {
-                    { "Amount",   tx.Amount.ToString("N2") },
-                    { "Multiple", multiple.ToString("F1") }
-                },
-                payload: new { code = NotificationCodes.FILUnusualTransaction },
-                ct: ct);
+            // newId == 0 means the SP blocked a concurrent duplicate — skip notification.
+            if (newId > 0)
+            {
+                await notificationPublisher.PublishAsync(
+                    NotificationCodes.FILUnusualTransaction,
+                    tx.UserId,
+                    parameters: new Dictionary<string, string>
+                    {
+                        { "Amount",   tx.Amount.ToString("N2") },
+                        { "Multiple", multiple.ToString("F1") }
+                    },
+                    payload: new { code = NotificationCodes.FILUnusualTransaction },
+                    ct: ct);
+            }
         }
     }
 
@@ -345,9 +349,10 @@ internal sealed class FinancialIntelligenceService(
                 ExpiresAtUtc      = DateTime.UtcNow.AddDays(30)
             };
 
-            await filRepository.CreateInsightAsync(dbModel, ct);
+            var newId = await filRepository.CreateInsightAsync(dbModel, ct);
 
-            if (candidate.FireNotification && candidate.NotificationCode is not null)
+            // newId == 0 means the SP blocked a concurrent duplicate — skip notification.
+            if (newId > 0 && candidate.FireNotification && candidate.NotificationCode is not null)
             {
                 await notificationPublisher.PublishAsync(
                     candidate.NotificationCode,
