@@ -3,10 +3,9 @@
   "configurations": [
     {
       "name": "MyMoney-FE",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "E:/Development/Frontend/MyMoney-FE"],
-      "port": 5501,
-      "autoPort": true
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5501", "--directory", "E:\\Development\\Frontend\\MyMoney-FE"],
+      "port": 5501
     }
   ]
 }
