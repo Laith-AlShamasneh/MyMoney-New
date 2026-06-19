@@ -6,6 +6,7 @@ using WebApi.Features.Onboarding;
 using WebApi.Features.Profile;
 using WebApi.Features.FinancialIntelligence;
 using WebApi.Features.Notifications;
+using WebApi.Features.Goals;
 using WebApi.Features.RecurringTransactions;
 using WebApi.Features.Report;
 using WebApi.Features.Subscriptions;
@@ -108,6 +109,7 @@ app.MapNotificationEndpoints();
 app.MapFinancialIntelligenceEndpoints();
 app.MapRecurringTransactionEndpoints();
 app.MapSubscriptionEndpoints();
+app.MapGoalEndpoints();
 app.MapOnboardingEndpoints();
 
 app.Run();

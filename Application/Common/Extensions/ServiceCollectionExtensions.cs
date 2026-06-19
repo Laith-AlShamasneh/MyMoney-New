@@ -8,6 +8,8 @@ using Application.Features.Notifications;
 using Application.Features.Notifications.Services;
 using Application.Features.Onboarding.Services;
 using Application.Features.Profile.Services;
+using Application.Features.Goals;
+using Application.Features.Goals.Services;
 using Application.Features.RecurringTransactions;
 using Application.Features.RecurringTransactions.Services;
 using Application.Features.Reports;
@@ -39,6 +41,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFILBackgroundProcessingService>(
             sp => sp.GetRequiredService<FinancialIntelligenceService>());
         services.AddScoped<IFinancialRulesEngine, FinancialRulesEngine>();
+        services.AddScoped<IGoalService, GoalService>();
 
         // RecurringTransactionService implements both the API-facing and the
         // background-processing interfaces. Register the concrete type once.

@@ -284,6 +284,55 @@ public static class MessageKeys
         public const string GetSuccess  = "Subscription.GetSuccess";
     }
 
+    public static class Goal
+    {
+        // Validation
+        public const string NameRequired                  = "Goal.NameRequired";
+        public const string NameTooLong                   = "Goal.NameTooLong";
+        public const string DescriptionTooLong            = "Goal.DescriptionTooLong";
+        public const string InvalidGoalType               = "Goal.InvalidGoalType";
+        public const string TargetAmountRequired          = "Goal.TargetAmountRequired";
+        public const string TargetAmountMustBePositive    = "Goal.TargetAmountMustBePositive";
+        public const string InitialAmountCannotBeNegative = "Goal.InitialAmountCannotBeNegative";
+        public const string InitialAmountExceedsTarget    = "Goal.InitialAmountExceedsTarget";
+        public const string InvalidPriority               = "Goal.InvalidPriority";
+        public const string TargetDateMustBeFuture        = "Goal.TargetDateMustBeFuture";
+        public const string InvalidId                     = "Goal.InvalidId";
+        public const string PageNumberInvalid             = "Goal.PageNumberInvalid";
+        public const string PageSizeInvalid               = "Goal.PageSizeInvalid";
+        public const string ContributionAmountRequired    = "Goal.ContributionAmountRequired";
+        public const string ContributionAmountMustBePositive = "Goal.ContributionAmountMustBePositive";
+        public const string ContributionDateRequired      = "Goal.ContributionDateRequired";
+        public const string NewAmountMustBePositive       = "Goal.NewAmountMustBePositive";
+        public const string InvalidRecurringId            = "Goal.InvalidRecurringId";
+        public const string NotesTooLong                  = "Goal.NotesTooLong";
+
+        // Business
+        public const string NotFound              = "Goal.NotFound";
+        public const string Created               = "Goal.Created";
+        public const string Updated               = "Goal.Updated";
+        public const string Deleted               = "Goal.Deleted";
+        public const string Paused                = "Goal.Paused";
+        public const string Resumed               = "Goal.Resumed";
+        public const string Completed             = "Goal.Completed";
+        public const string ListLoaded            = "Goal.ListLoaded";
+        public const string GetSuccess            = "Goal.GetSuccess";
+        public const string DashboardLoaded       = "Goal.DashboardLoaded";
+        public const string ContributionAdded     = "Goal.ContributionAdded";
+        public const string WithdrawalAdded       = "Goal.WithdrawalAdded";
+        public const string AdjustmentApplied     = "Goal.AdjustmentApplied";
+        public const string NoAdjustmentNeeded    = "Goal.NoAdjustmentNeeded";
+        public const string ContributionListLoaded = "Goal.ContributionListLoaded";
+        public const string RecurringLinked       = "Goal.RecurringLinked";
+        public const string RecurringUnlinked     = "Goal.RecurringUnlinked";
+        public const string CannotContributeStatus = "Goal.CannotContributeStatus";
+        public const string InsufficientBalance   = "Goal.InsufficientBalance";
+        public const string RecurringLinkFailed   = "Goal.RecurringLinkFailed";
+        public const string AlreadyCompleted      = "Goal.AlreadyCompleted";
+        public const string AlreadyPaused         = "Goal.AlreadyPaused";
+        public const string AlreadyActive         = "Goal.AlreadyActive";
+    }
+
     public static class BackgroundJobs
     {
         public const string JobEnqueueFailed = "BackgroundJobs.JobEnqueueFailed";

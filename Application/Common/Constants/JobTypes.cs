@@ -23,4 +23,8 @@ public static class JobTypes
     // ── Recurring Transactions ────────────────────────────────────────────────
     public const string ProcessRecurringTransactions    = "ProcessRecurringTransactions";
     public const string SendUpcomingPaymentNotification = "SendUpcomingPaymentNotification";
+
+    // ── Goals & Savings ───────────────────────────────────────────────────────
+    public const string GoalBehindScheduleCheck    = "GoalBehindScheduleCheck";
+    public const string GoalAutoContributionSync   = "GoalAutoContributionSync";
 }

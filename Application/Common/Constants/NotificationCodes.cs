@@ -29,6 +29,11 @@ public static class NotificationCodes
     public const string SystemAnnouncement = "SystemAnnouncement";
     public const string MaintenanceNotice  = "MaintenanceNotice";
 
+    // ── Goals & Savings ───────────────────────────────────────────────────────
+    public const string GoalMilestoneReached = "Goal_MilestoneReached";
+    public const string GoalCompleted        = "Goal_Completed";
+    public const string GoalBehindSchedule   = "Goal_BehindSchedule";
+
     // ── Financial Intelligence ─────────────────────────────────────────────────
     public const string FILOverspendingAlert   = "FIL_OverspendingAlert";
     public const string FILSpendingSpike       = "FIL_SpendingSpike";
