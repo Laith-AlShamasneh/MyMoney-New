@@ -19,4 +19,8 @@ public static class JobTypes
     public const string DailyFILProcessing   = "DailyFILProcessing";
     public const string HourlyAnomalyCheck   = "HourlyAnomalyCheck";
     public const string MonthlyFILProcessing = "MonthlyFILProcessing";
+
+    // ── Recurring Transactions ────────────────────────────────────────────────
+    public const string ProcessRecurringTransactions    = "ProcessRecurringTransactions";
+    public const string SendUpcomingPaymentNotification = "SendUpcomingPaymentNotification";
 }

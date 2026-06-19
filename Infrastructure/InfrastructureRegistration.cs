@@ -22,6 +22,7 @@ using Infrastructure.Services.Dashboard;
 using Infrastructure.Services.Profile;
 using Infrastructure.Services.FinancialIntelligence;
 using Infrastructure.Services.Notifications;
+using Infrastructure.Services.RecurringTransactions;
 using Infrastructure.Services.Reports;
 using Infrastructure.Services.Transaction;
 using Infrastructure.Services.Storage;
@@ -61,6 +62,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IFinancialIntelligenceRepository, FinancialIntelligenceRepository>();
+        services.AddScoped<IRecurringTransactionRepository, RecurringTransactionRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -91,9 +93,12 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, DailyFILJobHandler>();
         services.AddScoped<IJobHandler, HourlyAnomalyJobHandler>();
         services.AddScoped<IJobHandler, MonthlyFILJobHandler>();
+        services.AddScoped<IJobHandler, ProcessRecurringTransactionsHandler>();
+        services.AddScoped<IJobHandler, SendUpcomingPaymentNotificationHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
         services.AddHostedService<NotificationCleanupService>();
         services.AddHostedService<FILSchedulerService>();
+        services.AddHostedService<RecurringTransactionSchedulerService>();
 
         // 7b. Report generators
         services.AddScoped<IReportGenerator, FinancialSummaryReportGenerator>();

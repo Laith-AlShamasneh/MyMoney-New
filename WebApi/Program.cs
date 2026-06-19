@@ -6,7 +6,9 @@ using WebApi.Features.Onboarding;
 using WebApi.Features.Profile;
 using WebApi.Features.FinancialIntelligence;
 using WebApi.Features.Notifications;
+using WebApi.Features.RecurringTransactions;
 using WebApi.Features.Report;
+using WebApi.Features.Subscriptions;
 using WebApi.Features.Transaction;
 using FluentValidation;
 using Infrastructure;
@@ -104,6 +106,8 @@ app.MapCategoryEndpoints();
 app.MapReportEndpoints();
 app.MapNotificationEndpoints();
 app.MapFinancialIntelligenceEndpoints();
+app.MapRecurringTransactionEndpoints();
+app.MapSubscriptionEndpoints();
 app.MapOnboardingEndpoints();
 
 app.Run();

@@ -224,6 +224,66 @@ public static class MessageKeys
         public const string InvalidRecommendationId    = "FinancialIntelligence.InvalidRecommendationId";
     }
 
+    public static class RecurringTransaction
+    {
+        // Validation
+        public const string NameRequired                 = "RecurringTransaction.NameRequired";
+        public const string NameTooLong                  = "RecurringTransaction.NameTooLong";
+        public const string AmountRequired               = "RecurringTransaction.AmountRequired";
+        public const string AmountMustBePositive         = "RecurringTransaction.AmountMustBePositive";
+        public const string CategoryRequired             = "RecurringTransaction.CategoryRequired";
+        public const string InvalidTransactionType       = "RecurringTransaction.InvalidTransactionType";
+        public const string InvalidFrequency             = "RecurringTransaction.InvalidFrequency";
+        public const string StartDateRequired            = "RecurringTransaction.StartDateRequired";
+        public const string InvalidStartDate             = "RecurringTransaction.InvalidStartDate";
+        public const string EndDateBeforeStartDate       = "RecurringTransaction.EndDateBeforeStartDate";
+        public const string CustomIntervalRequired       = "RecurringTransaction.CustomIntervalRequired";
+        public const string CustomIntervalMustBePositive = "RecurringTransaction.CustomIntervalMustBePositive";
+        public const string CustomUnitRequired           = "RecurringTransaction.CustomUnitRequired";
+        public const string InvalidDayOfMonth            = "RecurringTransaction.InvalidDayOfMonth";
+        public const string DayOfWeekRequired            = "RecurringTransaction.DayOfWeekRequired";
+        public const string InvalidDayOfWeek             = "RecurringTransaction.InvalidDayOfWeek";
+        public const string InvalidId                    = "RecurringTransaction.InvalidId";
+        public const string PageNumberInvalid            = "RecurringTransaction.PageNumberInvalid";
+        public const string PageSizeInvalid              = "RecurringTransaction.PageSizeInvalid";
+        public const string DescriptionTooLong           = "RecurringTransaction.DescriptionTooLong";
+        public const string NotesTooLong                 = "RecurringTransaction.NotesTooLong";
+
+        // Business
+        public const string Created           = "RecurringTransaction.Created";
+        public const string Updated           = "RecurringTransaction.Updated";
+        public const string Deleted           = "RecurringTransaction.Deleted";
+        public const string Paused            = "RecurringTransaction.Paused";
+        public const string Resumed           = "RecurringTransaction.Resumed";
+        public const string NotFound          = "RecurringTransaction.NotFound";
+        public const string AlreadyPaused     = "RecurringTransaction.AlreadyPaused";
+        public const string AlreadyActive     = "RecurringTransaction.AlreadyActive";
+        public const string CannotResumeExpired = "RecurringTransaction.CannotResumeExpired";
+        public const string ListLoaded        = "RecurringTransaction.ListLoaded";
+        public const string GetSuccess        = "RecurringTransaction.GetSuccess";
+        public const string DashboardLoaded   = "RecurringTransaction.DashboardLoaded";
+    }
+
+    public static class Subscription
+    {
+        // Validation
+        public const string ProviderNameRequired  = "Subscription.ProviderNameRequired";
+        public const string ProviderNameTooLong   = "Subscription.ProviderNameTooLong";
+        public const string WebsiteUrlTooLong     = "Subscription.WebsiteUrlTooLong";
+        public const string InvalidWebsiteUrl     = "Subscription.InvalidWebsiteUrl";
+        public const string InvalidId             = "Subscription.InvalidId";
+        public const string PageNumberInvalid     = "Subscription.PageNumberInvalid";
+        public const string PageSizeInvalid       = "Subscription.PageSizeInvalid";
+
+        // Business
+        public const string Created     = "Subscription.Created";
+        public const string Updated     = "Subscription.Updated";
+        public const string Deleted     = "Subscription.Deleted";
+        public const string NotFound    = "Subscription.NotFound";
+        public const string ListLoaded  = "Subscription.ListLoaded";
+        public const string GetSuccess  = "Subscription.GetSuccess";
+    }
+
     public static class BackgroundJobs
     {
         public const string JobEnqueueFailed = "BackgroundJobs.JobEnqueueFailed";
