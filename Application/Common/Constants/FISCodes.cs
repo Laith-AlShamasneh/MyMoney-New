@@ -12,6 +12,10 @@ public static class InsightCodes
     public const string PositiveBehavior   = "PositiveBehavior";
     public const string ConsistentSaver    = "ConsistentSaver";
     public const string UnusualTransaction = "UnusualTransaction";
+
+    // Budget-related
+    public const string BudgetAtRisk    = "BudgetAtRisk";
+    public const string BudgetOverspend = "BudgetOverspend";
 }
 
 /// <summary>
@@ -20,6 +24,10 @@ public static class InsightCodes
 /// </summary>
 public static class RecommendationCodes
 {
-    public const string ReviewTopCategory  = "ReviewTopCategory";
-    public const string SavingsTarget20Pct = "SavingsTarget20Pct";
+    public const string ReviewTopCategory    = "ReviewTopCategory";
+    public const string SavingsTarget20Pct   = "SavingsTarget20Pct";
+
+    // Budget-related
+    public const string ReduceCategorySpend = "ReduceCategorySpend";
+    public const string AdjustBudget        = "AdjustBudget";
 }

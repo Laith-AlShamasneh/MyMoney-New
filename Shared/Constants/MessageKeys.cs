@@ -345,6 +345,42 @@ public static class MessageKeys
         public const string DashboardLoaded         = "CashFlow.DashboardLoaded";
     }
 
+    public static class Budget
+    {
+        // Validation
+        public const string NameRequired            = "Budget.NameRequired";
+        public const string NameTooLong             = "Budget.NameTooLong";
+        public const string AmountRequired          = "Budget.AmountRequired";
+        public const string AmountMustBePositive    = "Budget.AmountMustBePositive";
+        public const string PercentageMustBe1To100  = "Budget.PercentageMustBe1To100";
+        public const string InvalidBudgetType       = "Budget.InvalidBudgetType";
+        public const string InvalidPeriodType       = "Budget.InvalidPeriodType";
+        public const string StartDateRequired       = "Budget.StartDateRequired";
+        public const string EndDateBeforeStartDate  = "Budget.EndDateBeforeStartDate";
+        public const string NotesTooLong            = "Budget.NotesTooLong";
+        public const string InvalidId              = "Budget.InvalidId";
+        public const string PageNumberInvalid       = "Budget.PageNumberInvalid";
+        public const string PageSizeInvalid         = "Budget.PageSizeInvalid";
+
+        // Business
+        public const string Created                 = "Budget.Created";
+        public const string Updated                 = "Budget.Updated";
+        public const string Deleted                 = "Budget.Deleted";
+        public const string Paused                  = "Budget.Paused";
+        public const string Resumed                 = "Budget.Resumed";
+        public const string NotFound                = "Budget.NotFound";
+        public const string DuplicateBudget         = "Budget.DuplicateBudget";
+        public const string InvalidCategory         = "Budget.InvalidCategory";
+        public const string ListLoaded              = "Budget.ListLoaded";
+        public const string GetSuccess              = "Budget.GetSuccess";
+        public const string DashboardLoaded         = "Budget.DashboardLoaded";
+        public const string AnalyticsLoaded         = "Budget.AnalyticsLoaded";
+        public const string PeriodsLoaded           = "Budget.PeriodsLoaded";
+        public const string AlreadyPaused           = "Budget.AlreadyPaused";
+        public const string AlreadyActive           = "Budget.AlreadyActive";
+        public const string CannotPauseArchived     = "Budget.CannotPauseArchived";
+    }
+
     public static class Reports
     {
         // Validation

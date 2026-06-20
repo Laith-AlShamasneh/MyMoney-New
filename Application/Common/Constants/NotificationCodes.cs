@@ -16,6 +16,7 @@ public static class NotificationCodes
     public const string LargeTransaction   = "LargeTransaction";
     public const string BudgetExceeded     = "BudgetExceeded";
     public const string BudgetNearingLimit = "BudgetNearingLimit";
+    public const string BudgetPeriodReset  = "BudgetPeriodReset";
 
     // ── Reports ───────────────────────────────────────────────────────────────
     public const string ReportReady  = "ReportReady";

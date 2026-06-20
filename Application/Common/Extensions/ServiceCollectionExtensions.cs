@@ -1,4 +1,6 @@
 ﻿using Application.Features.Authentication.Services;
+using Application.Features.Budget;
+using Application.Features.Budget.Services;
 using Application.Features.CashFlow;
 using Application.Features.CashFlow.Services;
 using Application.Features.Category.Services;
@@ -60,6 +62,14 @@ public static class ServiceCollectionExtensions
             sp => sp.GetRequiredService<RecurringTransactionService>());
         services.AddScoped<IRecurringTransactionEngineService>(
             sp => sp.GetRequiredService<RecurringTransactionService>());
+
+        // BudgetService implements both the API-facing and the
+        // background-processing interfaces. Register the concrete type once.
+        services.AddScoped<BudgetService>();
+        services.AddScoped<IBudgetService>(
+            sp => sp.GetRequiredService<BudgetService>());
+        services.AddScoped<IBudgetComputationService>(
+            sp => sp.GetRequiredService<BudgetService>());
 
         return services;
     }

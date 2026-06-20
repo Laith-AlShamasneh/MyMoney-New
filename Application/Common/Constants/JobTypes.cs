@@ -31,4 +31,8 @@ public static class JobTypes
 
     // ── Cash Flow Forecasting ─────────────────────────────────────────────────
     public const string ComputeCashFlowForecast = "ComputeCashFlowForecast";
+
+    // ── Budgeting ─────────────────────────────────────────────────────────────
+    public const string ComputeBudgetSnapshot    = "ComputeBudgetSnapshot";
+    public const string BudgetDailyMaintenance   = "BudgetDailyMaintenance";
 }
