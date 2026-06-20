@@ -44,7 +44,7 @@ public sealed class RegisterValidator : AbstractValidator<RegisterRequest>
             .When(x => !string.IsNullOrEmpty(x.DisplayNameAr));
 
         RuleFor(x => x.DateOfBirth)
-            .Must(d => d!.Value <= DateOnly.FromDateTime(DateTime.UtcNow))
+            .Must(d => d!.Value <= DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)))
             .WithMessage(MessageKeys.Authentication.InvalidDateOfBirth)
             .When(x => x.DateOfBirth.HasValue);
 

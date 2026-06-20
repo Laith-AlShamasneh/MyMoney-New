@@ -28,7 +28,7 @@ public sealed class UpdateTransactionValidator : AbstractValidator<UpdateTransac
             .NotEmpty()
             .WithMessage(MessageKeys.Transaction.DateRequired)
             .Must(d => DateOnly.TryParse(d, out var date) &&
-                       date <= DateOnly.FromDateTime(DateTime.UtcNow))
+                       date <= DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)))
             .WithMessage(MessageKeys.Transaction.DateCannotBeFuture)
             .When(x => !string.IsNullOrEmpty(x.TransactionDate));
 

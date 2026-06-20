@@ -31,7 +31,7 @@ public sealed class CreateGoalValidator : AbstractValidator<CreateGoalRequest>
             .When(x => x.Priority.HasValue);
 
         RuleFor(x => x.TargetDate)
-            .Must(d => DateOnly.TryParse(d, out var date) && date > DateOnly.FromDateTime(DateTime.UtcNow))
+            .Must(d => DateOnly.TryParse(d, out var date) && date >= DateOnly.FromDateTime(DateTime.UtcNow))
             .WithMessage(MessageKeys.Goal.TargetDateMustBeFuture)
             .When(x => !string.IsNullOrEmpty(x.TargetDate));
     }
@@ -59,7 +59,7 @@ public sealed class UpdateGoalValidator : AbstractValidator<UpdateGoalRequest>
             .InclusiveBetween(1, 4).WithMessage(MessageKeys.Goal.InvalidPriority);
 
         RuleFor(x => x.TargetDate)
-            .Must(d => DateOnly.TryParse(d, out var date) && date > DateOnly.FromDateTime(DateTime.UtcNow))
+            .Must(d => DateOnly.TryParse(d, out var date) && date >= DateOnly.FromDateTime(DateTime.UtcNow))
             .WithMessage(MessageKeys.Goal.TargetDateMustBeFuture)
             .When(x => !string.IsNullOrEmpty(x.TargetDate));
     }
