@@ -118,7 +118,7 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
         return new UpdateTransactionDbResult
         {
             AffectedRows       = p.Get<int>("@AffectedRows"),
-            OldTransactionDate = p.Get<DateOnly>("@OldTransactionDate")
+            OldTransactionDate = DateOnly.FromDateTime(p.Get<DateTime>("@OldTransactionDate"))
         };
     }
 
@@ -135,7 +135,7 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
         return new DeleteTransactionDbResult
         {
             AffectedRows = p.Get<int>("@AffectedRows"),
-            DeletedDate  = p.Get<DateOnly>("@DeletedDate")
+            DeletedDate  = DateOnly.FromDateTime(p.Get<DateTime>("@DeletedDate"))
         };
     }
 }
