@@ -1,4 +1,5 @@
 using Application.Common.Constants;
+using Application.Features.CashFlow.Jobs;
 using Application.Features.FinancialIntelligence.Jobs;
 using Application.Features.Transaction.DbModels;
 using Application.Features.Transaction.DTOs;
@@ -255,6 +256,14 @@ internal sealed class TransactionService(
             JobTypes.SnapshotRecompute,
             new SnapshotRecomputePayload(userId, year, month),
             priority: 3,
+            ct: ct);
+
+        await cacheService.RemoveAsync($"cashflow:forecast:{userId}:12");
+        await cacheService.RemoveAsync($"cashflow:dashboard:{userId}");
+        await backgroundJobService.EnqueueAsync(
+            JobTypes.ComputeCashFlowForecast,
+            new ComputeForecastPayload(userId),
+            priority: 5,
             ct: ct);
     }
 

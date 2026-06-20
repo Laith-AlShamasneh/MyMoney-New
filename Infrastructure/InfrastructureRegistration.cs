@@ -20,6 +20,7 @@ using Infrastructure.Services.Localization;
 using Infrastructure.Services.Category;
 using Infrastructure.Services.Dashboard;
 using Infrastructure.Services.Profile;
+using Infrastructure.Services.CashFlow;
 using Infrastructure.Services.FinancialIntelligence;
 using Infrastructure.Services.Notifications;
 using Infrastructure.Services.Goals;
@@ -65,6 +66,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IFinancialIntelligenceRepository, FinancialIntelligenceRepository>();
         services.AddScoped<IRecurringTransactionRepository, RecurringTransactionRepository>();
         services.AddScoped<IGoalRepository, GoalRepository>();
+        services.AddScoped<ICashFlowForecastRepository, CashFlowForecastRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -100,11 +102,13 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, SendUpcomingPaymentNotificationHandler>();
         services.AddScoped<IJobHandler, GoalBehindScheduleCheckHandler>();
         services.AddScoped<IJobHandler, GoalAutoContributionSyncHandler>();
+        services.AddScoped<IJobHandler, ComputeForecastHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
         services.AddHostedService<NotificationCleanupService>();
         services.AddHostedService<FILSchedulerService>();
         services.AddHostedService<RecurringTransactionSchedulerService>();
         services.AddHostedService<GoalSchedulerService>();
+        services.AddHostedService<CashFlowSchedulerService>();
 
         // 7b. Report generators
         services.AddScoped<IReportGenerator, FinancialSummaryReportGenerator>();

@@ -338,6 +338,13 @@ public static class MessageKeys
         public const string JobEnqueueFailed = "BackgroundJobs.JobEnqueueFailed";
     }
 
+    public static class CashFlow
+    {
+        public const string ForecastLoaded          = "CashFlow.ForecastLoaded";
+        public const string ForecastNotAvailable    = "CashFlow.ForecastNotAvailable";
+        public const string DashboardLoaded         = "CashFlow.DashboardLoaded";
+    }
+
     public static class Reports
     {
         // Validation

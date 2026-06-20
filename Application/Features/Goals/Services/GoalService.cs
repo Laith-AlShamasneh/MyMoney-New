@@ -1,4 +1,5 @@
 using Application.Common.Constants;
+using Application.Features.CashFlow.Jobs;
 using Application.Features.Goals.DbModels;
 using Application.Features.Goals.DTOs;
 using Application.Interfaces.Repositories;
@@ -11,10 +12,12 @@ using Shared.Results;
 namespace Application.Features.Goals.Services;
 
 internal sealed class GoalService(
-    IGoalRepository       goalRepository,
-    IUserContext           userContext,
-    IMessageProvider       messageProvider,
-    INotificationPublisher notificationPublisher) : IGoalService
+    IGoalRepository        goalRepository,
+    IUserContext            userContext,
+    IMessageProvider        messageProvider,
+    INotificationPublisher  notificationPublisher,
+    IBackgroundJobService   backgroundJobService,
+    ICacheService           cacheService) : IGoalService
 {
     // ── List ──────────────────────────────────────────────────────────────────
 
@@ -385,6 +388,14 @@ internal sealed class GoalService(
 
             await goalRepository.MarkMilestoneNotifiedAsync(model.GoalId, 100, ct);
         }
+
+        await cacheService.RemoveAsync($"cashflow:forecast:{model.UserId}:12");
+        await cacheService.RemoveAsync($"cashflow:dashboard:{model.UserId}");
+        await backgroundJobService.EnqueueAsync(
+            JobTypes.ComputeCashFlowForecast,
+            new ComputeForecastPayload(model.UserId),
+            priority: 5,
+            ct: ct);
 
         var message = await messageProvider.GetMessagesAsync(successMessageKey, ct);
         return ServiceResultFactory.Success(

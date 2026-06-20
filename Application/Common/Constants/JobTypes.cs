@@ -28,4 +28,7 @@ public static class JobTypes
     // ── Goals & Savings ───────────────────────────────────────────────────────
     public const string GoalBehindScheduleCheck    = "GoalBehindScheduleCheck";
     public const string GoalAutoContributionSync   = "GoalAutoContributionSync";
+
+    // ── Cash Flow Forecasting ─────────────────────────────────────────────────
+    public const string ComputeCashFlowForecast = "ComputeCashFlowForecast";
 }

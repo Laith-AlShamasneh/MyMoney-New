@@ -1,3 +1,5 @@
+using Application.Common.Constants;
+using Application.Features.CashFlow.Jobs;
 using Application.Features.RecurringTransactions.DbModels;
 using Application.Features.RecurringTransactions.DTOs;
 using Application.Interfaces.Repositories;
@@ -14,7 +16,9 @@ internal sealed class RecurringTransactionService(
     IRecurringTransactionRepository repository,
     IUserContext                     userContext,
     IMessageProvider                 messageProvider,
-    INotificationPublisher           notificationPublisher) : IRecurringTransactionService, IRecurringTransactionEngineService
+    INotificationPublisher           notificationPublisher,
+    IBackgroundJobService            backgroundJobService,
+    ICacheService                    cacheService) : IRecurringTransactionService, IRecurringTransactionEngineService
 {
     // ── CRUD ───────────────────────────────────────────────────────────────────
 
@@ -61,6 +65,8 @@ internal sealed class RecurringTransactionService(
         var id = await repository.CreateAsync(model, ct);
 
         var created = await repository.GetByIdAsync(id, ct);
+
+        await InvalidateForecastCacheAndEnqueueAsync(userContext.UserId, ct);
 
         return ServiceResultFactory.Success(
             MapToResponse(created!),
@@ -172,6 +178,8 @@ internal sealed class RecurringTransactionService(
         await repository.UpdateAsync(model, ct);
 
         var updated = await repository.GetByIdAsync(request.Id, ct);
+
+        await InvalidateForecastCacheAndEnqueueAsync(userContext.UserId, ct);
 
         return ServiceResultFactory.Success(
             MapToResponse(updated!),
@@ -529,6 +537,17 @@ internal sealed class RecurringTransactionService(
             RecurrenceFrequency.Custom    => $"Every {interval} {((FrequencyUnit)(unit ?? 3)).ToString().TrimEnd('s')}(s)",
             _                             => "Unknown",
         };
+    }
+
+    private async Task InvalidateForecastCacheAndEnqueueAsync(long userId, CancellationToken ct)
+    {
+        await cacheService.RemoveAsync($"cashflow:forecast:{userId}:12");
+        await cacheService.RemoveAsync($"cashflow:dashboard:{userId}");
+        await backgroundJobService.EnqueueAsync(
+            JobTypes.ComputeCashFlowForecast,
+            new ComputeForecastPayload(userId),
+            priority: 5,
+            ct: ct);
     }
 
     private static RecurringTransactionResponse MapToResponse(RecurringTransactionDbResult r)

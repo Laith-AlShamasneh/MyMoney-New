@@ -34,6 +34,11 @@ public static class NotificationCodes
     public const string GoalCompleted        = "Goal_Completed";
     public const string GoalBehindSchedule   = "Goal_BehindSchedule";
 
+    // ── Cash Flow Forecasting ─────────────────────────────────────────────────
+    public const string CashFlowNegativeBalance = "CASHFLOW_NEGATIVE_BALANCE_RISK";
+    public const string CashFlowCashShortage    = "CASHFLOW_CASH_SHORTAGE_WARNING";
+    public const string CashFlowGoalAtRisk      = "CASHFLOW_GOAL_AT_RISK";
+
     // ── Financial Intelligence ─────────────────────────────────────────────────
     public const string FILOverspendingAlert   = "FIL_OverspendingAlert";
     public const string FILSpendingSpike       = "FIL_SpendingSpike";

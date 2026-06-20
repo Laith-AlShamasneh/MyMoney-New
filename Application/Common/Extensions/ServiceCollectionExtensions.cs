@@ -1,4 +1,6 @@
 ﻿using Application.Features.Authentication.Services;
+using Application.Features.CashFlow;
+using Application.Features.CashFlow.Services;
 using Application.Features.Category.Services;
 using Application.Features.Dashboard.Services;
 using Application.Features.FinancialIntelligence;
@@ -42,6 +44,14 @@ public static class ServiceCollectionExtensions
             sp => sp.GetRequiredService<FinancialIntelligenceService>());
         services.AddScoped<IFinancialRulesEngine, FinancialRulesEngine>();
         services.AddScoped<IGoalService, GoalService>();
+
+        // CashFlowForecastService implements both the API-facing and the
+        // background-processing interfaces. Register the concrete type once.
+        services.AddScoped<CashFlowForecastService>();
+        services.AddScoped<ICashFlowForecastService>(
+            sp => sp.GetRequiredService<CashFlowForecastService>());
+        services.AddScoped<ICashFlowComputationService>(
+            sp => sp.GetRequiredService<CashFlowForecastService>());
 
         // RecurringTransactionService implements both the API-facing and the
         // background-processing interfaces. Register the concrete type once.
