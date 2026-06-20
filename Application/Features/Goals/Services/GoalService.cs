@@ -394,7 +394,7 @@ internal sealed class GoalService(
         await backgroundJobService.EnqueueAsync(
             JobTypes.ComputeCashFlowForecast,
             new ComputeForecastPayload(model.UserId),
-            priority: 5,
+            priority: 3,
             ct: ct);
 
         var message = await messageProvider.GetMessagesAsync(successMessageKey, ct);

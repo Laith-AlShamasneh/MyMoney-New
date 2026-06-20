@@ -263,7 +263,7 @@ internal sealed class TransactionService(
         await backgroundJobService.EnqueueAsync(
             JobTypes.ComputeCashFlowForecast,
             new ComputeForecastPayload(userId),
-            priority: 5,
+            priority: 3,
             ct: ct);
     }
 
