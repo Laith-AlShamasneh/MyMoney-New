@@ -99,33 +99,43 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
         return p.Get<long>("@NewId");
     }
 
-    public async Task<int> UpdateAsync(UpdateTransactionDbModel model, CancellationToken ct = default)
+    public async Task<UpdateTransactionDbResult> UpdateAsync(UpdateTransactionDbModel model, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",            model.UserId,            DbType.Int64);
-        p.Add("@TransactionId",     model.TransactionId,     DbType.Int64);
-        p.Add("@CategoryId",        model.CategoryId,        DbType.Int32);
-        p.Add("@TransactionTypeId", model.TransactionTypeId, DbType.Byte);
-        p.Add("@Amount",            model.Amount,            DbType.Decimal);
-        p.Add("@Description",       model.Description,       DbType.String);
-        p.Add("@TransactionDate",   model.TransactionDate,   DbType.Date);
-        p.Add("@Notes",             model.Notes,             DbType.String);
-        p.Add("@AffectedRows", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        p.Add("@UserId",              model.UserId,            DbType.Int64);
+        p.Add("@TransactionId",       model.TransactionId,     DbType.Int64);
+        p.Add("@CategoryId",          model.CategoryId,        DbType.Int32);
+        p.Add("@TransactionTypeId",   model.TransactionTypeId, DbType.Byte);
+        p.Add("@Amount",              model.Amount,            DbType.Decimal);
+        p.Add("@Description",         model.Description,       DbType.String);
+        p.Add("@TransactionDate",     model.TransactionDate,   DbType.Date);
+        p.Add("@Notes",               model.Notes,             DbType.String);
+        p.Add("@AffectedRows",        dbType: DbType.Int32,    direction: ParameterDirection.Output);
+        p.Add("@OldTransactionDate",  dbType: DbType.Date,     direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("MyMoney.usp_Transaction_Update", p, ct);
 
-        return p.Get<int>("@AffectedRows");
+        return new UpdateTransactionDbResult
+        {
+            AffectedRows       = p.Get<int>("@AffectedRows"),
+            OldTransactionDate = p.Get<DateOnly>("@OldTransactionDate")
+        };
     }
 
-    public async Task<int> DeleteAsync(DeleteTransactionDbModel model, CancellationToken ct = default)
+    public async Task<DeleteTransactionDbResult> DeleteAsync(DeleteTransactionDbModel model, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",        model.UserId,        DbType.Int64);
         p.Add("@TransactionId", model.TransactionId, DbType.Int64);
-        p.Add("@AffectedRows", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        p.Add("@AffectedRows",  dbType: DbType.Int32, direction: ParameterDirection.Output);
+        p.Add("@DeletedDate",   dbType: DbType.Date,  direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("MyMoney.usp_Transaction_Delete", p, ct);
 
-        return p.Get<int>("@AffectedRows");
+        return new DeleteTransactionDbResult
+        {
+            AffectedRows = p.Get<int>("@AffectedRows"),
+            DeletedDate  = p.Get<DateOnly>("@DeletedDate")
+        };
     }
 }

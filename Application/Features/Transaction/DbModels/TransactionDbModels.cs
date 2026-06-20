@@ -117,3 +117,15 @@ public class DeleteTransactionDbModel
     public long UserId        { get; set; }
     public long TransactionId { get; set; }
 }
+
+public class UpdateTransactionDbResult
+{
+    public int      AffectedRows       { get; set; }
+    public DateOnly OldTransactionDate { get; set; }
+}
+
+public class DeleteTransactionDbResult
+{
+    public int      AffectedRows { get; set; }
+    public DateOnly DeletedDate  { get; set; }
+}

@@ -10,4 +10,7 @@ public interface IFILBackgroundProcessingService
     Task ProcessDailyAsync(int year, int month, int day, CancellationToken ct = default);
     Task ProcessMonthlyAsync(int year, int month, CancellationToken ct = default);
     Task ProcessHourlyAnomalyAsync(DateTime fromUtc, CancellationToken ct = default);
+
+    // Targeted recomputation triggered by transaction mutations.
+    Task ProcessUserSnapshotAsync(long userId, int year, int month, CancellationToken ct = default);
 }

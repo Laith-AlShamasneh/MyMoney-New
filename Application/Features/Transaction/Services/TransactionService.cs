@@ -15,6 +15,7 @@ internal sealed class TransactionService(
     ITransactionRepository transactionRepository,
     IUserContext           userContext,
     IMessageProvider       messageProvider,
+    ICacheService          cacheService,
     IBackgroundJobService  backgroundJobService) : ITransactionService
 {
     public async Task<ServiceResult<TransactionSearchResponse>> SearchAsync(
@@ -138,14 +139,17 @@ internal sealed class TransactionService(
         CreateTransactionRequest request,
         CancellationToken        ct = default)
     {
+        var userId = userContext.UserId;
+        var txDate = DateOnly.Parse(request.TransactionDate);
+
         var model = new CreateTransactionDbModel
         {
-            UserId            = userContext.UserId,
+            UserId            = userId,
             CategoryId        = request.CategoryId,
             TransactionTypeId = (byte)request.TransactionTypeId,
             Amount            = request.Amount,
             Description       = request.Description?.Trim(),
-            TransactionDate   = DateOnly.Parse(request.TransactionDate),
+            TransactionDate   = txDate,
             Notes             = request.Notes?.Trim(),
         };
 
@@ -159,6 +163,8 @@ internal sealed class TransactionService(
                 await messageProvider.GetMessagesAsync(MessageKeys.Transaction.InvalidCategory, ct));
         }
 
+        await InvalidateFILCacheAndEnqueueRecomputeAsync(userId, txDate.Year, txDate.Month, ct);
+
         var message = await messageProvider.GetMessagesAsync(MessageKeys.Transaction.Created, ct);
         return ServiceResultFactory.Success(
             new CreateTransactionResponse(newId),
@@ -171,26 +177,39 @@ internal sealed class TransactionService(
         UpdateTransactionRequest request,
         CancellationToken        ct = default)
     {
+        var userId = userContext.UserId;
+        var newDate = DateOnly.Parse(request.TransactionDate);
+
         var model = new UpdateTransactionDbModel
         {
-            UserId            = userContext.UserId,
+            UserId            = userId,
             TransactionId     = transactionId,
             CategoryId        = request.CategoryId,
             TransactionTypeId = (byte)request.TransactionTypeId,
             Amount            = request.Amount,
             Description       = request.Description?.Trim(),
-            TransactionDate   = DateOnly.Parse(request.TransactionDate),
+            TransactionDate   = newDate,
             Notes             = request.Notes?.Trim(),
         };
 
-        var affected = await transactionRepository.UpdateAsync(model, ct);
+        var result = await transactionRepository.UpdateAsync(model, ct);
 
-        if (affected == 0)
+        if (result.AffectedRows == 0)
         {
             return ServiceResultFactory.Failure<object?>(
                 InternalResponseCodes.NotFound,
                 await messageProvider.GetMessagesAsync(MessageKeys.Transaction.NotFound, ct));
         }
+
+        // Recompute the new month unconditionally; recompute the old month only if the date crossed a month boundary.
+        await InvalidateFILCacheAndEnqueueRecomputeAsync(userId, newDate.Year, newDate.Month, ct);
+
+        var oldDate = result.OldTransactionDate;
+        if (oldDate.Year != newDate.Year || oldDate.Month != newDate.Month)
+            await backgroundJobService.EnqueueAsync(
+                JobTypes.SnapshotRecompute,
+                new SnapshotRecomputePayload(userId, oldDate.Year, oldDate.Month),
+                priority: 3, ct: ct);
 
         var message = await messageProvider.GetMessagesAsync(MessageKeys.Transaction.Updated, ct);
         return ServiceResultFactory.Success<object?>(null, InternalResponseCodes.OK, message);
@@ -200,26 +219,44 @@ internal sealed class TransactionService(
         long              transactionId,
         CancellationToken ct = default)
     {
+        var userId = userContext.UserId;
+
         var model = new DeleteTransactionDbModel
         {
-            UserId        = userContext.UserId,
+            UserId        = userId,
             TransactionId = transactionId,
         };
 
-        var affected = await transactionRepository.DeleteAsync(model, ct);
+        var result = await transactionRepository.DeleteAsync(model, ct);
 
-        if (affected == 0)
+        if (result.AffectedRows == 0)
         {
             return ServiceResultFactory.Failure<object?>(
                 InternalResponseCodes.NotFound,
                 await messageProvider.GetMessagesAsync(MessageKeys.Transaction.NotFound, ct));
         }
 
+        await InvalidateFILCacheAndEnqueueRecomputeAsync(userId, result.DeletedDate.Year, result.DeletedDate.Month, ct);
+
         var message = await messageProvider.GetMessagesAsync(MessageKeys.Transaction.Deleted, ct);
         return ServiceResultFactory.Success<object?>(null, InternalResponseCodes.OK, message);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private async Task InvalidateFILCacheAndEnqueueRecomputeAsync(
+        long              userId,
+        int               year,
+        int               month,
+        CancellationToken ct)
+    {
+        await cacheService.RemoveAsync($"fil:dashboard:{userId}");
+        await backgroundJobService.EnqueueAsync(
+            JobTypes.SnapshotRecompute,
+            new SnapshotRecomputePayload(userId, year, month),
+            priority: 3,
+            ct: ct);
+    }
 
     private static DateOnly? TryParseDate(string? s) =>
         !string.IsNullOrEmpty(s) && DateOnly.TryParse(s, out var d) ? d : null;

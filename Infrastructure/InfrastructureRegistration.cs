@@ -95,6 +95,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, DailyFILJobHandler>();
         services.AddScoped<IJobHandler, HourlyAnomalyJobHandler>();
         services.AddScoped<IJobHandler, MonthlyFILJobHandler>();
+        services.AddScoped<IJobHandler, SnapshotRecomputeHandler>();
         services.AddScoped<IJobHandler, ProcessRecurringTransactionsHandler>();
         services.AddScoped<IJobHandler, SendUpcomingPaymentNotificationHandler>();
         services.AddScoped<IJobHandler, GoalBehindScheduleCheckHandler>();
