@@ -1,6 +1,8 @@
 ﻿using Application.Features.Authentication.Services;
 using Application.Features.Budget;
 using Application.Features.Budget.Services;
+using Application.Features.Calendar;
+using Application.Features.Calendar.Services;
 using Application.Features.CashFlow;
 using Application.Features.CashFlow.Services;
 using Application.Features.Category.Services;
@@ -70,6 +72,8 @@ public static class ServiceCollectionExtensions
             sp => sp.GetRequiredService<BudgetService>());
         services.AddScoped<IBudgetComputationService>(
             sp => sp.GetRequiredService<BudgetService>());
+
+        services.AddScoped<ICalendarService, CalendarService>();
 
         return services;
     }

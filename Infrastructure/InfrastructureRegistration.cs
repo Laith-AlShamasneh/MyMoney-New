@@ -21,6 +21,7 @@ using Infrastructure.Services.Category;
 using Infrastructure.Services.Dashboard;
 using Infrastructure.Services.Profile;
 using Infrastructure.Services.Budget;
+using Infrastructure.Services.Calendar;
 using Infrastructure.Services.CashFlow;
 using Infrastructure.Services.FinancialIntelligence;
 using Infrastructure.Services.Notifications;
@@ -69,6 +70,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IGoalRepository, GoalRepository>();
         services.AddScoped<ICashFlowForecastRepository, CashFlowForecastRepository>();
         services.AddScoped<IBudgetRepository, BudgetRepository>();
+        services.AddScoped<ICalendarRepository, CalendarRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -107,6 +109,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, ComputeForecastHandler>();
         services.AddScoped<IJobHandler, ComputeBudgetSnapshotHandler>();
         services.AddScoped<IJobHandler, BudgetDailyMaintenanceHandler>();
+        services.AddScoped<IJobHandler, CalendarReminderHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
         services.AddHostedService<NotificationCleanupService>();
         services.AddHostedService<FILSchedulerService>();
@@ -114,6 +117,7 @@ public static class InfrastructureRegistration
         services.AddHostedService<GoalSchedulerService>();
         services.AddHostedService<CashFlowSchedulerService>();
         services.AddHostedService<BudgetSchedulerService>();
+        services.AddHostedService<CalendarSchedulerService>();
 
         // 7b. Report generators
         services.AddScoped<IReportGenerator, FinancialSummaryReportGenerator>();

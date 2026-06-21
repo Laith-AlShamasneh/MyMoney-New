@@ -35,4 +35,7 @@ public static class JobTypes
     // ── Budgeting ─────────────────────────────────────────────────────────────
     public const string ComputeBudgetSnapshot    = "ComputeBudgetSnapshot";
     public const string BudgetDailyMaintenance   = "BudgetDailyMaintenance";
+
+    // ── Calendar ──────────────────────────────────────────────────────────────
+    public const string CalendarReminder = "CalendarReminder";
 }

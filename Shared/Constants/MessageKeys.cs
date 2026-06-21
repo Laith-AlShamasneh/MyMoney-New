@@ -402,4 +402,48 @@ public static class MessageKeys
         public const string Deleted              = "Reports.Deleted";
         public const string DownloadReady        = "Reports.DownloadReady";
     }
+
+    public static class Calendar
+    {
+        // Validation
+        public const string TitleRequired             = "Calendar.TitleRequired";
+        public const string TitleTooLong              = "Calendar.TitleTooLong";
+        public const string DescriptionTooLong        = "Calendar.DescriptionTooLong";
+        public const string EventDateRequired         = "Calendar.EventDateRequired";
+        public const string InvalidEventDate          = "Calendar.InvalidEventDate";
+        public const string InvalidEventType          = "Calendar.InvalidEventType";
+        public const string InvalidPriority           = "Calendar.InvalidPriority";
+        public const string NotifyBeforeMustBePositive = "Calendar.NotifyBeforeMustBePositive";
+        public const string NotifyBeforeTooLarge      = "Calendar.NotifyBeforeTooLarge";
+        public const string ColorHexTooLong           = "Calendar.ColorHexTooLong";
+        public const string IconTooLong               = "Calendar.IconTooLong";
+        public const string InvalidLinkedEntityId     = "Calendar.InvalidLinkedEntityId";
+        public const string InvalidLinkedEntityType   = "Calendar.InvalidLinkedEntityType";
+        public const string InvalidEventId            = "Calendar.InvalidEventId";
+        public const string WeekStartRequired         = "Calendar.WeekStartRequired";
+        public const string InvalidWeekStart          = "Calendar.InvalidWeekStart";
+        public const string InvalidYear               = "Calendar.InvalidYear";
+        public const string InvalidMonth              = "Calendar.InvalidMonth";
+        public const string DaysAheadInvalid          = "Calendar.DaysAheadInvalid";
+        public const string PageNumberInvalid         = "Calendar.PageNumberInvalid";
+        public const string PageSizeInvalid           = "Calendar.PageSizeInvalid";
+        public const string KeywordTooLong            = "Calendar.KeywordTooLong";
+        public const string InvalidReminderId         = "Calendar.InvalidReminderId";
+
+        // Business
+        public const string EventCreated             = "Calendar.EventCreated";
+        public const string EventUpdated             = "Calendar.EventUpdated";
+        public const string EventDeleted             = "Calendar.EventDeleted";
+        public const string EventCompleted           = "Calendar.EventCompleted";
+        public const string EventNotFound            = "Calendar.EventNotFound";
+        public const string EventAlreadyCompleted    = "Calendar.EventAlreadyCompleted";
+        public const string EventAlreadyCancelled    = "Calendar.EventAlreadyCancelled";
+        public const string GetSuccess               = "Calendar.GetSuccess";
+        public const string ListLoaded               = "Calendar.ListLoaded";
+        public const string DashboardLoaded          = "Calendar.DashboardLoaded";
+        public const string AgendaLoaded             = "Calendar.AgendaLoaded";
+        public const string SearchResultsLoaded      = "Calendar.SearchResultsLoaded";
+        public const string ReminderDismissed        = "Calendar.ReminderDismissed";
+        public const string ReminderNotFound         = "Calendar.ReminderNotFound";
+    }
 }

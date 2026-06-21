@@ -8,6 +8,7 @@ using WebApi.Features.CashFlow;
 using WebApi.Features.FinancialIntelligence;
 using WebApi.Features.Notifications;
 using WebApi.Features.Budget;
+using WebApi.Features.Calendar;
 using WebApi.Features.Goals;
 using WebApi.Features.RecurringTransactions;
 using WebApi.Features.Report;
@@ -114,6 +115,7 @@ app.MapRecurringTransactionEndpoints();
 app.MapSubscriptionEndpoints();
 app.MapGoalEndpoints();
 app.MapBudgetEndpoints();
+app.MapCalendarEndpoints();
 app.MapOnboardingEndpoints();
 
 app.Run();
