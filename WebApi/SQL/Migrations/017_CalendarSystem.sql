@@ -165,8 +165,9 @@ BEGIN
         DECLARE @ReminderAt DATETIME2(0);
         IF @StartTime IS NOT NULL
             SET @ReminderAt = DATEADD(MINUTE, -@NotifyBefore,
-                CAST(CAST(@EventDate AS DATETIME2(0)) AS DATETIME2(0))
-                + CAST(@StartTime AS DATETIME2(0)));
+                DATEADD(SECOND,
+                    DATEDIFF(SECOND, CAST('00:00:00' AS TIME(0)), @StartTime),
+                    CAST(@EventDate AS DATETIME2(0))));
         ELSE
             SET @ReminderAt = DATEADD(MINUTE, -@NotifyBefore,
                 CAST(@EventDate AS DATETIME2(0)));
@@ -233,8 +234,9 @@ BEGIN
             DECLARE @ReminderAt DATETIME2(0);
             IF @StartTime IS NOT NULL
                 SET @ReminderAt = DATEADD(MINUTE, -@NotifyBefore,
-                    CAST(CAST(@EventDate AS DATETIME2(0)) AS DATETIME2(0))
-                    + CAST(@StartTime AS DATETIME2(0)));
+                    DATEADD(SECOND,
+                        DATEDIFF(SECOND, CAST('00:00:00' AS TIME(0)), @StartTime),
+                        CAST(@EventDate AS DATETIME2(0))));
             ELSE
                 SET @ReminderAt = DATEADD(MINUTE, -@NotifyBefore,
                     CAST(@EventDate AS DATETIME2(0)));
