@@ -31,6 +31,8 @@ using Infrastructure.Services.Reports;
 using Infrastructure.Services.Transaction;
 using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Options;
+using Infrastructure.Services.Receipt;
+using Infrastructure.Services.Ocr;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -50,6 +52,7 @@ public static class InfrastructureRegistration
         services.Configure<SmtpOptions>(config.GetSection("Smtp"));
         services.Configure<BackgroundJobOptions>(config.GetSection("BackgroundJobs"));
         services.Configure<AuthenticationOptions>(config.GetSection("Authentication"));
+        services.Configure<ReceiptOptions>(config.GetSection("Receipts"));
 
         // 2. Database engine
         services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
@@ -71,6 +74,7 @@ public static class InfrastructureRegistration
         services.AddScoped<ICashFlowForecastRepository, CashFlowForecastRepository>();
         services.AddScoped<IBudgetRepository, BudgetRepository>();
         services.AddScoped<ICalendarRepository, CalendarRepository>();
+        services.AddScoped<IReceiptRepository, ReceiptRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -83,9 +87,10 @@ public static class InfrastructureRegistration
         services.AddSingleton<ICacheService, MemoryCacheService>();
         services.AddScoped<IMessageProvider, MessageProvider>();
 
-        // 6. Storage
+        // 6. Storage & OCR
         services.AddSingleton<IStorageUtility, StorageUtility>();
         services.AddSingleton<IFileService, LocalFileService>();
+        services.AddSingleton<IOcrProvider, LocalOcrProvider>();
 
         // 7. Background jobs
         services.AddScoped<IBackgroundJobService, BackgroundJobService>();
@@ -110,6 +115,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, ComputeBudgetSnapshotHandler>();
         services.AddScoped<IJobHandler, BudgetDailyMaintenanceHandler>();
         services.AddScoped<IJobHandler, CalendarReminderHandler>();
+        services.AddScoped<IJobHandler, ProcessReceiptOcrHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
         services.AddHostedService<NotificationCleanupService>();
         services.AddHostedService<FILSchedulerService>();

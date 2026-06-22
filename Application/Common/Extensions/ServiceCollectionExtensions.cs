@@ -16,6 +16,8 @@ using Application.Features.Onboarding.Services;
 using Application.Features.Profile.Services;
 using Application.Features.Goals;
 using Application.Features.Goals.Services;
+using Application.Features.Receipt;
+using Application.Features.Receipt.Services;
 using Application.Features.RecurringTransactions;
 using Application.Features.RecurringTransactions.Services;
 using Application.Features.Reports;
@@ -74,6 +76,7 @@ public static class ServiceCollectionExtensions
             sp => sp.GetRequiredService<BudgetService>());
 
         services.AddScoped<ICalendarService, CalendarService>();
+        services.AddScoped<IReceiptService, ReceiptService>();
 
         return services;
     }

@@ -446,4 +446,52 @@ public static class MessageKeys
         public const string ReminderDismissed        = "Calendar.ReminderDismissed";
         public const string ReminderNotFound         = "Calendar.ReminderNotFound";
     }
+
+    public static class Receipt
+    {
+        // Validation
+        public const string FileRequired              = "Receipt.FileRequired";
+        public const string FileTooLarge              = "Receipt.FileTooLarge";
+        public const string InvalidFileType           = "Receipt.InvalidFileType";
+        public const string TitleTooLong              = "Receipt.TitleTooLong";
+        public const string DescriptionTooLong        = "Receipt.DescriptionTooLong";
+        public const string MerchantNameTooLong       = "Receipt.MerchantNameTooLong";
+        public const string AmountMustBePositive      = "Receipt.AmountMustBePositive";
+        public const string CurrencyCodeTooLong       = "Receipt.CurrencyCodeTooLong";
+        public const string NotesTooLong              = "Receipt.NotesTooLong";
+        public const string InvalidReceiptId          = "Receipt.InvalidReceiptId";
+        public const string InvalidTagId              = "Receipt.InvalidTagId";
+        public const string TagNameRequired           = "Receipt.TagNameRequired";
+        public const string TagNameTooLong            = "Receipt.TagNameTooLong";
+        public const string ColorHexTooLong           = "Receipt.ColorHexTooLong";
+        public const string KeywordTooLong            = "Receipt.KeywordTooLong";
+        public const string InvalidPageNumber         = "Receipt.InvalidPageNumber";
+        public const string InvalidPageSize           = "Receipt.InvalidPageSize";
+        public const string InvalidTransactionId      = "Receipt.InvalidTransactionId";
+
+        // Business
+        public const string Uploaded                  = "Receipt.Uploaded";
+        public const string DuplicateFile             = "Receipt.DuplicateFile";
+        public const string CorruptOrUnsupportedFile  = "Receipt.CorruptOrUnsupportedFile";
+        public const string Updated                   = "Receipt.Updated";
+        public const string Deleted                   = "Receipt.Deleted";
+        public const string Archived                  = "Receipt.Archived";
+        public const string Restored                  = "Receipt.Restored";
+        public const string NotFound                  = "Receipt.NotFound";
+        public const string CannotArchiveNonActive    = "Receipt.CannotArchiveNonActive";
+        public const string CannotRestoreNonArchived  = "Receipt.CannotRestoreNonArchived";
+        public const string TransactionAssigned       = "Receipt.TransactionAssigned";
+        public const string TransactionUnlinked       = "Receipt.TransactionUnlinked";
+        public const string TransactionNotFound       = "Receipt.TransactionNotFound";
+        public const string SearchLoaded              = "Receipt.SearchLoaded";
+        public const string GetSuccess                = "Receipt.GetSuccess";
+        public const string DashboardLoaded           = "Receipt.DashboardLoaded";
+        public const string TagCreated                = "Receipt.TagCreated";
+        public const string TagDeleted                = "Receipt.TagDeleted";
+        public const string TagDuplicate              = "Receipt.TagDuplicate";
+        public const string TagNotFound               = "Receipt.TagNotFound";
+        public const string TagsLoaded                = "Receipt.TagsLoaded";
+        public const string TagsUpdated               = "Receipt.TagsUpdated";
+        public const string DownloadReady             = "Receipt.DownloadReady";
+    }
 }

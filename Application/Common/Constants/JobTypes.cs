@@ -38,4 +38,7 @@ public static class JobTypes
 
     // ── Calendar ──────────────────────────────────────────────────────────────
     public const string CalendarReminder = "CalendarReminder";
+
+    // ── Receipts ──────────────────────────────────────────────────────────────
+    public const string ProcessReceiptOcr = "ProcessReceiptOcr";
 }

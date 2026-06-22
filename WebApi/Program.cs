@@ -14,6 +14,7 @@ using WebApi.Features.RecurringTransactions;
 using WebApi.Features.Report;
 using WebApi.Features.Subscriptions;
 using WebApi.Features.Transaction;
+using WebApi.Features.Receipt;
 using FluentValidation;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -117,5 +118,6 @@ app.MapGoalEndpoints();
 app.MapBudgetEndpoints();
 app.MapCalendarEndpoints();
 app.MapOnboardingEndpoints();
+app.MapReceiptEndpoints();
 
 app.Run();
