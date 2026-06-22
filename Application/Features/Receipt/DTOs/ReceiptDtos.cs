@@ -6,14 +6,14 @@ namespace Application.Features.Receipt.DTOs;
 
 public sealed record UploadReceiptRequest(
     IFormFile   File,
-    string?     Title,
-    string?     Description,
-    string?     ReceiptDate,
-    string?     MerchantName,
-    decimal?    Amount,
-    string?     CurrencyCode,
-    string?     Notes,
-    string?     TagIds  // JSON array e.g. "[1,2,3]"
+    string?     Title        = null,
+    string?     Description  = null,
+    string?     ReceiptDate  = null,
+    string?     MerchantName = null,
+    decimal?    Amount       = null,
+    string?     CurrencyCode = null,
+    string?     Notes        = null,
+    string?     TagIds       = null  // JSON array e.g. "[1,2,3]"
 );
 
 public sealed record UploadReceiptResponse(
