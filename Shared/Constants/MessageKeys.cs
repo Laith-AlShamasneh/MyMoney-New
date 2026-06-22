@@ -115,6 +115,34 @@ public static class MessageKeys
         public const string LoadedSuccessfully  = "Category.LoadedSuccessfully";
     }
 
+    public static class Currency
+    {
+        // Validation
+        public const string CurrencyCodeRequired       = "Currency.CurrencyCodeRequired";
+        public const string InvalidCurrencyCode        = "Currency.InvalidCurrencyCode";
+        public const string InvalidPreference          = "Currency.InvalidPreference";
+        public const string DateRequired               = "Currency.DateRequired";
+        public const string InvalidDate                = "Currency.InvalidDate";
+        public const string RateMustBePositive         = "Currency.RateMustBePositive";
+        public const string AmountMustBeNonNegative    = "Currency.AmountMustBeNonNegative";
+        public const string SameCurrencyConversion     = "Currency.SameCurrencyConversion";
+
+        // Business
+        public const string CurrencyNotFound           = "Currency.CurrencyNotFound";
+        public const string ExchangeRateNotFound       = "Currency.ExchangeRateNotFound";
+        public const string InvalidProvider            = "Currency.InvalidProvider";
+        public const string PreferencesUpdated         = "Currency.PreferencesUpdated";
+        public const string PreferencesLoaded          = "Currency.PreferencesLoaded";
+        public const string RateSet                    = "Currency.RateSet";
+        public const string ConversionSuccess          = "Currency.ConversionSuccess";
+        public const string SyncTriggered              = "Currency.SyncTriggered";
+        public const string StatisticsLoaded           = "Currency.StatisticsLoaded";
+        public const string DashboardLoaded            = "Currency.DashboardLoaded";
+        public const string RatesLoaded                = "Currency.RatesLoaded";
+        public const string CurrenciesLoaded           = "Currency.CurrenciesLoaded";
+        public const string DuplicateRate              = "Currency.DuplicateRate";
+    }
+
     public static class Dashboard
     {
         public const string LoadedSuccessfully = "Dashboard.LoadedSuccessfully";

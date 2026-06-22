@@ -33,6 +33,7 @@ using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Options;
 using Infrastructure.Services.Receipt;
 using Infrastructure.Services.Ocr;
+using Infrastructure.Services.Currency;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -75,6 +76,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IBudgetRepository, BudgetRepository>();
         services.AddScoped<ICalendarRepository, CalendarRepository>();
         services.AddScoped<IReceiptRepository, ReceiptRepository>();
+        services.AddScoped<ICurrencyRepository, CurrencyRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -116,6 +118,8 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, BudgetDailyMaintenanceHandler>();
         services.AddScoped<IJobHandler, CalendarReminderHandler>();
         services.AddScoped<IJobHandler, ProcessReceiptOcrHandler>();
+        services.AddScoped<IJobHandler, ExchangeRateSyncHandler>();
+        services.AddScoped<IJobHandler, ExchangeRateValidationHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
         services.AddHostedService<NotificationCleanupService>();
         services.AddHostedService<FILSchedulerService>();
@@ -124,6 +128,11 @@ public static class InfrastructureRegistration
         services.AddHostedService<CashFlowSchedulerService>();
         services.AddHostedService<BudgetSchedulerService>();
         services.AddHostedService<CalendarSchedulerService>();
+        services.AddHostedService<CurrencySchedulerService>();
+
+        // 7a. Currency services
+        services.AddScoped<ICurrencyConversionService, CurrencyConversionService>();
+        services.AddSingleton<IExchangeRateProvider, ManualExchangeRateProvider>();
 
         // 7b. Report generators
         services.AddScoped<IReportGenerator, FinancialSummaryReportGenerator>();

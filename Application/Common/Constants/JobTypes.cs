@@ -41,4 +41,8 @@ public static class JobTypes
 
     // ── Receipts ──────────────────────────────────────────────────────────────
     public const string ProcessReceiptOcr = "ProcessReceiptOcr";
+
+    // ── Currency ──────────────────────────────────────────────────────────────
+    public const string ExchangeRateSync       = "ExchangeRateSync";
+    public const string ExchangeRateValidation = "ExchangeRateValidation";
 }

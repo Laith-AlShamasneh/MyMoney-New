@@ -1,6 +1,7 @@
 ﻿using Application.Features.Authentication.Services;
 using Application.Features.Budget;
 using Application.Features.Budget.Services;
+using Application.Features.Currency.Services;
 using Application.Features.Calendar;
 using Application.Features.Calendar.Services;
 using Application.Features.CashFlow;
@@ -77,6 +78,9 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ICalendarService, CalendarService>();
         services.AddScoped<IReceiptService, ReceiptService>();
+
+        // ── Currency ──────────────────────────────────────────────────────────
+        services.AddScoped<ICurrencyService, CurrencyService>();
 
         return services;
     }
