@@ -522,4 +522,68 @@ public static class MessageKeys
         public const string TagsUpdated               = "Receipt.TagsUpdated";
         public const string DownloadReady             = "Receipt.DownloadReady";
     }
+
+    public static class Workspace
+    {
+        // Validation
+        public const string NameRequired             = "Workspace.NameRequired";
+        public const string NameTooLong              = "Workspace.NameTooLong";
+        public const string DescriptionTooLong       = "Workspace.DescriptionTooLong";
+        public const string InvalidTypeId            = "Workspace.InvalidTypeId";
+        public const string CurrencyCodeTooLong      = "Workspace.CurrencyCodeTooLong";
+        public const string TimezoneTooLong          = "Workspace.TimezoneTooLong";
+        public const string ColorTooLong             = "Workspace.ColorTooLong";
+        public const string InvalidWorkspaceId       = "Workspace.InvalidWorkspaceId";
+        public const string InvalidRoleId            = "Workspace.InvalidRoleId";
+        public const string InvalidTargetUserId      = "Workspace.InvalidTargetUserId";
+        public const string EmailRequired            = "Workspace.EmailRequired";
+        public const string InvalidEmail             = "Workspace.InvalidEmail";
+        public const string TokenRequired            = "Workspace.TokenRequired";
+        public const string InvalidInvitationId      = "Workspace.InvalidInvitationId";
+        public const string PageNumberInvalid        = "Workspace.PageNumberInvalid";
+        public const string PageSizeInvalid          = "Workspace.PageSizeInvalid";
+
+        // Business
+        public const string Created                  = "Workspace.Created";
+        public const string Updated                  = "Workspace.Updated";
+        public const string Deleted                  = "Workspace.Deleted";
+        public const string NotFound                 = "Workspace.NotFound";
+        public const string Forbidden                = "Workspace.Forbidden";
+        public const string ListLoaded               = "Workspace.ListLoaded";
+        public const string GetSuccess               = "Workspace.GetSuccess";
+        public const string Switched                 = "Workspace.Switched";
+        public const string SwitchFailed             = "Workspace.SwitchFailed";
+        public const string ContextLoaded            = "Workspace.ContextLoaded";
+
+        // Members
+        public const string MemberListLoaded         = "Workspace.MemberListLoaded";
+        public const string MemberRoleUpdated        = "Workspace.MemberRoleUpdated";
+        public const string MemberSuspended          = "Workspace.MemberSuspended";
+        public const string MemberReinstated         = "Workspace.MemberReinstated";
+        public const string MemberRemoved            = "Workspace.MemberRemoved";
+        public const string MemberLeft               = "Workspace.MemberLeft";
+        public const string MemberNotFound           = "Workspace.MemberNotFound";
+        public const string CannotModifyOwner        = "Workspace.CannotModifyOwner";
+        public const string CannotModifySelf         = "Workspace.CannotModifySelf";
+        public const string OwnerCannotLeave         = "Workspace.OwnerCannotLeave";
+
+        // Invitations
+        public const string InvitationSent           = "Workspace.InvitationSent";
+        public const string InvitationCancelled      = "Workspace.InvitationCancelled";
+        public const string InvitationAccepted       = "Workspace.InvitationAccepted";
+        public const string InvitationRejected       = "Workspace.InvitationRejected";
+        public const string InvitationNotFound       = "Workspace.InvitationNotFound";
+        public const string InvitationExpired        = "Workspace.InvitationExpired";
+        public const string InvitationAlreadyUsed    = "Workspace.InvitationAlreadyUsed";
+        public const string AlreadyMember            = "Workspace.AlreadyMember";
+        public const string CannotInviteOwnerRole    = "Workspace.CannotInviteOwnerRole";
+        public const string EmailMismatch            = "Workspace.EmailMismatch";
+        public const string InvitationListLoaded     = "Workspace.InvitationListLoaded";
+
+        // Permissions
+        public const string PermissionsLoaded        = "Workspace.PermissionsLoaded";
+
+        // Activity
+        public const string ActivityLoaded           = "Workspace.ActivityLoaded";
+    }
 }

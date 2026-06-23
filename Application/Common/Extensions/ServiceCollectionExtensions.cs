@@ -1,4 +1,5 @@
 ﻿using Application.Features.Authentication.Services;
+using Application.Features.Workspace.Services;
 using Application.Features.Budget;
 using Application.Features.Budget.Services;
 using Application.Features.Currency.Services;
@@ -81,6 +82,9 @@ public static class ServiceCollectionExtensions
 
         // ── Currency ──────────────────────────────────────────────────────────
         services.AddScoped<ICurrencyService, CurrencyService>();
+
+        // ── Workspace ─────────────────────────────────────────────────────────
+        services.AddScoped<IWorkspaceService, WorkspaceService>();
 
         return services;
     }

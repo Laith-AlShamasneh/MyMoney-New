@@ -45,4 +45,7 @@ public static class JobTypes
     // ── Currency ──────────────────────────────────────────────────────────────
     public const string ExchangeRateSync       = "ExchangeRateSync";
     public const string ExchangeRateValidation = "ExchangeRateValidation";
+
+    // ── Workspace ─────────────────────────────────────────────────────────────
+    public const string WorkspaceInvitationEmail = "WorkspaceInvitationEmail";
 }

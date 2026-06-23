@@ -34,6 +34,7 @@ using Infrastructure.Services.Storage.Options;
 using Infrastructure.Services.Receipt;
 using Infrastructure.Services.Ocr;
 using Infrastructure.Services.Currency;
+using Infrastructure.Services.Workspace;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -77,6 +78,7 @@ public static class InfrastructureRegistration
         services.AddScoped<ICalendarRepository, CalendarRepository>();
         services.AddScoped<IReceiptRepository, ReceiptRepository>();
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+        services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
 
         // 4. Auth & identity services
         services.AddSingleton<IJwtService, JwtService>();
@@ -120,6 +122,7 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, ProcessReceiptOcrHandler>();
         services.AddScoped<IJobHandler, ExchangeRateSyncHandler>();
         services.AddScoped<IJobHandler, ExchangeRateValidationHandler>();
+        services.AddScoped<IJobHandler, WorkspaceInvitationEmailHandler>();
         services.AddHostedService<BackgroundJobProcessor>();
         services.AddHostedService<NotificationCleanupService>();
         services.AddHostedService<FILSchedulerService>();

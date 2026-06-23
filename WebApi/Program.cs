@@ -16,6 +16,7 @@ using WebApi.Features.Subscriptions;
 using WebApi.Features.Transaction;
 using WebApi.Features.Receipt;
 using WebApi.Features.Currency;
+using WebApi.Features.Workspace;
 using FluentValidation;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -121,5 +122,6 @@ app.MapCalendarEndpoints();
 app.MapOnboardingEndpoints();
 app.MapReceiptEndpoints();
 app.MapCurrencyEndpoints();
+app.MapWorkspaceEndpoints();
 
 app.Run();
