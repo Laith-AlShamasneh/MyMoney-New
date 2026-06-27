@@ -48,12 +48,33 @@ public static class InfrastructureRegistration
         // 0. Dapper type handlers
         SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 
-        // 1. Options
-        services.Configure<JwtOptions>(config.GetSection("Jwt"));
+        // 1. Options — critical ones are validated and fail fast at startup.
+        services.AddOptions<JwtOptions>()
+            .Bind(config.GetSection("Jwt"))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Issuer),   "Jwt:Issuer is required.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Audience), "Jwt:Audience is required.")
+            .Validate(o => System.Text.Encoding.UTF8.GetByteCount(o.SecretKey ?? string.Empty) >= 32,
+                "Jwt:SecretKey must be supplied out-of-band and be at least 32 bytes.")
+            .Validate(o => o.ExpiryMinutes > 0, "Jwt:ExpiryMinutes must be greater than zero.")
+            .ValidateOnStart();
+
+        services.AddOptions<SmtpOptions>()
+            .Bind(config.GetSection("Smtp"))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Host),        "Smtp:Host is required.")
+            .Validate(o => o.Port is > 0 and <= 65535,               "Smtp:Port must be a valid port.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.FromAddress), "Smtp:FromAddress is required.")
+            .ValidateOnStart();
+
+        services.AddOptions<AuthenticationOptions>()
+            .Bind(config.GetSection("Authentication"))
+            .Validate(o => o.MaxFailedLoginAttempts > 0,     "Authentication:MaxFailedLoginAttempts must be greater than zero.")
+            .Validate(o => o.LockoutDurationMinutes > 0,     "Authentication:LockoutDurationMinutes must be greater than zero.")
+            .Validate(o => o.PasswordResetExpiryMinutes > 0, "Authentication:PasswordResetExpiryMinutes must be greater than zero.")
+            .Validate(o => o.EmailConfirmationExpiryHours > 0, "Authentication:EmailConfirmationExpiryHours must be greater than zero.")
+            .ValidateOnStart();
+
         services.Configure<StorageOptions>(config.GetSection("Storage"));
-        services.Configure<SmtpOptions>(config.GetSection("Smtp"));
         services.Configure<BackgroundJobOptions>(config.GetSection("BackgroundJobs"));
-        services.Configure<AuthenticationOptions>(config.GetSection("Authentication"));
         services.Configure<ReceiptOptions>(config.GetSection("Receipts"));
 
         // 2. Database engine
@@ -124,15 +145,26 @@ public static class InfrastructureRegistration
         services.AddScoped<IJobHandler, ExchangeRateSyncHandler>();
         services.AddScoped<IJobHandler, ExchangeRateValidationHandler>();
         services.AddScoped<IJobHandler, WorkspaceInvitationEmailHandler>();
+        // The job processor pulls work off the queue; its pick-up SP is atomic, so it is
+        // safe to run on every instance under horizontal scale.
         services.AddHostedService<BackgroundJobProcessor>();
-        services.AddHostedService<NotificationCleanupService>();
-        services.AddHostedService<FILSchedulerService>();
-        services.AddHostedService<RecurringTransactionSchedulerService>();
-        services.AddHostedService<GoalSchedulerService>();
-        services.AddHostedService<CashFlowSchedulerService>();
-        services.AddHostedService<BudgetSchedulerService>();
-        services.AddHostedService<CalendarSchedulerService>();
-        services.AddHostedService<CurrencySchedulerService>();
+
+        // Timer-based schedulers enqueue work on a wall-clock cadence and track their
+        // "last run" in memory — running them on every instance would double-enqueue.
+        // Gate them behind a flag: leave true on exactly one instance (or a dedicated
+        // scheduler deployment) and set BackgroundJobs:RunSchedulers=false on the rest.
+        var runSchedulers = config.GetValue<bool?>("BackgroundJobs:RunSchedulers") ?? true;
+        if (runSchedulers)
+        {
+            services.AddHostedService<NotificationCleanupService>();
+            services.AddHostedService<FILSchedulerService>();
+            services.AddHostedService<RecurringTransactionSchedulerService>();
+            services.AddHostedService<GoalSchedulerService>();
+            services.AddHostedService<CashFlowSchedulerService>();
+            services.AddHostedService<BudgetSchedulerService>();
+            services.AddHostedService<CalendarSchedulerService>();
+            services.AddHostedService<CurrencySchedulerService>();
+        }
 
         // 7a. Currency services
         services.AddScoped<ICurrencyConversionService, CurrencyConversionService>();

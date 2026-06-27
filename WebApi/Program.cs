@@ -25,8 +25,11 @@ using Serilog;
 using System.Text;
 using System.Threading.RateLimiting;
 using WebApi.Common.Exceptions;
+using WebApi.Common.Health;
 using WebApi.Common.Middlewares;
 using WebApi.Features.Files;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,6 +98,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// ── 5b. Health checks ─────────────────────────────────────────────────────────
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
+
+// ── 5c. OpenAPI / Swagger ─────────────────────────────────────────────────────
+// The UI is only mapped in Development (below). To expose it in another environment,
+// put it behind authorization first — it documents the entire API surface.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "MyMoney API", Version = "v1" });
+
+    // "Authorize" button: paste a JWT to send it as the Bearer header on calls.
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name         = "Authorization",
+        Type         = SecuritySchemeType.Http,
+        Scheme       = "bearer",
+        BearerFormat = "JWT",
+        In           = ParameterLocation.Header,
+        Description  = "Paste the JWT access token (without the 'Bearer ' prefix)."
+    });
+});
+
 // ── 6. Rate limiting ──────────────────────────────────────────────────────────
 // Global per-IP limiter protects every endpoint; the strict "auth" policy is
 // applied to credential/token endpoints to blunt brute-force and email-bomb abuse.
@@ -129,6 +156,31 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 // ─────────────────────────────────────────────────────────────────────────────
 
+// API documentation — Development only (gate behind auth before enabling elsewhere).
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+else
+{
+    app.UseHsts();
+}
+
+// Correlation id first so every log line for the request — including early
+// pipeline and exception logs — carries it.
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+// Baseline security response headers applied to every response.
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"]        = "DENY";
+    headers["Referrer-Policy"]        = "no-referrer";
+    await next();
+});
+
 app.UseHttpsRedirection();
 
 // Block anonymous static access to sensitive uploaded artifacts. Receipts and
@@ -153,10 +205,11 @@ app.UseCors("FrontendPolicy");
 
 app.UseRateLimiter();
 
-app.UseMiddleware<RequestLoggingMiddleware>();
-
 app.UseAuthentication();
 app.UseAuthorization();
+
+// After authentication so the logged UserId reflects the authenticated caller.
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 // ── 8. Endpoints ──────────────────────────────────────────────────────────────
 app.MapAuthenticationEndpoints();
@@ -178,5 +231,11 @@ app.MapReceiptEndpoints();
 app.MapCurrencyEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapFileEndpoints();
+
+// Liveness: process is up (no dependency checks). Readiness: dependencies (DB) are reachable.
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false })
+   .DisableRateLimiting();
+app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") })
+   .DisableRateLimiting();
 
 app.Run();

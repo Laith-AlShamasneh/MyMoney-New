@@ -198,7 +198,7 @@ internal sealed class CurrencyService(
         else
             result = await conversionService.ConvertAsync(request.Amount, from, to, ct);
 
-        if (!result.IsIdentityConversion && result.ExchangeRate <= 0)
+        if (!result.Succeeded)
             return ServiceResultFactory.Failure<ConvertAmountResponse>(
                 InternalResponseCodes.NotFound,
                 await messageProvider.GetMessagesAsync(MessageKeys.Currency.ExchangeRateNotFound, ct));

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace WebApi.Common.Middlewares;
 
-public sealed class RequestLoggingMiddleware(RequestDelegate next)
+public sealed class RequestLoggingMiddleware(RequestDelegate next, IHostEnvironment environment)
 {
     private const long MaxBodyLength = 32_768;
 
@@ -12,31 +12,13 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next)
     {
         var request = context.Request;
         var path    = request.Path.Value ?? string.Empty;
-        string? body = null;
 
-        if (request.HasFormContentType && request.ContentType?.Contains("multipart/form-data") == true)
-        {
-            body = "[Multipart Content Skipped]";
-        }
-        else if (request.ContentLength > 0 && request.ContentLength < MaxBodyLength)
-        {
-            // Redact sensitive endpoints
-            if (path.Contains("/login",           StringComparison.OrdinalIgnoreCase)
-             || path.Contains("/register",        StringComparison.OrdinalIgnoreCase)
-             || path.Contains("/change-password", StringComparison.OrdinalIgnoreCase)
-             || path.Contains("/reset-password",  StringComparison.OrdinalIgnoreCase)
-             || path.Contains("/forgot-password", StringComparison.OrdinalIgnoreCase))
-            {
-                body = "[REDACTED SENSITIVE DATA]";
-            }
-            else
-            {
-                request.EnableBuffering();
-                using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
-                body = await reader.ReadToEndAsync();
-                request.Body.Position = 0;
-            }
-        }
+        // Request bodies can carry financial PII (amounts, descriptions, credentials).
+        // Never persist them to the log store in Production — only capture outside it,
+        // and even then redact auth endpoints. Metadata (path/method/user/ip) is always logged.
+        var body = environment.IsDevelopment() ? await CaptureBodyAsync(request, path) : null;
+        if (body is { Length: > 0 } && request.Body.CanSeek)
+            request.Body.Position = 0;
 
         using (LogContext.PushProperty("UserId",        userContext.UserId))
         using (LogContext.PushProperty("IPAddress",     userContext.IpAddress))
@@ -46,5 +28,25 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next)
         {
             await next(context);
         }
+    }
+
+    private static async Task<string?> CaptureBodyAsync(HttpRequest request, string path)
+    {
+        if (request.HasFormContentType && request.ContentType?.Contains("multipart/form-data") == true)
+            return "[Multipart Content Skipped]";
+
+        if (request.ContentLength is not (> 0 and < MaxBodyLength))
+            return null;
+
+        if (path.Contains("/login",           StringComparison.OrdinalIgnoreCase)
+         || path.Contains("/register",        StringComparison.OrdinalIgnoreCase)
+         || path.Contains("/change-password", StringComparison.OrdinalIgnoreCase)
+         || path.Contains("/reset-password",  StringComparison.OrdinalIgnoreCase)
+         || path.Contains("/forgot-password", StringComparison.OrdinalIgnoreCase))
+            return "[REDACTED SENSITIVE DATA]";
+
+        request.EnableBuffering();
+        using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
+        return await reader.ReadToEndAsync();
     }
 }

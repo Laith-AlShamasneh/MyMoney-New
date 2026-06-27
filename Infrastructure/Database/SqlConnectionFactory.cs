@@ -20,4 +20,11 @@ internal sealed class SqlConnectionFactory(IConfiguration configuration) : ISqlC
 
         return connection;
     }
+
+    public async Task<IDbConnection> CreateConnectionAsync(CancellationToken ct = default)
+    {
+        var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(ct);
+        return connection;
+    }
 }

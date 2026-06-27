@@ -46,14 +46,25 @@ internal sealed class BackgroundJobProcessor(
 
         if (jobs.Count == 0) return;
 
-        foreach (var job in jobs)
-            await ExecuteJobAsync(job, ct);
+        // Process the batch with bounded parallelism — each job gets its own scope/connection.
+        await Parallel.ForEachAsync(
+            jobs,
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Math.Max(1, _options.MaxDegreeOfParallelism),
+                CancellationToken      = ct
+            },
+            async (job, token) => await ExecuteJobAsync(job, token));
     }
 
     private async Task ExecuteJobAsync(BackgroundJobRow job, CancellationToken ct)
     {
         await using var scope = serviceProvider.CreateAsyncScope();
         var repository = scope.ServiceProvider.GetRequiredService<IBackgroundJobRepository>();
+
+        // Cap each job's runtime so one hung handler cannot stall the batch.
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(_options.JobTimeoutSeconds));
 
         try
         {
@@ -73,18 +84,28 @@ internal sealed class BackgroundJobProcessor(
                 return;
             }
 
-            await handler.HandleAsync(job.Payload, ct);
+            await handler.HandleAsync(job.Payload, timeoutCts.Token);
             await repository.CompleteAsync(job.JobId, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // App shutdown: leave the job in its current state for re-pickup; don't mark failed.
+            throw;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Job {JobId} ({JobType}) failed on attempt {Attempt}/{Max}.",
-                job.JobId, job.JobType, job.AttemptCount, job.MaxAttempts);
+            var timedOut = timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested;
+            var errorMessage = timedOut
+                ? $"Job timed out after {_options.JobTimeoutSeconds}s."
+                : ex.Message;
+
+            logger.LogError(ex, "Job {JobId} ({JobType}) failed on attempt {Attempt}/{Max}.{TimedOut}",
+                job.JobId, job.JobType, job.AttemptCount, job.MaxAttempts, timedOut ? " (timed out)" : string.Empty);
 
             await repository.FailAsync(new BackgroundJobFailInput
             {
                 JobId        = job.JobId,
-                ErrorMessage = ex.Message,
+                ErrorMessage = errorMessage,
                 AttemptCount = job.AttemptCount,
                 MaxAttempts  = job.MaxAttempts
             }, ct);

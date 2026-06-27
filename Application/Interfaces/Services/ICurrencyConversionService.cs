@@ -75,7 +75,8 @@ public sealed record ConversionResult(
     DateOnly        RateEffectiveDate,
     long?           RateId,
     ExchangeRateSourceType SourceType,
-    bool            IsIdentityConversion  // true when From == To
+    bool            IsIdentityConversion, // true when From == To
+    bool            Succeeded = true      // false when no exchange rate could be resolved
 );
 
 public sealed record RateSnapshot(

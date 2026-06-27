@@ -11,7 +11,7 @@ internal sealed class DbExecutor(ISqlConnectionFactory connectionFactory) : IDbE
         DynamicParameters? parameters = null,
         CancellationToken ct = default)
     {
-        using var connection = connectionFactory.CreateConnection();
+        using var connection = await connectionFactory.CreateConnectionAsync(ct);
 
         return await connection.ExecuteAsync(
             new CommandDefinition(
@@ -26,7 +26,7 @@ internal sealed class DbExecutor(ISqlConnectionFactory connectionFactory) : IDbE
         DynamicParameters? parameters = null,
         CancellationToken ct = default)
     {
-        using var connection = connectionFactory.CreateConnection();
+        using var connection = await connectionFactory.CreateConnectionAsync(ct);
 
         return await connection.ExecuteScalarAsync<T>(
             new CommandDefinition(
@@ -41,7 +41,7 @@ internal sealed class DbExecutor(ISqlConnectionFactory connectionFactory) : IDbE
         DynamicParameters? parameters = null,
         CancellationToken ct = default)
     {
-        using var connection = connectionFactory.CreateConnection();
+        using var connection = await connectionFactory.CreateConnectionAsync(ct);
 
         return await connection.QueryFirstOrDefaultAsync<T>(
             new CommandDefinition(
@@ -56,7 +56,7 @@ internal sealed class DbExecutor(ISqlConnectionFactory connectionFactory) : IDbE
         DynamicParameters? parameters = null,
         CancellationToken ct = default)
     {
-        using var connection = connectionFactory.CreateConnection();
+        using var connection = await connectionFactory.CreateConnectionAsync(ct);
 
         var result = await connection.QueryAsync<T>(
             new CommandDefinition(
@@ -74,7 +74,7 @@ internal sealed class DbExecutor(ISqlConnectionFactory connectionFactory) : IDbE
         DynamicParameters? parameters = null,
         CancellationToken ct = default)
     {
-        using var connection = connectionFactory.CreateConnection();
+        using var connection = await connectionFactory.CreateConnectionAsync(ct);
 
         using var multi = await connection.QueryMultipleAsync(
             new CommandDefinition(

@@ -5,6 +5,7 @@ using Application.Features.Authentication.DTOs;
 using Application.Features.Email.Jobs;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Shared.Constants;
 using Shared.Enums.System;
@@ -25,9 +26,14 @@ internal sealed class AuthService(
     IBackgroundJobService           backgroundJobService,
     INotificationPublisher          notificationPublisher,
     IOptions<AuthenticationOptions> authOptions,
-    IOnboardingService              onboardingService) : IAuthService
+    IOnboardingService              onboardingService,
+    ILogger<AuthService>            logger) : IAuthService
 {
     private const int RefreshTokenExpiryDays = 7;
+
+    // Process-wide constant hash used to equalize password-verify timing on the
+    // "email not found" path, so response time can't be used to enumerate accounts.
+    private static string? _decoyPasswordHash;
 
     public async Task<ServiceResult<RegisterResponse>> RegisterAsync(
         RegisterRequest request, CancellationToken ct = default)
@@ -83,7 +89,14 @@ internal sealed class AuthService(
         }
 
         // 3.5 Initialise onboarding for the new user (non-critical — registration succeeds even on failure)
-        try { await onboardingService.InitializeAsync(dbResult.UserId, ct); } catch { /* silently ignored */ }
+        try
+        {
+            await onboardingService.InitializeAsync(dbResult.UserId, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Onboarding initialisation failed for new user {UserId}; registration continues.", dbResult.UserId);
+        }
 
         // 4. Generate tokens
         var jwtModel = new JwtTokenResponse(
@@ -171,9 +184,14 @@ internal sealed class AuthService(
         // 1. Load user record — NULL means email does not exist
         var user = await authRepository.GetByEmailForLoginAsync(request.Email, ct);
 
-        // Always return generic failure — never reveal whether the email exists (Rule: no enumeration)
+        // Always return generic failure — never reveal whether the email exists (Rule: no enumeration).
+        // Run a decoy verify so the no-such-user path costs the same as a wrong-password path
+        // (otherwise response timing leaks whether the email is registered).
         if (user is null)
         {
+            var decoyHash = _decoyPasswordHash ??= passwordHasher.Hash("decoy-timing-equalizer");
+            passwordHasher.Verify(request.Password, decoyHash);
+
             return ServiceResultFactory.Failure<LoginResponse>(
                 InternalResponseCodes.Unauthorized,
                 await messageProvider.GetMessagesAsync(MessageKeys.Authentication.InvalidCredentials, ct));

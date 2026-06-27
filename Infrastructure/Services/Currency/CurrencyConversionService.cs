@@ -162,10 +162,12 @@ internal sealed class CurrencyConversionService(
             1m, DateOnly.FromDateTime(DateTime.UtcNow), null,
             ExchangeRateSourceType.Manual, IsIdentityConversion: true);
 
+    // No rate available: ConvertedAmount/ExchangeRate are 0 — callers must check Succeeded
+    // and treat the result as a failure rather than a real zero-valued conversion.
     private static ConversionResult FailedResult(decimal amount, string from, string to) =>
         new(amount, from, 0m, to,
             0m, DateOnly.FromDateTime(DateTime.UtcNow), null,
-            ExchangeRateSourceType.Manual, IsIdentityConversion: false);
+            ExchangeRateSourceType.Manual, IsIdentityConversion: false, Succeeded: false);
 
     private static RateSnapshot IdentityRateSnapshot(string currency) =>
         new(currency, currency, 1m, 1m,
