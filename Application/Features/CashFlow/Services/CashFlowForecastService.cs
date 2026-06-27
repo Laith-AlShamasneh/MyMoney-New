@@ -13,6 +13,7 @@ namespace Application.Features.CashFlow.Services;
 
 internal sealed class CashFlowForecastService(
     ICashFlowForecastRepository              cashFlowRepo,
+    IFinancialIntelligenceRepository         filRepo,
     INotificationPublisher                   notificationPublisher,
     IUserContext                             userContext,
     IMessageProvider                         messageProvider,
@@ -96,13 +97,15 @@ internal sealed class CashFlowForecastService(
     // Background processing methods (called by ComputeForecastHandler + scheduler)
     // ═════════════════════════════════════════════════════════════════════════
 
-    public async Task ProcessUserForecastAsync(long userId, CancellationToken ct = default)
+    public async Task ProcessUserForecastAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
-        var inputs = await cashFlowRepo.GetComputationInputsAsync(userId, ct);
+        var inputs = await cashFlowRepo.GetComputationInputsAsync(userId, workspaceId, ct);
 
         if (inputs.MonthlySnapshots.Count == 0)
         {
-            logger.LogInformation("CashFlow: skipping user {UserId} — no historical snapshots", userId);
+            logger.LogInformation(
+                "CashFlow: skipping user {UserId} / workspace {WorkspaceId} — no historical snapshots",
+                userId, workspaceId);
             return;
         }
 
@@ -113,7 +116,7 @@ internal sealed class CashFlowForecastService(
         ForecastRiskDetector.Detect(result, inputs.ActiveRecurringDefs, DateOnly.FromDateTime(DateTime.UtcNow));
 
         // ── Persist ──────────────────────────────────────────────────────────
-        var forecastId = await cashFlowRepo.UpsertForecastAsync(userId, result, horizonMonths, ct);
+        var forecastId = await cashFlowRepo.UpsertForecastAsync(userId, workspaceId, result, horizonMonths, ct);
 
         await Task.WhenAll(
             cashFlowRepo.ReplaceMonthlyPointsAsync(forecastId, userId, result.MonthlyPoints, ct),
@@ -122,12 +125,11 @@ internal sealed class CashFlowForecastService(
 
         // ── Invalidate cache ─────────────────────────────────────────────────
         await Task.WhenAll(
-            // Recompute runs in personal scope (workspace 0) for now.
-            cacheService.RemoveAsync($"{ForecastCacheKeyPrefix}{userId}:0:{horizonMonths}"),
-            cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:0"));
+            cacheService.RemoveAsync($"{ForecastCacheKeyPrefix}{userId}:{workspaceId ?? 0}:{horizonMonths}"),
+            cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:{workspaceId ?? 0}"));
 
         // ── Notify unnotified risks (severity ≥ Medium) ──────────────────────
-        var unnotified = await cashFlowRepo.GetUnnotifiedRisksAsync(userId, minSeverity: 2, ct);
+        var unnotified = await cashFlowRepo.GetUnnotifiedRisksAsync(userId, workspaceId, minSeverity: 2, ct);
         foreach (var risk in unnotified)
         {
             var code = (ForecastRiskType)risk.RiskType switch
@@ -158,18 +160,20 @@ internal sealed class CashFlowForecastService(
 
     public async Task ProcessAllActiveUsersAsync(CancellationToken ct = default)
     {
-        var users = await cashFlowRepo.GetActiveUsersAsync(activeDays: 60, ct);
+        // usp_CashFlow_GetActiveUsers returns users only; forecasts are per-workspace,
+        // so we drive the batch off the active-WORKSPACE list (shared with FIL).
+        var workspaces = await filRepo.GetActiveUsersAsync(activeDays: 60, ct);
 
-        foreach (var user in users)
+        foreach (var ws in workspaces)
         {
             try
             {
-                await ProcessUserForecastAsync(user.UserId, ct);
+                await ProcessUserForecastAsync(ws.OwnerUserId, ws.WorkspaceId, ct);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex,
-                    "CashFlow: forecast computation failed for user {UserId}", user.UserId);
+                    "CashFlow: forecast computation failed for workspace {WorkspaceId}", ws.WorkspaceId);
             }
         }
     }

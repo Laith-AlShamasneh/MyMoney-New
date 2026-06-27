@@ -31,7 +31,7 @@ internal sealed class GenerateReportHandler(
                 DateOnly.Parse(payload.DateFrom),
                 DateOnly.Parse(payload.DateTo));
 
-            var excelBytes = await generator.GenerateAsync(payload.UserId, payload.Language, parameters, ct);
+            var excelBytes = await generator.GenerateAsync(payload.UserId, payload.WorkspaceId, payload.Language, parameters, ct);
 
             var fileKey = storageUtility.BuildFileKey(FolderPaths.Reports, $"{payload.ReportId}.xlsx");
             using var ms = new MemoryStream(excelBytes);

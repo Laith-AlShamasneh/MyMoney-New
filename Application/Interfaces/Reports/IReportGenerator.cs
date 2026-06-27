@@ -6,6 +6,7 @@ public interface IReportGenerator
 
     Task<byte[]> GenerateAsync(
         long              userId,
+        long?             workspaceId,
         string            language,
         ReportParameters  parameters,
         CancellationToken ct = default);

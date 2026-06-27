@@ -8,4 +8,5 @@ public sealed record GenerateReportPayload(
     string DateFrom,
     string DateTo,
     string UserEmail,
-    string UserDisplayName);
+    string UserDisplayName,
+    long?  WorkspaceId = null);

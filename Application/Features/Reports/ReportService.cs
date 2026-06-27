@@ -62,7 +62,8 @@ internal sealed class ReportService(
                 request.DateFrom,
                 request.DateTo,
                 userContext.Email,
-                userContext.DisplayName),
+                userContext.DisplayName,
+                userContext.WorkspaceId),
             priority:    2,
             maxAttempts: 3,
             ct:          ct);

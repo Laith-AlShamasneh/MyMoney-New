@@ -11,10 +11,11 @@ internal sealed class CashFlowForecastRepository(IDbExecutor db) : ICashFlowFore
 {
     // ── Computation inputs ────────────────────────────────────────────────────
 
-    public Task<ForecastComputationInputs> GetComputationInputsAsync(long userId, CancellationToken ct = default)
+    public Task<ForecastComputationInputs> GetComputationInputsAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return db.QueryMultipleAsync(
             "MyMoney.usp_CashFlow_GetComputationInputs",
@@ -42,12 +43,14 @@ internal sealed class CashFlowForecastRepository(IDbExecutor db) : ICashFlowFore
 
     public async Task<long> UpsertForecastAsync(
         long                       userId,
+        long?                      workspaceId,
         ForecastComputationResult  result,
         byte                       horizonMonths,
         CancellationToken          ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",               userId,                        DbType.Int64);
+        p.Add("@WorkspaceId",          workspaceId,                   DbType.Int64);
         p.Add("@HorizonMonths",        horizonMonths,                 DbType.Byte);
         p.Add("@MonthsOfHistoryUsed",  (byte)result.MonthsOfHistoryUsed, DbType.Byte);
         p.Add("@CurrentBalanceEst",    result.CurrentBalanceEst,      DbType.Decimal);
@@ -210,10 +213,11 @@ internal sealed class CashFlowForecastRepository(IDbExecutor db) : ICashFlowFore
     // ── Risk notifications ────────────────────────────────────────────────────
 
     public Task<IReadOnlyList<UnnotifiedRiskDbResult>> GetUnnotifiedRisksAsync(
-        long userId, byte minSeverity, CancellationToken ct = default)
+        long userId, long? workspaceId, byte minSeverity, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@MinSeverity", minSeverity, DbType.Byte);
         return db.QueryListAsync<UnnotifiedRiskDbResult>(
             "MyMoney.usp_CashFlow_GetUnnotifiedRisks", p, ct);

@@ -12,5 +12,5 @@ public interface IFILBackgroundProcessingService
     Task ProcessHourlyAnomalyAsync(DateTime fromUtc, CancellationToken ct = default);
 
     // Targeted recomputation triggered by transaction mutations.
-    Task ProcessUserSnapshotAsync(long userId, int year, int month, CancellationToken ct = default);
+    Task ProcessUserSnapshotAsync(long userId, long? workspaceId, int year, int month, CancellationToken ct = default);
 }

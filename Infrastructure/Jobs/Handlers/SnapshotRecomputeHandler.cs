@@ -11,5 +11,5 @@ internal sealed class SnapshotRecomputeHandler(
     public override string JobType => JobTypes.SnapshotRecompute;
 
     protected override Task HandleAsync(SnapshotRecomputePayload payload, CancellationToken ct) =>
-        filService.ProcessUserSnapshotAsync(payload.UserId, payload.Year, payload.Month, ct);
+        filService.ProcessUserSnapshotAsync(payload.UserId, payload.WorkspaceId, payload.Year, payload.Month, ct);
 }

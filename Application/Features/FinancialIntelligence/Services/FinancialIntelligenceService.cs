@@ -207,19 +207,19 @@ internal sealed class FinancialIntelligenceService(
 
     public async Task ProcessDailyAsync(int year, int month, int day, CancellationToken ct = default)
     {
-        var activeUsers = await filRepository.GetActiveUsersAsync(activeDays: 30, ct);
+        var activeWorkspaces = await filRepository.GetActiveUsersAsync(activeDays: 30, ct);
 
-        foreach (var user in activeUsers)
+        foreach (var ws in activeWorkspaces)
         {
             try
             {
-                await ProcessUserDailyAsync(user.UserId, year, month, ct);
+                await ProcessWorkspaceDailyAsync(ws.WorkspaceId, ws.OwnerUserId, year, month, ct);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex,
-                    "FIL daily processing failed for user {UserId} — {Year}-{Month:D2}",
-                    user.UserId, year, month);
+                    "FIL daily processing failed for workspace {WorkspaceId} — {Year}-{Month:D2}",
+                    ws.WorkspaceId, year, month);
             }
         }
 
@@ -229,19 +229,19 @@ internal sealed class FinancialIntelligenceService(
 
     public async Task ProcessMonthlyAsync(int year, int month, CancellationToken ct = default)
     {
-        var activeUsers = await filRepository.GetActiveUsersAsync(activeDays: 90, ct);
+        var activeWorkspaces = await filRepository.GetActiveUsersAsync(activeDays: 90, ct);
 
-        foreach (var user in activeUsers)
+        foreach (var ws in activeWorkspaces)
         {
             try
             {
-                await ProcessUserMonthlyAsync(user.UserId, year, month, ct);
+                await ProcessWorkspaceMonthlyAsync(ws.WorkspaceId, ws.OwnerUserId, year, month, ct);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex,
-                    "FIL monthly processing failed for user {UserId} — {Year}-{Month:D2}",
-                    user.UserId, year, month);
+                    "FIL monthly processing failed for workspace {WorkspaceId} — {Year}-{Month:D2}",
+                    ws.WorkspaceId, year, month);
             }
         }
     }
@@ -249,8 +249,8 @@ internal sealed class FinancialIntelligenceService(
     public Task ProcessHourlyAnomalyAsync(DateTime fromUtc, CancellationToken ct = default) =>
         ProcessAnomalyWindowAsync(fromUtc, ct);
 
-    public Task ProcessUserSnapshotAsync(long userId, int year, int month, CancellationToken ct = default) =>
-        ProcessUserDailyAsync(userId, year, month, ct);
+    public Task ProcessUserSnapshotAsync(long userId, long? workspaceId, int year, int month, CancellationToken ct = default) =>
+        ProcessWorkspaceDailyAsync(workspaceId, userId, year, month, ct);
 
     private async Task ProcessAnomalyWindowAsync(DateTime fromUtc, CancellationToken ct)
     {
@@ -258,20 +258,21 @@ internal sealed class FinancialIntelligenceService(
 
         foreach (var tx in largeTx)
         {
-            // One UnusualTransaction insight per user per month — categoryId is not part of the key.
+            // One UnusualTransaction insight per workspace per month — categoryId is not part of the key.
             var alreadyExists = await filRepository.InsightExistsForMonthAsync(
-                tx.UserId, InsightCodes.UnusualTransaction,
+                tx.UserId, tx.WorkspaceId, InsightCodes.UnusualTransaction,
                 fromUtc.Year, fromUtc.Month, categoryId: null, ct);
 
             if (alreadyExists) continue;
 
-            var multiple = tx.UserAverage > 0
-                ? Math.Round(tx.Amount / tx.UserAverage, 1)
+            var multiple = tx.WsAverage > 0
+                ? Math.Round(tx.Amount / tx.WsAverage, 1)
                 : 0;
 
             var dbModel = new CreateInsightDbModel
             {
                 UserId        = tx.UserId,
+                WorkspaceId   = tx.WorkspaceId,
                 Type          = (byte)InsightType.Warning,
                 Code          = InsightCodes.UnusualTransaction,
                 Severity      = (byte)InsightSeverity.High,
@@ -283,7 +284,7 @@ internal sealed class FinancialIntelligenceService(
                 {
                     transactionId = tx.TransactionId,
                     amount        = tx.Amount,
-                    userAverage   = tx.UserAverage,
+                    wsAverage     = tx.WsAverage,
                     multiple
                 }),
                 ExpiresAtUtc = DateTime.UtcNow.AddDays(7)
@@ -307,8 +308,7 @@ internal sealed class FinancialIntelligenceService(
                     payload: new { code = NotificationCodes.FILUnusualTransaction },
                     ct: ct);
 
-                // Anomaly compute runs in personal scope (workspace 0) for now.
-                await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{tx.UserId}:0");
+                await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{tx.UserId}:{tx.WorkspaceId}");
             }
         }
     }
@@ -317,17 +317,18 @@ internal sealed class FinancialIntelligenceService(
     // Private helpers — per-user processing
     // ═════════════════════════════════════════════════════════════════════════
 
-    private async Task ProcessUserDailyAsync(long userId, int year, int month, CancellationToken ct)
+    private async Task ProcessWorkspaceDailyAsync(long? workspaceId, long userId, int year, int month, CancellationToken ct)
     {
-        // Compute & upsert the current month's running snapshot.
+        // Compute & upsert the current month's running snapshot for the workspace.
         var computed = await filRepository.ComputeMonthlySnapshotAsync(
-            new ComputeSnapshotDbModel { UserId = userId, Year = year, Month = month }, ct);
+            new ComputeSnapshotDbModel { UserId = userId, WorkspaceId = workspaceId, Year = year, Month = month }, ct);
 
         if (computed is null || computed.TransactionCount == 0) return;
 
         await filRepository.UpsertSnapshotAsync(new UpsertSnapshotDbModel
         {
             UserId                  = userId,
+            WorkspaceId             = workspaceId,
             SnapshotDate            = new DateOnly(year, month, 1),
             PeriodType              = (byte)SnapshotPeriodType.Monthly,
             TotalIncome             = computed.TotalIncome,
@@ -339,33 +340,32 @@ internal sealed class FinancialIntelligenceService(
             TopCategoryId           = computed.TopCategoryId
         }, ct);
 
-        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:{userContext.WorkspaceId ?? 0}");
+        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:{workspaceId ?? 0}");
     }
 
-    private async Task ProcessUserMonthlyAsync(long userId, int year, int month, CancellationToken ct)
+    private async Task ProcessWorkspaceMonthlyAsync(long? workspaceId, long userId, int year, int month, CancellationToken ct)
     {
         // 1. Compute and upsert snapshot for the previous (completed) month.
-        await ProcessUserDailyAsync(userId, year, month, ct);
+        await ProcessWorkspaceDailyAsync(workspaceId, userId, year, month, ct);
 
         // 2. Compute and upsert category analytics.
         var categoryRows = await filRepository.ComputeCategoryAnalyticsAsync(
-            new ComputeCategoryAnalyticsDbModel { UserId = userId, Year = year, Month = month }, ct);
+            new ComputeCategoryAnalyticsDbModel { UserId = userId, WorkspaceId = workspaceId, Year = year, Month = month }, ct);
 
         if (categoryRows.Count > 0)
-            await filRepository.UpsertCategoryAnalyticsAsync(userId, categoryRows, ct);
+            await filRepository.UpsertCategoryAnalyticsAsync(userId, workspaceId, categoryRows, ct);
 
         // 3. Build rules context — load 3 prior months of category data in parallel
         //    so EvaluateOverspendingAlert has a genuine rolling 3-month baseline.
-        // Compute path still runs per-user (personal scope) until scheduler workspace-iteration lands.
-        var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, null, months: 3, ct);
+        var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, workspaceId, months: 3, ct);
 
         var (pm1, py1) = PriorMonth(year,  month,  1);
         var (pm2, py2) = PriorMonth(py1,   pm1,    1);
         var (pm3, py3) = PriorMonth(py2,   pm2,    1);
 
-        var prevCatsTask  = filRepository.GetCategoryAnalyticsAsync(userId, null, py1, pm1, ct);
-        var prevCats2Task = filRepository.GetCategoryAnalyticsAsync(userId, null, py2, pm2, ct);
-        var prevCats3Task = filRepository.GetCategoryAnalyticsAsync(userId, null, py3, pm3, ct);
+        var prevCatsTask  = filRepository.GetCategoryAnalyticsAsync(userId, workspaceId, py1, pm1, ct);
+        var prevCats2Task = filRepository.GetCategoryAnalyticsAsync(userId, workspaceId, py2, pm2, ct);
+        var prevCats3Task = filRepository.GetCategoryAnalyticsAsync(userId, workspaceId, py3, pm3, ct);
 
         await Task.WhenAll(recentSnapshotsTask, prevCatsTask, prevCats2Task, prevCats3Task);
 
@@ -383,12 +383,13 @@ internal sealed class FinancialIntelligenceService(
         foreach (var candidate in insightCandidates)
         {
             var exists = await filRepository.InsightExistsForMonthAsync(
-                userId, candidate.Code, year, month, candidate.RelatedCategoryId, ct);
+                userId, workspaceId, candidate.Code, year, month, candidate.RelatedCategoryId, ct);
             if (exists) continue;
 
             var dbModel = new CreateInsightDbModel
             {
                 UserId            = userId,
+                WorkspaceId       = workspaceId,
                 Type              = candidate.Type,
                 Code              = candidate.Code,
                 TitleEn           = candidate.TitleEn,
@@ -419,12 +420,13 @@ internal sealed class FinancialIntelligenceService(
         var recoCandidates = rulesEngine.EvaluateRecommendations(context);
         foreach (var candidate in recoCandidates)
         {
-            var exists = await filRepository.RecommendationExistsForMonthAsync(userId, candidate.Code, year, month, ct);
+            var exists = await filRepository.RecommendationExistsForMonthAsync(userId, workspaceId, candidate.Code, year, month, ct);
             if (exists) continue;
 
             await filRepository.CreateRecommendationAsync(new CreateRecommendationDbModel
             {
                 UserId              = userId,
+                WorkspaceId         = workspaceId,
                 Type                = candidate.Type,
                 Code                = candidate.Code,
                 TitleEn             = candidate.TitleEn,
@@ -438,7 +440,7 @@ internal sealed class FinancialIntelligenceService(
             }, ct);
         }
 
-        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:{userContext.WorkspaceId ?? 0}");
+        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:{workspaceId ?? 0}");
     }
 
     // ═════════════════════════════════════════════════════════════════════════

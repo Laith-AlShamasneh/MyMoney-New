@@ -13,11 +13,12 @@ internal sealed class CategoryAnalysisReportGenerator(IDbExecutor db) : IReportG
 
     public async Task<byte[]> GenerateAsync(
         long              userId,
+        long?             workspaceId,
         string            language,
         ReportParameters  parameters,
         CancellationToken ct = default)
     {
-        var (rows, summary) = await FetchDataAsync(userId, parameters, ct);
+        var (rows, summary) = await FetchDataAsync(userId, workspaceId, parameters, ct);
 
         using var wb = new XLWorkbook();
         BuildDetailSheet(wb, language, parameters, rows);
@@ -28,10 +29,11 @@ internal sealed class CategoryAnalysisReportGenerator(IDbExecutor db) : IReportG
     }
 
     private async Task<(IReadOnlyList<CategoryAnalysisRow>, CategoryAnalysisSummary)>
-        FetchDataAsync(long userId, ReportParameters p, CancellationToken ct)
+        FetchDataAsync(long userId, long? workspaceId, ReportParameters p, CancellationToken ct)
     {
         var dp = new DynamicParameters();
-        dp.Add("@UserId",   userId,    DbType.Int64);
+        dp.Add("@UserId",      userId,      DbType.Int64);
+        dp.Add("@WorkspaceId", workspaceId, DbType.Int64);
         dp.Add("@DateFrom", p.DateFrom, DbType.Date);
         dp.Add("@DateTo",   p.DateTo,   DbType.Date);
 

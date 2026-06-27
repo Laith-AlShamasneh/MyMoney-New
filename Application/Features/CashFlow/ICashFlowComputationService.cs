@@ -5,6 +5,6 @@ namespace Application.Features.CashFlow;
 /// </summary>
 public interface ICashFlowComputationService
 {
-    Task ProcessUserForecastAsync(long userId, CancellationToken ct = default);
+    Task ProcessUserForecastAsync(long userId, long? workspaceId, CancellationToken ct = default);
     Task ProcessAllActiveUsersAsync(CancellationToken ct = default);
 }

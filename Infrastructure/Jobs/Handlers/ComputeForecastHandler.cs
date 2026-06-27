@@ -11,5 +11,5 @@ internal sealed class ComputeForecastHandler(
     public override string JobType => JobTypes.ComputeCashFlowForecast;
 
     protected override Task HandleAsync(ComputeForecastPayload payload, CancellationToken ct) =>
-        cashFlowService.ProcessUserForecastAsync(payload.UserId, ct);
+        cashFlowService.ProcessUserForecastAsync(payload.UserId, payload.WorkspaceId, ct);
 }

@@ -12,7 +12,7 @@ public interface IFinancialIntelligenceRepository
 
     // ── Category Analytics ────────────────────────────────────────────────────
     Task<IReadOnlyList<CategoryAnalyticsDbResult>> ComputeCategoryAnalyticsAsync(ComputeCategoryAnalyticsDbModel model, CancellationToken ct = default);
-    Task                                           UpsertCategoryAnalyticsAsync(long userId, IReadOnlyList<CategoryAnalyticsDbResult> rows, CancellationToken ct = default);
+    Task                                           UpsertCategoryAnalyticsAsync(long userId, long? workspaceId, IReadOnlyList<CategoryAnalyticsDbResult> rows, CancellationToken ct = default);
     Task<IReadOnlyList<CategoryAnalyticsDbResult>> GetCategoryAnalyticsAsync(long userId, long? workspaceId, int year, int month, CancellationToken ct = default);
 
     // ── Insights ──────────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ public interface IFinancialIntelligenceRepository
     Task<GetInsightsDbResult>                     GetInsightsAsync(GetInsightsDbModel model, CancellationToken ct = default);
     Task<int>                                     MarkInsightReadAsync(long userId, long? workspaceId, long insightId, CancellationToken ct = default);
     Task<int>                                     MarkAllInsightsReadAsync(long userId, long? workspaceId, CancellationToken ct = default);
-    Task<bool>                                    InsightExistsForMonthAsync(long userId, string code, int year, int month, int? categoryId, CancellationToken ct = default);
+    Task<bool>                                    InsightExistsForMonthAsync(long userId, long? workspaceId, string code, int year, int month, int? categoryId, CancellationToken ct = default);
     Task                                          CleanupExpiredInsightsAsync(CancellationToken ct = default);
 
     // ── Spending Patterns ─────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ public interface IFinancialIntelligenceRepository
     Task<GetRecommendationsDbResult>              GetRecommendationsAsync(GetRecommendationsDbModel model, CancellationToken ct = default);
     Task<int>                                     MarkRecommendationAppliedAsync(long userId, long? workspaceId, long recommendationId, CancellationToken ct = default);
     Task<int>                                     DismissRecommendationAsync(long userId, long? workspaceId, long recommendationId, CancellationToken ct = default);
-    Task<bool>                                    RecommendationExistsForMonthAsync(long userId, string code, int year, int month, CancellationToken ct = default);
+    Task<bool>                                    RecommendationExistsForMonthAsync(long userId, long? workspaceId, string code, int year, int month, CancellationToken ct = default);
     Task                                          CleanupExpiredRecommendationsAsync(CancellationToken ct = default);
 
     // ── Large-transaction detection ───────────────────────────────────────────

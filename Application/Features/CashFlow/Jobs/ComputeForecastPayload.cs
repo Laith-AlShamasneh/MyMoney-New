@@ -1,3 +1,3 @@
 namespace Application.Features.CashFlow.Jobs;
 
-public record ComputeForecastPayload(long UserId);
+public record ComputeForecastPayload(long UserId, long? WorkspaceId = null);

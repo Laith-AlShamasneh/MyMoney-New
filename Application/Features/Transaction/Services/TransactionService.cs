@@ -213,7 +213,7 @@ internal sealed class TransactionService(
         if (oldDate.Year != newDate.Year || oldDate.Month != newDate.Month)
             await backgroundJobService.EnqueueAsync(
                 JobTypes.SnapshotRecompute,
-                new SnapshotRecomputePayload(userId, oldDate.Year, oldDate.Month),
+                new SnapshotRecomputePayload(userId, oldDate.Year, oldDate.Month, userContext.WorkspaceId),
                 priority: 3, ct: ct);
 
         var message = await messageProvider.GetMessagesAsync(MessageKeys.Transaction.Updated, ct);
@@ -259,7 +259,7 @@ internal sealed class TransactionService(
         await cacheService.RemoveAsync($"fil:dashboard:{userId}:{userContext.WorkspaceId ?? 0}");
         await backgroundJobService.EnqueueAsync(
             JobTypes.SnapshotRecompute,
-            new SnapshotRecomputePayload(userId, year, month),
+            new SnapshotRecomputePayload(userId, year, month, userContext.WorkspaceId),
             priority: 3,
             ct: ct);
 
@@ -267,7 +267,7 @@ internal sealed class TransactionService(
         await cacheService.RemoveAsync($"cashflow:dashboard:{userId}:{userContext.WorkspaceId ?? 0}");
         await backgroundJobService.EnqueueAsync(
             JobTypes.ComputeCashFlowForecast,
-            new ComputeForecastPayload(userId),
+            new ComputeForecastPayload(userId, userContext.WorkspaceId),
             priority: 3,
             ct: ct);
     }

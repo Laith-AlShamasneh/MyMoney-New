@@ -5,10 +5,10 @@ namespace Application.Interfaces.Repositories;
 public interface ICashFlowForecastRepository
 {
     // ── Computation inputs ────────────────────────────────────────────────────
-    Task<ForecastComputationInputs> GetComputationInputsAsync(long userId, CancellationToken ct = default);
+    Task<ForecastComputationInputs> GetComputationInputsAsync(long userId, long? workspaceId, CancellationToken ct = default);
 
     // ── Upsert ────────────────────────────────────────────────────────────────
-    Task<long> UpsertForecastAsync(long userId, ForecastComputationResult result, byte horizonMonths, CancellationToken ct = default);
+    Task<long> UpsertForecastAsync(long userId, long? workspaceId, ForecastComputationResult result, byte horizonMonths, CancellationToken ct = default);
 
     // ── Child table replace ───────────────────────────────────────────────────
     Task ReplaceMonthlyPointsAsync(long forecastId, long userId, IReadOnlyList<ForecastMonthlyPointData> points, CancellationToken ct = default);
@@ -20,7 +20,7 @@ public interface ICashFlowForecastRepository
     Task<ForecastDashboardDbResult?>    GetDashboardAsync(long userId, long? workspaceId, CancellationToken ct = default);
 
     // ── Risk notifications ────────────────────────────────────────────────────
-    Task<IReadOnlyList<UnnotifiedRiskDbResult>> GetUnnotifiedRisksAsync(long userId, byte minSeverity, CancellationToken ct = default);
+    Task<IReadOnlyList<UnnotifiedRiskDbResult>> GetUnnotifiedRisksAsync(long userId, long? workspaceId, byte minSeverity, CancellationToken ct = default);
     Task MarkRiskNotifiedAsync(long riskId, CancellationToken ct = default);
 
     // ── Scheduler ─────────────────────────────────────────────────────────────

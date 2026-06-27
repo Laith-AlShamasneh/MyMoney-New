@@ -5,6 +5,7 @@ namespace Application.Features.FinancialIntelligence.DbModels;
 public class UpsertSnapshotDbModel
 {
     public long     UserId                  { get; set; }
+    public long?    WorkspaceId             { get; set; }
     public DateOnly SnapshotDate            { get; set; }
     public byte     PeriodType              { get; set; }  // SnapshotPeriodType
     public decimal  TotalIncome             { get; set; }
@@ -33,9 +34,10 @@ public class SnapshotDbResult
 
 public class ComputeSnapshotDbModel
 {
-    public long UserId { get; set; }
-    public int  Year   { get; set; }
-    public int  Month  { get; set; }
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
+    public int   Year        { get; set; }
+    public int   Month       { get; set; }
 }
 
 public class ComputedSnapshotDbResult
@@ -70,9 +72,10 @@ public class CategoryAnalyticsDbResult
 
 public class ComputeCategoryAnalyticsDbModel
 {
-    public long UserId { get; set; }
-    public int  Year   { get; set; }
-    public int  Month  { get; set; }
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
+    public int   Year        { get; set; }
+    public int   Month       { get; set; }
 }
 
 // ── Insights ──────────────────────────────────────────────────────────────────
@@ -80,6 +83,7 @@ public class ComputeCategoryAnalyticsDbModel
 public class CreateInsightDbModel
 {
     public long    UserId           { get; set; }
+    public long?   WorkspaceId      { get; set; }
     public byte    Type             { get; set; }    // InsightType enum
     public string  Code             { get; set; } = null!;
     public string  TitleEn          { get; set; } = null!;
@@ -130,6 +134,7 @@ public class GetInsightsDbResult
 public class CreatePatternDbModel
 {
     public long    UserId          { get; set; }
+    public long?   WorkspaceId     { get; set; }
     public byte    PatternType     { get; set; }    // PatternType enum
     public string  Code            { get; set; } = null!;
     public string  DescriptionEn   { get; set; } = null!;
@@ -155,6 +160,7 @@ public class PatternDbResult
 public class CreateRecommendationDbModel
 {
     public long     UserId               { get; set; }
+    public long?    WorkspaceId          { get; set; }
     public byte     Type                 { get; set; }    // RecommendationType enum
     public string   Code                 { get; set; } = null!;
     public string   TitleEn              { get; set; } = null!;
@@ -202,17 +208,19 @@ public class GetRecommendationsDbResult
 
 public class LargeTransactionDbResult
 {
+    public long    WorkspaceId   { get; set; }
     public long    UserId        { get; set; }
     public long    TransactionId { get; set; }
     public decimal Amount        { get; set; }
-    public decimal UserAverage   { get; set; }
+    public decimal WsAverage     { get; set; }
     public string  CategoryNameEn { get; set; } = null!;
     public string  CategoryNameAr { get; set; } = null!;
 }
 
-// ── Users for processing ──────────────────────────────────────────────────────
+// ── Workspaces for processing ─────────────────────────────────────────────────
 
 public class ActiveUserDbResult
 {
-    public long UserId { get; set; }
+    public long WorkspaceId { get; set; }
+    public long OwnerUserId { get; set; }
 }

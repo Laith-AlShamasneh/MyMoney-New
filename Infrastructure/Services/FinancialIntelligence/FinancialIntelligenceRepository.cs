@@ -16,7 +16,8 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
         CancellationToken      ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", model.UserId, DbType.Int64);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@Year",   model.Year,   DbType.Int32);
         p.Add("@Month",  model.Month,  DbType.Int32);
         return await db.QuerySingleAsync<ComputedSnapshotDbResult?>(
@@ -27,6 +28,7 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     {
         var p = new DynamicParameters();
         p.Add("@UserId",                  model.UserId,                  DbType.Int64);
+        p.Add("@WorkspaceId",             model.WorkspaceId,             DbType.Int64);
         p.Add("@SnapshotDate",            model.SnapshotDate,            DbType.Date);
         p.Add("@PeriodType",              model.PeriodType,              DbType.Byte);
         p.Add("@TotalIncome",             model.TotalIncome,             DbType.Decimal);
@@ -66,7 +68,8 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
         CancellationToken               ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", model.UserId, DbType.Int64);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@Year",   model.Year,   DbType.Int32);
         p.Add("@Month",  model.Month,  DbType.Int32);
         return await db.QueryListAsync<CategoryAnalyticsDbResult>(
@@ -75,6 +78,7 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
 
     public async Task UpsertCategoryAnalyticsAsync(
         long                                     userId,
+        long?                                    workspaceId,
         IReadOnlyList<CategoryAnalyticsDbResult> rows,
         CancellationToken                        ct = default)
     {
@@ -96,7 +100,8 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
             }));
 
         var p = new DynamicParameters();
-        p.Add("@UserId",           userId, DbType.Int64);
+        p.Add("@UserId",           userId,      DbType.Int64);
+        p.Add("@WorkspaceId",      workspaceId, DbType.Int64);
         p.Add("@CategoryDataJson", json,   DbType.String);
         await db.ExecuteAsync("MyMoney.usp_FIL_CategoryAnalytics_BulkUpsert", p, ct);
     }
@@ -119,6 +124,7 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     {
         var p = new DynamicParameters();
         p.Add("@UserId",            model.UserId,            DbType.Int64);
+        p.Add("@WorkspaceId",       model.WorkspaceId,       DbType.Int64);
         p.Add("@Type",              model.Type,              DbType.Byte);
         p.Add("@Code",              model.Code,              DbType.String);
         p.Add("@TitleEn",           model.TitleEn,           DbType.String);
@@ -182,10 +188,11 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     }
 
     public async Task<bool> InsightExistsForMonthAsync(
-        long userId, string code, int year, int month, int? categoryId, CancellationToken ct = default)
+        long userId, long? workspaceId, string code, int year, int month, int? categoryId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",     userId,     DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@Code",       code,       DbType.String);
         p.Add("@Year",       year,       DbType.Int32);
         p.Add("@Month",      month,      DbType.Int32);
@@ -205,6 +212,7 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     {
         var p = new DynamicParameters();
         p.Add("@UserId",          model.UserId,          DbType.Int64);
+        p.Add("@WorkspaceId",     model.WorkspaceId,     DbType.Int64);
         p.Add("@PatternType",     model.PatternType,     DbType.Byte);
         p.Add("@Code",            model.Code,            DbType.String);
         p.Add("@DescriptionEn",   model.DescriptionEn,   DbType.String);
@@ -231,6 +239,7 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     {
         var p = new DynamicParameters();
         p.Add("@UserId",              model.UserId,              DbType.Int64);
+        p.Add("@WorkspaceId",         model.WorkspaceId,         DbType.Int64);
         p.Add("@Type",                model.Type,                DbType.Byte);
         p.Add("@Code",                model.Code,                DbType.String);
         p.Add("@TitleEn",             model.TitleEn,             DbType.String);
@@ -297,10 +306,11 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     }
 
     public async Task<bool> RecommendationExistsForMonthAsync(
-        long userId, string code, int year, int month, CancellationToken ct = default)
+        long userId, long? workspaceId, string code, int year, int month, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@Code",   code,   DbType.String);
         p.Add("@Year",   year,   DbType.Int32);
         p.Add("@Month",  month,  DbType.Int32);
