@@ -4,6 +4,27 @@ This document is the architectural constitution for the MyMoney API. It records 
 
 ---
 
+## 0. Remediation Addendum — 2026-06-28
+
+The enterprise audit (`ENTERPRISE_BACKEND_AUDIT.md`) drove a set of changes that supersede or extend the decisions below. Where this addendum conflicts with a later section, the addendum wins.
+
+- **Secrets management.** Secrets (JWT signing key, SMTP credentials, production connection strings) **must not** live in `appsettings.json`. They come from .NET user-secrets in development and environment variables (`Jwt__SecretKey`, `Smtp__Password`, `ConnectionStrings__SqlConnection`, …) in production. Startup fails fast if the JWT key is missing or < 32 bytes. (New Rule 21.)
+- **Access-token lifetime.** Configured as `Jwt:ExpiryMinutes` (default **15**), not hours. The refresh-token rotation flow provides continuity. True access-token revocation (a `SecurityStamp`/token-version claim) is a pending DB-coordinated item (audit H8).
+- **Workspace multi-tenancy.** Every workspace-scoped stored procedure takes `@WorkspaceId BIGINT = NULL` immediately after `@UserId` (or after a leading `@Id`); NULL resolves to the caller's personal workspace (back-compat). The active workspace is resolved per request from `UserWorkspacePreferences.CurrentWorkspaceId` via `IUserContext.WorkspaceId` and threaded through every scoped repository call. Reads/writes scope by `WorkspaceId`, not `UserId`. Authorization is enforced inside the SPs via `fn_CanAccessWorkspace`. Background analytics (FIL, Cash Flow) and report generation iterate **workspaces**, not users.
+- **Rate limiting.** A global per-IP limiter plus a strict `"auth"` policy (applied to credential/token endpoints). `app.UseRateLimiter()` is in the pipeline.
+- **Health checks.** `/health/live` (liveness) and `/health/ready` (DB connectivity via `ISqlConnectionFactory`), both anonymous and rate-limit-exempt.
+- **API docs.** Swagger/OpenAPI (Swashbuckle) is mapped in Development only; gate it behind authorization before exposing it elsewhere.
+- **Response hardening.** HSTS in non-Development plus baseline security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`).
+- **Options validation.** `Jwt`, `Smtp`, and `Authentication` options use `AddOptions<T>().Bind().Validate(...).ValidateOnStart()` — misconfiguration aborts startup.
+- **Async data access.** `ISqlConnectionFactory.CreateConnectionAsync` (`OpenAsync`) is the default path used by `DbExecutor`.
+- **File storage.** Receipts and reports are **not** served by static-file middleware. They are reached only through authenticated endpoints or short-lived signed file links (`/api/files/...`). Only public assets (profile pictures, category icons) remain under `wwwroot/uploads` static serving.
+- **Background jobs.** A batch is processed with bounded parallelism and a per-job timeout. Timer-based schedulers are gated behind `BackgroundJobs:RunSchedulers` (run on exactly one instance under horizontal scale); the queue processor stays on every instance.
+- **Correlation + request logging.** `CorrelationIdMiddleware` runs first (echoes `X-Correlation-Id`, enriches logs). `RequestLoggingMiddleware` runs **after** authentication (so `UserId` is the authenticated caller) and only captures request bodies outside Production (no financial PII in the log store).
+- **Domain layer.** Confirmed: Domain contains the exception hierarchy **only** — the previously-unused entity classes were removed.
+- **Password hashing.** BCrypt enhanced, work factor **12**.
+
+---
+
 ## Table of Contents
 
 1. [Project Structure](#1-project-structure)
@@ -476,3 +497,6 @@ Serilog is configured from `appsettings.json` with a Console sink and an MSSqlSe
 | **18** | **File system access uses `IFileService` exclusively.** `System.IO.File` must not be used directly in Application services. |
 | **19** | **Passwords are hashed with BCrypt via `IPasswordHasher`.** Tokens are hashed with SHA-256 via `ITokenHasher`. Never use MD5 or SHA-1. |
 | **20** | **Stored procedure names follow `MyMoney.usp_{Feature}_{Action}` exactly.** No deviations in casing or schema prefix. |
+| **21** | **Secrets never live in `appsettings.json`.** JWT key, SMTP credentials, and production connection strings come from user-secrets (dev) or environment variables (prod). Startup fails fast if the JWT key is absent or < 32 bytes. |
+| **22** | **Workspace-scoped SPs take `@WorkspaceId BIGINT = NULL` after `@UserId`.** Resolve the active workspace from `IUserContext.WorkspaceId` and pass it on every scoped call; scope rows by `WorkspaceId`, never `UserId`. |
+| **23** | **Sensitive uploaded files (receipts, reports) are never served by static-file middleware.** Reach them only via authenticated endpoints or signed file links. |

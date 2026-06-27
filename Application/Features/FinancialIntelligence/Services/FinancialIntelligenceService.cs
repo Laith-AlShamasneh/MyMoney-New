@@ -179,19 +179,23 @@ internal sealed class FinancialIntelligenceService(
         var patternsTask        = filRepository.GetPatternsAsync(userId, workspaceId, ct);
         var recommendTask       = filRepository.GetRecommendationsAsync(new GetRecommendationsDbModel { UserId = userId, WorkspaceId = workspaceId, PageNumber = 1, PageSize = 5 }, ct);
 
-        await Task.WhenAll(snapshotTask, recentSnapshotsTask, insightsTask, patternsTask, recommendTask);
+        // The five reads are already in flight; await each (no blocking .Result).
+        var snapshot        = await snapshotTask;
+        var recentSnapshots = await recentSnapshotsTask;
+        var insights        = await insightsTask;
+        var patterns        = await patternsTask;
+        var recommendations = await recommendTask;
 
-        var snapshot    = snapshotTask.Result;
         var latestMonth = snapshot is not null
             ? await filRepository.GetCategoryAnalyticsAsync(userId, workspaceId, snapshot.SnapshotDate.Year, snapshot.SnapshotDate.Month, ct)
             : [];
 
         var response = new FILDashboardResponse(
             LatestSnapshot:  snapshot is not null ? MapSnapshot(snapshot) : null,
-            HealthScore:     ComputeHealthScore(snapshot, recentSnapshotsTask.Result),
-            TopInsights:     insightsTask.Result.Items.Select(r => MapInsight(r, isArabic)).ToList(),
-            Patterns:        patternsTask.Result.Select(p => MapPattern(p, isArabic)).ToList(),
-            Recommendations: recommendTask.Result.Items.Select(r => MapRecommendation(r, isArabic)).ToList(),
+            HealthScore:     ComputeHealthScore(snapshot, recentSnapshots),
+            TopInsights:     insights.Items.Select(r => MapInsight(r, isArabic)).ToList(),
+            Patterns:        patterns.Select(p => MapPattern(p, isArabic)).ToList(),
+            Recommendations: recommendations.Items.Select(r => MapRecommendation(r, isArabic)).ToList(),
             CategoryTrends:  latestMonth.Select(c => MapCategoryAnalytics(c, isArabic)).ToList()
         );
 

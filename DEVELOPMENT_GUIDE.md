@@ -2,6 +2,13 @@
 
 This document is the authoritative source of truth for all development on this codebase. Every new feature, endpoint, service, and repository **must** follow the patterns established here. When in doubt, refer to the nearest existing feature for guidance.
 
+> **Remediation addendum (2026-06-28).** The enterprise audit added cross-cutting patterns that every new feature must respect. See `ARCHITECTURE_DECISIONS.md` §0 for the full list. The ones that change day-to-day implementation:
+> - **Workspace scoping.** Workspace-scoped repository calls pass `@WorkspaceId` (from `IUserContext.WorkspaceId`) right after `@UserId`; the SP treats `NULL` as the caller's personal workspace. Scope by workspace, not user. Background analytics/report jobs iterate workspaces.
+> - **Secrets** come from user-secrets/env, never `appsettings.json` (the JWT key is validated at startup).
+> - **Data access** uses `IDbExecutor` over `ISqlConnectionFactory.CreateConnectionAsync` (async open).
+> - **Pipeline** (in order): `CorrelationIdMiddleware` → security headers → rate limiter → auth → `RequestLoggingMiddleware` (after auth; bodies logged in Development only). Health (`/health/live`, `/health/ready`) and Swagger (Development) are mapped.
+> - **Sensitive files** (receipts, reports) are served only through authenticated endpoints or signed links — never static-file middleware.
+
 ---
 
 ## Table of Contents
@@ -1220,4 +1227,4 @@ public async Task<ServiceResult<AuthTokenResponse>> RefreshTokenAsync(
 
 ---
 
-*Last updated: 2026-06-12. Update this document whenever a new pattern is introduced or an existing pattern changes.*
+*Last updated: 2026-06-28. Update this document whenever a new pattern is introduced or an existing pattern changes.*
