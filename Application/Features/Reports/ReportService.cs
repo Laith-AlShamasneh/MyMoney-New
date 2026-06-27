@@ -49,7 +49,7 @@ internal sealed class ReportService(
         var expires  = DateTime.UtcNow.Add(ReportExpiry);
 
         var reportId = await reportRepository.CreateAsync(
-            userContext.UserId, type.Id, type.Key, request.Language,
+            userContext.UserId, userContext.WorkspaceId, type.Id, type.Key, request.Language,
             dateFrom, dateTo, expires, ct);
 
         await backgroundJobService.EnqueueAsync(
@@ -87,7 +87,7 @@ internal sealed class ReportService(
     public async Task<ServiceResult<IReadOnlyList<ReportDto>>> GetListAsync(
         CancellationToken ct = default)
     {
-        var reports = await reportRepository.GetListAsync(userContext.UserId, ct);
+        var reports = await reportRepository.GetListAsync(userContext.UserId, userContext.WorkspaceId, ct);
         var dtos    = reports.Select(MapDto).ToList();
         var msg     = await messageProvider.GetMessagesAsync(MessageKeys.Reports.ListLoaded, ct);
         return ServiceResultFactory.Success<IReadOnlyList<ReportDto>>(dtos, InternalResponseCodes.OK, msg);
@@ -97,7 +97,7 @@ internal sealed class ReportService(
         long              reportId,
         CancellationToken ct = default)
     {
-        var report = await reportRepository.GetByIdAsync(reportId, userContext.UserId, ct);
+        var report = await reportRepository.GetByIdAsync(reportId, userContext.UserId, userContext.WorkspaceId, ct);
 
         if (report is null)
         {
@@ -133,7 +133,7 @@ internal sealed class ReportService(
         long              reportId,
         CancellationToken ct = default)
     {
-        var existing = await reportRepository.GetByIdAsync(reportId, userContext.UserId, ct);
+        var existing = await reportRepository.GetByIdAsync(reportId, userContext.UserId, userContext.WorkspaceId, ct);
         if (existing is null)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -141,7 +141,7 @@ internal sealed class ReportService(
                 await messageProvider.GetMessagesAsync(MessageKeys.Reports.NotFound, ct));
         }
 
-        await reportRepository.DeleteAsync(reportId, userContext.UserId, ct);
+        await reportRepository.DeleteAsync(reportId, userContext.UserId, userContext.WorkspaceId, ct);
 
         if (!string.IsNullOrEmpty(existing.FilePath))
         {

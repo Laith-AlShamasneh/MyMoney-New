@@ -256,15 +256,15 @@ internal sealed class TransactionService(
         int               month,
         CancellationToken ct)
     {
-        await cacheService.RemoveAsync($"fil:dashboard:{userId}");
+        await cacheService.RemoveAsync($"fil:dashboard:{userId}:{userContext.WorkspaceId ?? 0}");
         await backgroundJobService.EnqueueAsync(
             JobTypes.SnapshotRecompute,
             new SnapshotRecomputePayload(userId, year, month),
             priority: 3,
             ct: ct);
 
-        await cacheService.RemoveAsync($"cashflow:forecast:{userId}:12");
-        await cacheService.RemoveAsync($"cashflow:dashboard:{userId}");
+        await cacheService.RemoveAsync($"cashflow:forecast:{userId}:{userContext.WorkspaceId ?? 0}:12");
+        await cacheService.RemoveAsync($"cashflow:dashboard:{userId}:{userContext.WorkspaceId ?? 0}");
         await backgroundJobService.EnqueueAsync(
             JobTypes.ComputeCashFlowForecast,
             new ComputeForecastPayload(userId),

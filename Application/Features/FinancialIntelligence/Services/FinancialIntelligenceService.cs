@@ -36,7 +36,8 @@ internal sealed class FinancialIntelligenceService(
     {
         var model = new GetInsightsDbModel
         {
-            UserId     = userContext.UserId,
+            UserId      = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
             IsRead     = request.IsRead,
             PageNumber = request.PageNumber,
             PageSize   = request.PageSize
@@ -58,7 +59,7 @@ internal sealed class FinancialIntelligenceService(
         MarkInsightReadRequest request,
         CancellationToken      ct = default)
     {
-        var affected = await filRepository.MarkInsightReadAsync(userContext.UserId, request.InsightId, ct);
+        var affected = await filRepository.MarkInsightReadAsync(userContext.UserId, userContext.WorkspaceId, request.InsightId, ct);
 
         if (affected == 0)
         {
@@ -76,8 +77,8 @@ internal sealed class FinancialIntelligenceService(
     public async Task<ServiceResult<object?>> MarkAllInsightsReadAsync(CancellationToken ct = default)
     {
         var userId = userContext.UserId;
-        await filRepository.MarkAllInsightsReadAsync(userId, ct);
-        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}");
+        await filRepository.MarkAllInsightsReadAsync(userId, userContext.WorkspaceId, ct);
+        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:{userContext.WorkspaceId ?? 0}");
         return ServiceResultFactory.Success<object?>(
             null,
             InternalResponseCodes.OK,
@@ -86,7 +87,7 @@ internal sealed class FinancialIntelligenceService(
 
     public async Task<ServiceResult<IReadOnlyList<PatternResponse>>> GetPatternsAsync(CancellationToken ct = default)
     {
-        var db       = await filRepository.GetPatternsAsync(userContext.UserId, ct);
+        var db       = await filRepository.GetPatternsAsync(userContext.UserId, userContext.WorkspaceId, ct);
         var isArabic = IsArabic;
 
         var items = (IReadOnlyList<PatternResponse>)db.Select(p => MapPattern(p, isArabic)).ToList();
@@ -101,7 +102,8 @@ internal sealed class FinancialIntelligenceService(
     {
         var model = new GetRecommendationsDbModel
         {
-            UserId     = userContext.UserId,
+            UserId      = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
             PageNumber = request.PageNumber,
             PageSize   = request.PageSize
         };
@@ -122,7 +124,7 @@ internal sealed class FinancialIntelligenceService(
         MarkRecommendationAppliedRequest request,
         CancellationToken                ct = default)
     {
-        var affected = await filRepository.MarkRecommendationAppliedAsync(userContext.UserId, request.RecommendationId, ct);
+        var affected = await filRepository.MarkRecommendationAppliedAsync(userContext.UserId, userContext.WorkspaceId, request.RecommendationId, ct);
 
         if (affected == 0)
         {
@@ -141,7 +143,7 @@ internal sealed class FinancialIntelligenceService(
         DismissRecommendationRequest request,
         CancellationToken            ct = default)
     {
-        var affected = await filRepository.DismissRecommendationAsync(userContext.UserId, request.RecommendationId, ct);
+        var affected = await filRepository.DismissRecommendationAsync(userContext.UserId, userContext.WorkspaceId, request.RecommendationId, ct);
 
         if (affected == 0)
         {
@@ -161,7 +163,7 @@ internal sealed class FinancialIntelligenceService(
         var userId   = userContext.UserId;
         var isArabic = IsArabic;
 
-        var cacheKey = $"{DashboardCacheKeyPrefix}{userId}";
+        var cacheKey = $"{DashboardCacheKeyPrefix}{userId}:{userContext.WorkspaceId ?? 0}";
         var cached   = await cacheService.GetAsync<FILDashboardResponse>(cacheKey);
         if (cached is not null)
         {
@@ -170,17 +172,18 @@ internal sealed class FinancialIntelligenceService(
         }
 
         // Load all dashboard data in parallel — each is an independent read.
-        var snapshotTask        = filRepository.GetLatestSnapshotAsync(userId, ct);
-        var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, months: 3, ct);
-        var insightsTask        = filRepository.GetInsightsAsync(new GetInsightsDbModel { UserId = userId, IsRead = false, PageNumber = 1, PageSize = 5 }, ct);
-        var patternsTask        = filRepository.GetPatternsAsync(userId, ct);
-        var recommendTask       = filRepository.GetRecommendationsAsync(new GetRecommendationsDbModel { UserId = userId, PageNumber = 1, PageSize = 5 }, ct);
+        var workspaceId         = userContext.WorkspaceId;
+        var snapshotTask        = filRepository.GetLatestSnapshotAsync(userId, workspaceId, ct);
+        var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, workspaceId, months: 3, ct);
+        var insightsTask        = filRepository.GetInsightsAsync(new GetInsightsDbModel { UserId = userId, WorkspaceId = workspaceId, IsRead = false, PageNumber = 1, PageSize = 5 }, ct);
+        var patternsTask        = filRepository.GetPatternsAsync(userId, workspaceId, ct);
+        var recommendTask       = filRepository.GetRecommendationsAsync(new GetRecommendationsDbModel { UserId = userId, WorkspaceId = workspaceId, PageNumber = 1, PageSize = 5 }, ct);
 
         await Task.WhenAll(snapshotTask, recentSnapshotsTask, insightsTask, patternsTask, recommendTask);
 
         var snapshot    = snapshotTask.Result;
         var latestMonth = snapshot is not null
-            ? await filRepository.GetCategoryAnalyticsAsync(userId, snapshot.SnapshotDate.Year, snapshot.SnapshotDate.Month, ct)
+            ? await filRepository.GetCategoryAnalyticsAsync(userId, workspaceId, snapshot.SnapshotDate.Year, snapshot.SnapshotDate.Month, ct)
             : [];
 
         var response = new FILDashboardResponse(
@@ -304,7 +307,8 @@ internal sealed class FinancialIntelligenceService(
                     payload: new { code = NotificationCodes.FILUnusualTransaction },
                     ct: ct);
 
-                await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{tx.UserId}");
+                // Anomaly compute runs in personal scope (workspace 0) for now.
+                await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{tx.UserId}:0");
             }
         }
     }
@@ -335,7 +339,7 @@ internal sealed class FinancialIntelligenceService(
             TopCategoryId           = computed.TopCategoryId
         }, ct);
 
-        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}");
+        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:{userContext.WorkspaceId ?? 0}");
     }
 
     private async Task ProcessUserMonthlyAsync(long userId, int year, int month, CancellationToken ct)
@@ -352,15 +356,16 @@ internal sealed class FinancialIntelligenceService(
 
         // 3. Build rules context — load 3 prior months of category data in parallel
         //    so EvaluateOverspendingAlert has a genuine rolling 3-month baseline.
-        var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, months: 3, ct);
+        // Compute path still runs per-user (personal scope) until scheduler workspace-iteration lands.
+        var recentSnapshotsTask = filRepository.GetRecentSnapshotsAsync(userId, null, months: 3, ct);
 
         var (pm1, py1) = PriorMonth(year,  month,  1);
         var (pm2, py2) = PriorMonth(py1,   pm1,    1);
         var (pm3, py3) = PriorMonth(py2,   pm2,    1);
 
-        var prevCatsTask  = filRepository.GetCategoryAnalyticsAsync(userId, py1, pm1, ct);
-        var prevCats2Task = filRepository.GetCategoryAnalyticsAsync(userId, py2, pm2, ct);
-        var prevCats3Task = filRepository.GetCategoryAnalyticsAsync(userId, py3, pm3, ct);
+        var prevCatsTask  = filRepository.GetCategoryAnalyticsAsync(userId, null, py1, pm1, ct);
+        var prevCats2Task = filRepository.GetCategoryAnalyticsAsync(userId, null, py2, pm2, ct);
+        var prevCats3Task = filRepository.GetCategoryAnalyticsAsync(userId, null, py3, pm3, ct);
 
         await Task.WhenAll(recentSnapshotsTask, prevCatsTask, prevCats2Task, prevCats3Task);
 
@@ -433,7 +438,7 @@ internal sealed class FinancialIntelligenceService(
             }, ct);
         }
 
-        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}");
+        await cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:{userContext.WorkspaceId ?? 0}");
     }
 
     // ═════════════════════════════════════════════════════════════════════════

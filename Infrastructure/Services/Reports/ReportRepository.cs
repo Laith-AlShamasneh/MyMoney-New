@@ -13,6 +13,7 @@ internal sealed class ReportRepository(IDbExecutor db) : IReportRepository
 
     public async Task<long> CreateAsync(
         long      userId,
+        long?     workspaceId,
         byte      reportTypeId,
         string    reportTypeKey,
         string    language,
@@ -23,6 +24,7 @@ internal sealed class ReportRepository(IDbExecutor db) : IReportRepository
     {
         var p = new DynamicParameters();
         p.Add("@UserId",        userId,        DbType.Int64);
+        p.Add("@WorkspaceId",   workspaceId,   DbType.Int64);
         p.Add("@ReportTypeId",  reportTypeId,  DbType.Byte);
         p.Add("@ReportTypeKey", reportTypeKey, DbType.String);
         p.Add("@Language",      language,      DbType.String);
@@ -59,27 +61,30 @@ internal sealed class ReportRepository(IDbExecutor db) : IReportRepository
         return db.ExecuteAsync("MyMoney.usp_Report_Fail", p, ct);
     }
 
-    public async Task<ReportDbModel?> GetByIdAsync(long reportId, long userId, CancellationToken ct = default)
+    public async Task<ReportDbModel?> GetByIdAsync(long reportId, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@ReportId", reportId, DbType.Int64);
-        p.Add("@UserId",   userId,   DbType.Int64);
+        p.Add("@ReportId",    reportId,    DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         var list = await db.QueryListAsync<ReportDbModel>("MyMoney.usp_Report_GetById", p, ct);
         return list.Count > 0 ? list[0] : null;
     }
 
-    public Task<IReadOnlyList<ReportDbModel>> GetListAsync(long userId, CancellationToken ct = default)
+    public Task<IReadOnlyList<ReportDbModel>> GetListAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         return db.QueryListAsync<ReportDbModel>("MyMoney.usp_Report_GetList", p, ct);
     }
 
-    public async Task<bool> DeleteAsync(long reportId, long userId, CancellationToken ct = default)
+    public async Task<bool> DeleteAsync(long reportId, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@ReportId",    reportId, DbType.Int64);
         p.Add("@UserId",      userId,   DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@RowsDeleted", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("MyMoney.usp_Report_Delete", p, ct);

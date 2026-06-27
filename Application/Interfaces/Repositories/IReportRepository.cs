@@ -8,6 +8,7 @@ public interface IReportRepository
 
     Task<long> CreateAsync(
         long      userId,
+        long?     workspaceId,
         byte      reportTypeId,
         string    reportTypeKey,
         string    language,
@@ -22,11 +23,11 @@ public interface IReportRepository
 
     Task FailAsync(long reportId, string errorMessage, CancellationToken ct = default);
 
-    Task<ReportDbModel?> GetByIdAsync(long reportId, long userId, CancellationToken ct = default);
+    Task<ReportDbModel?> GetByIdAsync(long reportId, long userId, long? workspaceId, CancellationToken ct = default);
 
-    Task<IReadOnlyList<ReportDbModel>> GetListAsync(long userId, CancellationToken ct = default);
+    Task<IReadOnlyList<ReportDbModel>> GetListAsync(long userId, long? workspaceId, CancellationToken ct = default);
 
-    Task<bool> DeleteAsync(long reportId, long userId, CancellationToken ct = default);
+    Task<bool> DeleteAsync(long reportId, long userId, long? workspaceId, CancellationToken ct = default);
 
     Task ExpireOldAsync(CancellationToken ct = default);
 }

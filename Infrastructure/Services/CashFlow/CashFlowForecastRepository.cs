@@ -151,10 +151,11 @@ internal sealed class CashFlowForecastRepository(IDbExecutor db) : ICashFlowFore
     // ── Read ──────────────────────────────────────────────────────────────────
 
     public Task<ForecastFullDbResult?> GetForecastAsync(
-        long userId, byte horizonMonths, CancellationToken ct = default)
+        long userId, long? workspaceId, byte horizonMonths, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",        userId,        DbType.Int64);
+        p.Add("@WorkspaceId",   workspaceId,   DbType.Int64);
         p.Add("@HorizonMonths", horizonMonths, DbType.Byte);
 
         return db.QueryMultipleAsync<ForecastFullDbResult?>(
@@ -180,10 +181,11 @@ internal sealed class CashFlowForecastRepository(IDbExecutor db) : ICashFlowFore
     }
 
     public Task<ForecastDashboardDbResult?> GetDashboardAsync(
-        long userId, CancellationToken ct = default)
+        long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return db.QueryMultipleAsync<ForecastDashboardDbResult?>(
             "MyMoney.usp_CashFlow_GetDashboard",

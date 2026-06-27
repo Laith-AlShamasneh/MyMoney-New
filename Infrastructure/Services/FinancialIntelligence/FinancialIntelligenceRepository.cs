@@ -39,19 +39,21 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
         await db.ExecuteAsync("MyMoney.usp_FIL_Snapshot_Upsert", p, ct);
     }
 
-    public async Task<SnapshotDbResult?> GetLatestSnapshotAsync(long userId, CancellationToken ct = default)
+    public async Task<SnapshotDbResult?> GetLatestSnapshotAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         return await db.QuerySingleAsync<SnapshotDbResult?>(
             "MyMoney.usp_FIL_Snapshot_GetLatest", p, ct);
     }
 
     public async Task<IReadOnlyList<SnapshotDbResult>> GetRecentSnapshotsAsync(
-        long userId, int months, CancellationToken ct = default)
+        long userId, long? workspaceId, int months, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId,  DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@Months", months,  DbType.Int32);
         return await db.QueryListAsync<SnapshotDbResult>(
             "MyMoney.usp_FIL_Snapshot_GetRecent", p, ct);
@@ -100,10 +102,11 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     }
 
     public async Task<IReadOnlyList<CategoryAnalyticsDbResult>> GetCategoryAnalyticsAsync(
-        long userId, int year, int month, CancellationToken ct = default)
+        long userId, long? workspaceId, int year, int month, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@Year",   year,   DbType.Int32);
         p.Add("@Month",  month,  DbType.Int32);
         return await db.QueryListAsync<CategoryAnalyticsDbResult>(
@@ -135,6 +138,7 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     {
         var p = new DynamicParameters();
         p.Add("@UserId",     model.UserId,     DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@IsRead",     model.IsRead,     DbType.Boolean);
         p.Add("@PageNumber", model.PageNumber, DbType.Int32);
         p.Add("@PageSize",   model.PageSize,   DbType.Int32);
@@ -156,20 +160,22 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
             p, ct);
     }
 
-    public async Task<int> MarkInsightReadAsync(long userId, long insightId, CancellationToken ct = default)
+    public async Task<int> MarkInsightReadAsync(long userId, long? workspaceId, long insightId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",    userId,    DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@InsightId", insightId, DbType.Int64);
         p.Add("@RowsAffected", dbType: DbType.Int32, direction: ParameterDirection.Output);
         await db.ExecuteAsync("MyMoney.usp_FIL_Insight_MarkRead", p, ct);
         return p.Get<int>("@RowsAffected");
     }
 
-    public async Task<int> MarkAllInsightsReadAsync(long userId, CancellationToken ct = default)
+    public async Task<int> MarkAllInsightsReadAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",       userId, DbType.Int64);
+        p.Add("@WorkspaceId",  workspaceId, DbType.Int64);
         p.Add("@RowsAffected", dbType: DbType.Int32, direction: ParameterDirection.Output);
         await db.ExecuteAsync("MyMoney.usp_FIL_Insight_MarkAllRead", p, ct);
         return p.Get<int>("@RowsAffected");
@@ -209,10 +215,11 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
         await db.ExecuteAsync("MyMoney.usp_FIL_Pattern_Upsert", p, ct);
     }
 
-    public async Task<IReadOnlyList<PatternDbResult>> GetPatternsAsync(long userId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<PatternDbResult>> GetPatternsAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         return await db.QueryListAsync<PatternDbResult>("MyMoney.usp_FIL_Pattern_GetByUser", p, ct);
     }
 
@@ -245,6 +252,7 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     {
         var p = new DynamicParameters();
         p.Add("@UserId",     model.UserId,     DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@PageNumber", model.PageNumber, DbType.Int32);
         p.Add("@PageSize",   model.PageSize,   DbType.Int32);
 
@@ -265,10 +273,11 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     }
 
     public async Task<int> MarkRecommendationAppliedAsync(
-        long userId, long recommendationId, CancellationToken ct = default)
+        long userId, long? workspaceId, long recommendationId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",           userId,           DbType.Int64);
+        p.Add("@WorkspaceId",      workspaceId,      DbType.Int64);
         p.Add("@RecommendationId", recommendationId, DbType.Int64);
         p.Add("@RowsAffected", dbType: DbType.Int32, direction: ParameterDirection.Output);
         await db.ExecuteAsync("MyMoney.usp_FIL_Recommendation_MarkApplied", p, ct);
@@ -276,10 +285,11 @@ internal sealed class FinancialIntelligenceRepository(IDbExecutor db) : IFinanci
     }
 
     public async Task<int> DismissRecommendationAsync(
-        long userId, long recommendationId, CancellationToken ct = default)
+        long userId, long? workspaceId, long recommendationId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",           userId,           DbType.Int64);
+        p.Add("@WorkspaceId",      workspaceId,      DbType.Int64);
         p.Add("@RecommendationId", recommendationId, DbType.Int64);
         p.Add("@RowsAffected", dbType: DbType.Int32, direction: ParameterDirection.Output);
         await db.ExecuteAsync("MyMoney.usp_FIL_Recommendation_Dismiss", p, ct);

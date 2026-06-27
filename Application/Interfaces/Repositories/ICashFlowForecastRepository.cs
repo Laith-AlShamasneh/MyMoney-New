@@ -16,8 +16,8 @@ public interface ICashFlowForecastRepository
     Task ReplaceGoalProjectionsAsync(long forecastId, long userId, IReadOnlyList<ForecastGoalProjectionData> projections, CancellationToken ct = default);
 
     // ── Read ──────────────────────────────────────────────────────────────────
-    Task<ForecastFullDbResult?>         GetForecastAsync(long userId, byte horizonMonths, CancellationToken ct = default);
-    Task<ForecastDashboardDbResult?>    GetDashboardAsync(long userId, CancellationToken ct = default);
+    Task<ForecastFullDbResult?>         GetForecastAsync(long userId, long? workspaceId, byte horizonMonths, CancellationToken ct = default);
+    Task<ForecastDashboardDbResult?>    GetDashboardAsync(long userId, long? workspaceId, CancellationToken ct = default);
 
     // ── Risk notifications ────────────────────────────────────────────────────
     Task<IReadOnlyList<UnnotifiedRiskDbResult>> GetUnnotifiedRisksAsync(long userId, byte minSeverity, CancellationToken ct = default);

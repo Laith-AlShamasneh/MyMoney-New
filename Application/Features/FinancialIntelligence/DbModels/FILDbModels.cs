@@ -111,7 +111,8 @@ public class InsightRowDbResult
 
 public class GetInsightsDbModel
 {
-    public long  UserId     { get; set; }
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
     public bool? IsRead     { get; set; }
     public int   PageNumber { get; set; } = 1;
     public int   PageSize   { get; set; } = 20;
@@ -185,7 +186,8 @@ public class RecommendationDbResult
 
 public class GetRecommendationsDbModel
 {
-    public long UserId     { get; set; }
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
     public int  PageNumber { get; set; } = 1;
     public int  PageSize   { get; set; } = 10;
 }

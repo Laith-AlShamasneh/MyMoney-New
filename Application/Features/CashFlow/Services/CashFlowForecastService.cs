@@ -37,7 +37,7 @@ internal sealed class CashFlowForecastService(
         var userId   = userContext.UserId;
         var isArabic = IsArabic;
 
-        var cacheKey = $"{ForecastCacheKeyPrefix}{userId}:{request.HorizonMonths}";
+        var cacheKey = $"{ForecastCacheKeyPrefix}{userId}:{userContext.WorkspaceId ?? 0}:{request.HorizonMonths}";
         var cached   = await cacheService.GetAsync<CashFlowForecastResponse>(cacheKey);
         if (cached is not null)
         {
@@ -45,7 +45,7 @@ internal sealed class CashFlowForecastService(
             return ServiceResultFactory.Success(cached, InternalResponseCodes.OK, cachedMsg);
         }
 
-        var db = await cashFlowRepo.GetForecastAsync(userId, (byte)request.HorizonMonths, ct);
+        var db = await cashFlowRepo.GetForecastAsync(userId, userContext.WorkspaceId, (byte)request.HorizonMonths, ct);
 
         if (db?.Header is null)
         {
@@ -67,7 +67,7 @@ internal sealed class CashFlowForecastService(
         var userId   = userContext.UserId;
         var isArabic = IsArabic;
 
-        var cacheKey = $"{DashboardCacheKeyPrefix}{userId}";
+        var cacheKey = $"{DashboardCacheKeyPrefix}{userId}:{userContext.WorkspaceId ?? 0}";
         var cached   = await cacheService.GetAsync<CashFlowDashboardResponse>(cacheKey);
         if (cached is not null)
         {
@@ -75,7 +75,7 @@ internal sealed class CashFlowForecastService(
             return ServiceResultFactory.Success(cached, InternalResponseCodes.OK, cachedMsg);
         }
 
-        var db = await cashFlowRepo.GetDashboardAsync(userId, ct);
+        var db = await cashFlowRepo.GetDashboardAsync(userId, userContext.WorkspaceId, ct);
 
         if (db?.Summary is null)
         {
@@ -122,8 +122,9 @@ internal sealed class CashFlowForecastService(
 
         // ── Invalidate cache ─────────────────────────────────────────────────
         await Task.WhenAll(
-            cacheService.RemoveAsync($"{ForecastCacheKeyPrefix}{userId}:{horizonMonths}"),
-            cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}"));
+            // Recompute runs in personal scope (workspace 0) for now.
+            cacheService.RemoveAsync($"{ForecastCacheKeyPrefix}{userId}:0:{horizonMonths}"),
+            cacheService.RemoveAsync($"{DashboardCacheKeyPrefix}{userId}:0"));
 
         // ── Notify unnotified risks (severity ≥ Medium) ──────────────────────
         var unnotified = await cashFlowRepo.GetUnnotifiedRisksAsync(userId, minSeverity: 2, ct);
