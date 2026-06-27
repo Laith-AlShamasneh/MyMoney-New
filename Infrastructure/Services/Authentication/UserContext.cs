@@ -18,6 +18,15 @@ internal sealed class UserContext(IHttpContextAccessor httpContextAccessor) : IU
         }
     }
 
+    public long? WorkspaceId
+    {
+        get
+        {
+            var header = Http?.Request.Headers["X-Workspace-Id"].FirstOrDefault();
+            return long.TryParse(header, out var id) && id > 0 ? id : null;
+        }
+    }
+
     public string Email => Http?.User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
 
     public string DisplayName => Http?.User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;

@@ -5,6 +5,7 @@ namespace Application.Features.Goals.DbModels;
 public class CreateGoalDbModel
 {
     public long     UserId        { get; set; }
+    public long?    WorkspaceId   { get; set; }
     public string   Name          { get; set; } = null!;
     public string?  Description   { get; set; }
     public byte     GoalTypeId    { get; set; }
@@ -60,8 +61,9 @@ public class GoalRowDbResult
 
 public class GetGoalsDbModel
 {
-    public long  UserId     { get; set; }
-    public byte? StatusId   { get; set; }
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
+    public byte? StatusId    { get; set; }
     public byte? GoalTypeId { get; set; }
     public byte? Priority   { get; set; }
     public int   PageNumber { get; set; } = 1;
@@ -80,6 +82,7 @@ public class UpdateGoalDbModel
 {
     public long     GoalId        { get; set; }
     public long     UserId        { get; set; }
+    public long?    WorkspaceId   { get; set; }
     public string   Name          { get; set; } = null!;
     public string?  Description   { get; set; }
     public decimal  TargetAmount  { get; set; }
@@ -95,6 +98,7 @@ public class AddContributionDbModel
 {
     public long     GoalId              { get; set; }
     public long     UserId              { get; set; }
+    public long?    WorkspaceId         { get; set; }
     public byte     ContributionTypeId  { get; set; }
     public decimal  Amount              { get; set; }
     public bool     IsDebit             { get; set; }
@@ -127,8 +131,9 @@ public class AddContributionDbResult
 
 public class GetContributionsDbModel
 {
-    public long UserId     { get; set; }
-    public long GoalId     { get; set; }
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
+    public long  GoalId      { get; set; }
     public int  PageNumber { get; set; } = 1;
     public int  PageSize   { get; set; } = 20;
 }
@@ -174,9 +179,10 @@ public class MilestoneDbResult
 
 public class GoalRecurringLinkDbModel
 {
-    public long UserId                { get; set; }
-    public long GoalId                { get; set; }
-    public long RecurringDefinitionId { get; set; }
+    public long  UserId                { get; set; }
+    public long? WorkspaceId           { get; set; }
+    public long  GoalId                { get; set; }
+    public long  RecurringDefinitionId { get; set; }
 }
 
 public class GoalRecurringLinkDbResult

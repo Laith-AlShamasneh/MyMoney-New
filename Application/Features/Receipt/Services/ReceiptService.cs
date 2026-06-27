@@ -17,6 +17,7 @@ internal sealed class ReceiptService(
     IReceiptRepository     receiptRepository,
     IFileService           fileService,
     IStorageUtility        storageUtility,
+    IFileLinkService       fileLinkService,
     IBackgroundJobService  backgroundJobService,
     IUserContext           userContext,
     IMessageProvider       messageProvider) : IReceiptService
@@ -54,6 +55,7 @@ internal sealed class ReceiptService(
         var dbModel = new UploadReceiptDbModel
         {
             UserId           = userContext.UserId,
+            WorkspaceId      = userContext.WorkspaceId,
             OriginalFileName = SanitizeFileName(request.File.FileName),
             StoredFileName   = storedFileName,
             FileExtension    = ext,
@@ -84,7 +86,7 @@ internal sealed class ReceiptService(
         // Assign initial tags if provided
         if (!string.IsNullOrWhiteSpace(request.TagIds))
         {
-            await receiptRepository.SetTagsAsync(userContext.UserId, dbResult.ReceiptId, request.TagIds, ct);
+            await receiptRepository.SetTagsAsync(userContext.UserId, userContext.WorkspaceId, dbResult.ReceiptId, request.TagIds, ct);
         }
 
         // Enqueue OCR if this is a processable type
@@ -103,8 +105,8 @@ internal sealed class ReceiptService(
                 dbResult.ReceiptId, (byte)ReceiptProcessingStatus.Skipped, ct);
         }
 
-        var (fileUrl, _) = storageUtility.BuildFilePathWithExpiration(
-            FolderPaths.Receipts, storedFileName, isInternalStorage: true, baseUrl: userContext.RequestBaseUrl);
+        var fileUrl = fileLinkService.CreateSignedFileUrl(
+            userContext.RequestBaseUrl, FolderPaths.Receipts, storedFileName);
 
         return ServiceResultFactory.Success(
             new UploadReceiptResponse(
@@ -130,7 +132,7 @@ internal sealed class ReceiptService(
         GetReceiptRequest request,
         CancellationToken ct)
     {
-        var dbResult = await receiptRepository.GetByIdAsync(userContext.UserId, request.ReceiptId, ct);
+        var dbResult = await receiptRepository.GetByIdAsync(userContext.UserId, userContext.WorkspaceId, request.ReceiptId, ct);
         if (dbResult.Receipt is null)
         {
             return ServiceResultFactory.Failure<ReceiptDetailResponse>(
@@ -141,16 +143,13 @@ internal sealed class ReceiptService(
         var receipt = dbResult.Receipt;
         var tags    = dbResult.Tags;
 
-        var (fileUrl, _) = storageUtility.BuildFilePathWithExpiration(
-            FolderPaths.Receipts, receipt.StoredFileName, isInternalStorage: true, baseUrl: userContext.RequestBaseUrl);
+        var fileUrl = fileLinkService.CreateSignedFileUrl(
+            userContext.RequestBaseUrl, FolderPaths.Receipts, receipt.StoredFileName);
 
-        string? thumbnailUrl = null;
-        if (!string.IsNullOrEmpty(receipt.ThumbnailFileName))
-        {
-            var (tUrl, _) = storageUtility.BuildFilePathWithExpiration(
-                FolderPaths.Receipts, receipt.ThumbnailFileName, isInternalStorage: true, baseUrl: userContext.RequestBaseUrl);
-            thumbnailUrl = tUrl;
-        }
+        string? thumbnailUrl = string.IsNullOrEmpty(receipt.ThumbnailFileName)
+            ? null
+            : fileLinkService.CreateSignedFileUrl(
+                userContext.RequestBaseUrl, FolderPaths.Receipts, receipt.ThumbnailFileName);
 
         var response = new ReceiptDetailResponse(
             ReceiptId:          receipt.ReceiptId,
@@ -191,6 +190,7 @@ internal sealed class ReceiptService(
         var dbModel = new SearchReceiptsDbModel
         {
             UserId     = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
             Keyword    = string.IsNullOrWhiteSpace(request.Keyword) ? null : request.Keyword.Trim(),
             StatusId   = request.StatusId,
             DateFrom   = ParseDate(request.DateFrom),
@@ -232,6 +232,7 @@ internal sealed class ReceiptService(
         var dbModel = new UpdateReceiptDbModel
         {
             UserId       = userContext.UserId,
+            WorkspaceId  = userContext.WorkspaceId,
             ReceiptId    = request.ReceiptId,
             Title        = request.Title?.Trim(),
             Description  = request.Description?.Trim(),
@@ -253,7 +254,7 @@ internal sealed class ReceiptService(
         // Update tags if TagIds was provided (null = don't change, non-null string = update)
         if (request.TagIds is not null)
         {
-            await receiptRepository.SetTagsAsync(userContext.UserId, request.ReceiptId, request.TagIds, ct);
+            await receiptRepository.SetTagsAsync(userContext.UserId, userContext.WorkspaceId, request.ReceiptId, request.TagIds, ct);
         }
 
         return ServiceResultFactory.Success<object?>(
@@ -270,7 +271,7 @@ internal sealed class ReceiptService(
         ReceiptActionRequest request,
         CancellationToken    ct)
     {
-        var dbResult = await receiptRepository.DeleteAsync(userContext.UserId, request.ReceiptId, ct);
+        var dbResult = await receiptRepository.DeleteAsync(userContext.UserId, userContext.WorkspaceId, request.ReceiptId, ct);
         if (dbResult.RowsAffected == 0)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -305,7 +306,7 @@ internal sealed class ReceiptService(
         ReceiptActionRequest request,
         CancellationToken    ct)
     {
-        var rowsAffected = await receiptRepository.ArchiveAsync(userContext.UserId, request.ReceiptId, ct);
+        var rowsAffected = await receiptRepository.ArchiveAsync(userContext.UserId, userContext.WorkspaceId, request.ReceiptId, ct);
         if (rowsAffected == 0)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -327,7 +328,7 @@ internal sealed class ReceiptService(
         ReceiptActionRequest request,
         CancellationToken    ct)
     {
-        var rowsAffected = await receiptRepository.RestoreAsync(userContext.UserId, request.ReceiptId, ct);
+        var rowsAffected = await receiptRepository.RestoreAsync(userContext.UserId, userContext.WorkspaceId, request.ReceiptId, ct);
         if (rowsAffected == 0)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -350,7 +351,7 @@ internal sealed class ReceiptService(
         CancellationToken        ct)
     {
         var rowsAffected = await receiptRepository.AssignTransactionAsync(
-            userContext.UserId, request.ReceiptId, request.TransactionId, ct);
+            userContext.UserId, userContext.WorkspaceId, request.ReceiptId, request.TransactionId, ct);
 
         if (rowsAffected == -1)
         {
@@ -382,7 +383,7 @@ internal sealed class ReceiptService(
 
     public async Task<ServiceResult<ReceiptDashboardResponse>> GetDashboardAsync(CancellationToken ct)
     {
-        var dbResult = await receiptRepository.GetDashboardAsync(userContext.UserId, ct);
+        var dbResult = await receiptRepository.GetDashboardAsync(userContext.UserId, userContext.WorkspaceId, ct);
         var baseUrl  = userContext.RequestBaseUrl;
 
         var summary = new ReceiptDashboardSummaryResponse(
@@ -410,7 +411,7 @@ internal sealed class ReceiptService(
 
     public async Task<ServiceResult<IReadOnlyList<ReceiptTagListResponse>>> GetTagsAsync(CancellationToken ct)
     {
-        var tags = await receiptRepository.GetTagListAsync(userContext.UserId, ct);
+        var tags = await receiptRepository.GetTagListAsync(userContext.UserId, userContext.WorkspaceId, ct);
 
         var response = tags
             .Select(t => new ReceiptTagListResponse(t.TagId, t.Name, t.ColorHex, t.UsageCount, t.CreatedOnUtc))
@@ -429,6 +430,7 @@ internal sealed class ReceiptService(
         var dbModel = new CreateReceiptTagDbModel
         {
             UserId   = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
             Name     = request.Name.Trim(),
             ColorHex = request.ColorHex?.Trim()
         };
@@ -452,7 +454,7 @@ internal sealed class ReceiptService(
         DeleteReceiptTagRequest request,
         CancellationToken       ct)
     {
-        var rowsAffected = await receiptRepository.DeleteTagAsync(userContext.UserId, request.TagId, ct);
+        var rowsAffected = await receiptRepository.DeleteTagAsync(userContext.UserId, userContext.WorkspaceId, request.TagId, ct);
         if (rowsAffected == 0)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -471,7 +473,7 @@ internal sealed class ReceiptService(
         CancellationToken     ct)
     {
         // Verify receipt exists first
-        var dbResult = await receiptRepository.GetByIdAsync(userContext.UserId, request.ReceiptId, ct);
+        var dbResult = await receiptRepository.GetByIdAsync(userContext.UserId, userContext.WorkspaceId, request.ReceiptId, ct);
         if (dbResult.Receipt is null)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -479,7 +481,7 @@ internal sealed class ReceiptService(
                 await messageProvider.GetMessagesAsync(MessageKeys.Receipt.NotFound, ct));
         }
 
-        await receiptRepository.SetTagsAsync(userContext.UserId, request.ReceiptId, request.TagIds, ct);
+        await receiptRepository.SetTagsAsync(userContext.UserId, userContext.WorkspaceId, request.ReceiptId, request.TagIds, ct);
 
         return ServiceResultFactory.Success<object?>(
             null,
@@ -495,7 +497,7 @@ internal sealed class ReceiptService(
         DownloadReceiptRequest request,
         CancellationToken      ct)
     {
-        var dbResult = await receiptRepository.GetByIdAsync(userContext.UserId, request.ReceiptId, ct);
+        var dbResult = await receiptRepository.GetByIdAsync(userContext.UserId, userContext.WorkspaceId, request.ReceiptId, ct);
         if (dbResult.Receipt is null)
         {
             return ServiceResultFactory.Failure<DownloadReceiptResponse>(
@@ -568,16 +570,11 @@ internal sealed class ReceiptService(
 
     private ReceiptSummaryResponse MapToSummary(ReceiptSummaryDbResult r, string baseUrl)
     {
-        var (fileUrl, _) = storageUtility.BuildFilePathWithExpiration(
-            FolderPaths.Receipts, r.StoredFileName, isInternalStorage: true, baseUrl: baseUrl);
+        var fileUrl = fileLinkService.CreateSignedFileUrl(baseUrl, FolderPaths.Receipts, r.StoredFileName);
 
-        string? thumbnailUrl = null;
-        if (!string.IsNullOrEmpty(r.ThumbnailFileName))
-        {
-            var (tUrl, _) = storageUtility.BuildFilePathWithExpiration(
-                FolderPaths.Receipts, r.ThumbnailFileName, isInternalStorage: true, baseUrl: baseUrl);
-            thumbnailUrl = tUrl;
-        }
+        string? thumbnailUrl = string.IsNullOrEmpty(r.ThumbnailFileName)
+            ? null
+            : fileLinkService.CreateSignedFileUrl(baseUrl, FolderPaths.Receipts, r.ThumbnailFileName);
 
         return new ReceiptSummaryResponse(
             ReceiptId:          r.ReceiptId,

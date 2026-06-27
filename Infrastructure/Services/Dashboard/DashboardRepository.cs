@@ -12,10 +12,11 @@ internal sealed class DashboardRepository(IDbExecutor db) : IDashboardRepository
                        IReadOnlyList<MonthlyTrendDbResult>     Trend,
                        IReadOnlyList<CategoryBreakdownDbResult> Breakdown,
                        IReadOnlyList<RecentTransactionDbResult> Recent)>
-        GetSummaryAsync(long userId, CancellationToken ct = default)
+        GetSummaryAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QueryMultipleAsync(
             "MyMoney.usp_Dashboard_GetSummary",

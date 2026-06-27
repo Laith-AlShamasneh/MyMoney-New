@@ -25,8 +25,9 @@ internal sealed class TransactionService(
     {
         var model = new TransactionSearchDbModel
         {
-            UserId     = userContext.UserId,
-            TypeId     = request.TypeId.HasValue ? (byte?)request.TypeId.Value : null,
+            UserId      = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
+            TypeId      = request.TypeId.HasValue ? (byte?)request.TypeId.Value : null,
             CategoryId = request.CategoryId,
             DateFrom   = TryParseDate(request.DateFrom),
             DateTo     = TryParseDate(request.DateTo),
@@ -79,9 +80,10 @@ internal sealed class TransactionService(
     {
         var model = new TransactionAnalyticsDbModel
         {
-            UserId   = userContext.UserId,
-            DateFrom = TryParseDate(request.DateFrom),
-            DateTo   = TryParseDate(request.DateTo),
+            UserId      = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
+            DateFrom    = TryParseDate(request.DateFrom),
+            DateTo      = TryParseDate(request.DateTo),
         };
 
         var db = await transactionRepository.GetAnalyticsAsync(model, ct);
@@ -107,7 +109,7 @@ internal sealed class TransactionService(
         long              transactionId,
         CancellationToken ct = default)
     {
-        var db = await transactionRepository.GetByIdAsync(userContext.UserId, transactionId, ct);
+        var db = await transactionRepository.GetByIdAsync(userContext.UserId, userContext.WorkspaceId, transactionId, ct);
 
         if (db is null)
         {
@@ -146,6 +148,7 @@ internal sealed class TransactionService(
         var model = new CreateTransactionDbModel
         {
             UserId            = userId,
+            WorkspaceId       = userContext.WorkspaceId,
             CategoryId        = request.CategoryId,
             TransactionTypeId = (byte)request.TransactionTypeId,
             Amount            = request.Amount,
@@ -184,6 +187,7 @@ internal sealed class TransactionService(
         var model = new UpdateTransactionDbModel
         {
             UserId            = userId,
+            WorkspaceId       = userContext.WorkspaceId,
             TransactionId     = transactionId,
             CategoryId        = request.CategoryId,
             TransactionTypeId = (byte)request.TransactionTypeId,
@@ -225,6 +229,7 @@ internal sealed class TransactionService(
         var model = new DeleteTransactionDbModel
         {
             UserId        = userId,
+            WorkspaceId   = userContext.WorkspaceId,
             TransactionId = transactionId,
         };
 

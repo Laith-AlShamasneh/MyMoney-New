@@ -8,5 +8,5 @@ public interface IDashboardRepository
           IReadOnlyList<MonthlyTrendDbResult>     Trend,
           IReadOnlyList<CategoryBreakdownDbResult> Breakdown,
           IReadOnlyList<RecentTransactionDbResult> Recent)>
-        GetSummaryAsync(long userId, CancellationToken ct = default);
+        GetSummaryAsync(long userId, long? workspaceId, CancellationToken ct = default);
 }

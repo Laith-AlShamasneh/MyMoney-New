@@ -32,7 +32,7 @@ internal sealed class JwtService : IJwtService
 
     public (string Token, DateTime ExpiresAt) GenerateAccessToken(JwtTokenResponse model)
     {
-        var expiresAt = DateTime.UtcNow.AddHours(_options.ExpiryHours);
+        var expiresAt = DateTime.UtcNow.AddMinutes(_options.ExpiryMinutes);
 
         var claims = new List<Claim>
         {

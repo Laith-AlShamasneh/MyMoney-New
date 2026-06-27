@@ -14,6 +14,7 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     {
         var p = new DynamicParameters();
         p.Add("@UserId",       model.UserId,       DbType.Int64);
+        p.Add("@WorkspaceId",  model.WorkspaceId,  DbType.Int64);
         p.Add("@Name",         model.Name,         DbType.String);
         p.Add("@CategoryId",   model.CategoryId,   DbType.Int32);
         p.Add("@BudgetTypeId", model.BudgetTypeId, DbType.Byte);
@@ -41,6 +42,7 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     {
         var p = new DynamicParameters();
         p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@BudgetId",    model.BudgetId,    DbType.Int64);
         p.Add("@Name",        model.Name,        DbType.String);
         p.Add("@Amount",      model.Amount,      DbType.Decimal);
@@ -60,6 +62,7 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     {
         var p = new DynamicParameters();
         p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@BudgetId",    model.BudgetId,    DbType.Int64);
         p.Add("@NewStatusId", model.NewStatusId, DbType.Byte);
         p.Add("@AffectedRows", dbType: DbType.Int32, direction: ParameterDirection.Output);
@@ -74,8 +77,9 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     public async Task<int> DeleteAsync(DeleteBudgetDbModel model, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",   model.UserId,   DbType.Int64);
-        p.Add("@BudgetId", model.BudgetId, DbType.Int64);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
+        p.Add("@BudgetId",    model.BudgetId,    DbType.Int64);
         p.Add("@AffectedRows", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("MyMoney.usp_Budget_Delete", p, ct);
@@ -88,8 +92,9 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     public async Task<IReadOnlyList<BudgetRowDbResult>> GetListAsync(GetBudgetListDbModel model, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",   model.UserId,   DbType.Int64);
-        p.Add("@StatusId", model.StatusId, DbType.Byte);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
+        p.Add("@StatusId",    model.StatusId,    DbType.Byte);
 
         return await db.QueryListAsync<BudgetRowDbResult>("MyMoney.usp_Budget_GetList", p, ct);
     }
@@ -97,11 +102,12 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     // ── Get By ID ──────────────────────────────────────────────────────────────
 
     public async Task<(BudgetDetailDbResult? Budget, IReadOnlyList<BudgetPeriodRowDbResult> History)> GetByIdAsync(
-        long userId, long budgetId, CancellationToken ct = default)
+        long userId, long? workspaceId, long budgetId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",   userId,   DbType.Int64);
-        p.Add("@BudgetId", budgetId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
+        p.Add("@BudgetId",    budgetId,    DbType.Int64);
 
         return await db.QueryMultipleAsync(
             "MyMoney.usp_Budget_GetById",
@@ -117,10 +123,11 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     // ── Dashboard ──────────────────────────────────────────────────────────────
 
     public async Task<(BudgetDashboardSummaryDbResult? Summary, IReadOnlyList<BudgetRowDbResult> Budgets, IReadOnlyList<BudgetTrendPointDbResult> Trend)>
-        GetDashboardAsync(long userId, CancellationToken ct = default)
+        GetDashboardAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QueryMultipleAsync(
             "MyMoney.usp_Budget_GetDashboard",
@@ -139,10 +146,11 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     public async Task<IReadOnlyList<BudgetAnalyticsRowDbResult>> GetAnalyticsAsync(GetBudgetAnalyticsDbModel model, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",   model.UserId,   DbType.Int64);
-        p.Add("@BudgetId", model.BudgetId, DbType.Int64);
-        p.Add("@DateFrom", model.DateFrom, DbType.Date);
-        p.Add("@DateTo",   model.DateTo,   DbType.Date);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
+        p.Add("@BudgetId",    model.BudgetId,    DbType.Int64);
+        p.Add("@DateFrom",    model.DateFrom,    DbType.Date);
+        p.Add("@DateTo",      model.DateTo,      DbType.Date);
 
         return await db.QueryListAsync<BudgetAnalyticsRowDbResult>("MyMoney.usp_Budget_GetAnalytics", p, ct);
     }
@@ -152,10 +160,11 @@ internal sealed class BudgetRepository(IDbExecutor db) : IBudgetRepository
     public async Task<IReadOnlyList<BudgetPeriodRowDbResult>> GetPeriodsAsync(GetBudgetPeriodsDbModel model, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",     model.UserId,     DbType.Int64);
-        p.Add("@BudgetId",   model.BudgetId,   DbType.Int64);
-        p.Add("@PageNumber", model.PageNumber, DbType.Int32);
-        p.Add("@PageSize",   model.PageSize,   DbType.Int32);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
+        p.Add("@BudgetId",    model.BudgetId,    DbType.Int64);
+        p.Add("@PageNumber",  model.PageNumber,  DbType.Int32);
+        p.Add("@PageSize",    model.PageSize,    DbType.Int32);
 
         return await db.QueryListAsync<BudgetPeriodRowDbResult>("MyMoney.usp_BudgetPeriod_GetList", p, ct);
     }

@@ -94,6 +94,7 @@ public static class InfrastructureRegistration
         // 6. Storage & OCR
         services.AddSingleton<IStorageUtility, StorageUtility>();
         services.AddSingleton<IFileService, LocalFileService>();
+        services.AddSingleton<IFileLinkService, FileLinkService>();
         services.AddSingleton<IOcrProvider, LocalOcrProvider>();
 
         // 7. Background jobs

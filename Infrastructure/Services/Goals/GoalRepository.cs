@@ -14,6 +14,7 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
     {
         var p = new DynamicParameters();
         p.Add("@UserId",        model.UserId,        DbType.Int64);
+        p.Add("@WorkspaceId",   model.WorkspaceId,   DbType.Int64);
         p.Add("@Name",          model.Name,          DbType.String);
         p.Add("@Description",   model.Description,   DbType.String);
         p.Add("@GoalTypeId",    model.GoalTypeId,    DbType.Byte);
@@ -27,11 +28,12 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
         return await db.ExecuteScalarAsync<long>("MyMoney.usp_Goal_Create", p, ct);
     }
 
-    public async Task<GoalDbResult?> GetByIdAsync(long goalId, long userId, CancellationToken ct = default)
+    public async Task<GoalDbResult?> GetByIdAsync(long goalId, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@GoalId", goalId, DbType.Int64);
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@GoalId",      goalId,      DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QuerySingleAsync<GoalDbResult>("MyMoney.usp_Goal_GetById", p, ct);
     }
@@ -39,7 +41,8 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
     public async Task<GetGoalsDbResult> GetListAsync(GetGoalsDbModel model, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",     model.UserId,     DbType.Int64);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@StatusId",   model.StatusId,   DbType.Byte);
         p.Add("@GoalTypeId", model.GoalTypeId, DbType.Byte);
         p.Add("@Priority",   model.Priority,   DbType.Byte);
@@ -66,6 +69,7 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
         var p = new DynamicParameters();
         p.Add("@GoalId",       model.GoalId,       DbType.Int64);
         p.Add("@UserId",       model.UserId,        DbType.Int64);
+        p.Add("@WorkspaceId",  model.WorkspaceId,   DbType.Int64);
         p.Add("@Name",         model.Name,          DbType.String);
         p.Add("@Description",  model.Description,   DbType.String);
         p.Add("@TargetAmount", model.TargetAmount,  DbType.Decimal);
@@ -77,11 +81,12 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
         return await db.ExecuteScalarAsync<int>("MyMoney.usp_Goal_Update", p, ct);
     }
 
-    public async Task<int> SetStatusAsync(long goalId, long userId, byte statusId, CancellationToken ct = default)
+    public async Task<int> SetStatusAsync(long goalId, long userId, long? workspaceId, byte statusId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@GoalId",   goalId,   DbType.Int64);
-        p.Add("@UserId",   userId,   DbType.Int64);
+        p.Add("@GoalId",      goalId,      DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@StatusId", statusId, DbType.Byte);
 
         return await db.ExecuteScalarAsync<int>("MyMoney.usp_Goal_SetStatus", p, ct);
@@ -95,6 +100,7 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
         var p = new DynamicParameters();
         p.Add("@GoalId",              model.GoalId,              DbType.Int64);
         p.Add("@UserId",              model.UserId,              DbType.Int64);
+        p.Add("@WorkspaceId",         model.WorkspaceId,         DbType.Int64);
         p.Add("@ContributionTypeId",  model.ContributionTypeId,  DbType.Byte);
         p.Add("@Amount",              model.Amount,              DbType.Decimal);
         p.Add("@IsDebit",             model.IsDebit,             DbType.Boolean);
@@ -134,8 +140,9 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
         GetContributionsDbModel model, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@GoalId",     model.GoalId,     DbType.Int64);
-        p.Add("@UserId",     model.UserId,     DbType.Int64);
+        p.Add("@GoalId",      model.GoalId,      DbType.Int64);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@PageNumber", model.PageNumber, DbType.Int32);
         p.Add("@PageSize",   model.PageSize,   DbType.Int32);
 
@@ -155,11 +162,12 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
     }
 
     public async Task<IReadOnlyList<MonthlyStatsDbResult>> GetMonthlyStatsAsync(
-        long goalId, long userId, int monthsBack = 3, CancellationToken ct = default)
+        long goalId, long userId, long? workspaceId, int monthsBack = 3, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@GoalId",     goalId,     DbType.Int64);
-        p.Add("@UserId",     userId,     DbType.Int64);
+        p.Add("@GoalId",      goalId,      DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@MonthsBack", monthsBack, DbType.Int32);
 
         return await db.QueryListAsync<MonthlyStatsDbResult>(
@@ -169,11 +177,12 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
     // ── Milestones ────────────────────────────────────────────────────────────
 
     public async Task<IReadOnlyList<MilestoneDbResult>> GetMilestonesAsync(
-        long goalId, long userId, CancellationToken ct = default)
+        long goalId, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@GoalId", goalId, DbType.Int64);
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@GoalId",      goalId,      DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QueryListAsync<MilestoneDbResult>(
             "MyMoney.usp_GoalMilestone_GetByGoal", p, ct);
@@ -196,28 +205,31 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
         var p = new DynamicParameters();
         p.Add("@GoalId",                model.GoalId,                DbType.Int64);
         p.Add("@UserId",                model.UserId,                DbType.Int64);
+        p.Add("@WorkspaceId",           model.WorkspaceId,           DbType.Int64);
         p.Add("@RecurringDefinitionId", model.RecurringDefinitionId, DbType.Int64);
 
         return await db.ExecuteScalarAsync<bool>("MyMoney.usp_GoalRecurringLink_Upsert", p, ct);
     }
 
     public async Task<int> DeleteRecurringLinkAsync(
-        long goalId, long userId, long recurringDefinitionId, CancellationToken ct = default)
+        long goalId, long userId, long? workspaceId, long recurringDefinitionId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@GoalId",                goalId,                DbType.Int64);
         p.Add("@UserId",                userId,                DbType.Int64);
+        p.Add("@WorkspaceId",           workspaceId,           DbType.Int64);
         p.Add("@RecurringDefinitionId", recurringDefinitionId, DbType.Int64);
 
         return await db.ExecuteScalarAsync<int>("MyMoney.usp_GoalRecurringLink_Delete", p, ct);
     }
 
     public async Task<IReadOnlyList<GoalRecurringLinkDbResult>> GetRecurringLinksAsync(
-        long goalId, long userId, CancellationToken ct = default)
+        long goalId, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@GoalId", goalId, DbType.Int64);
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@GoalId",      goalId,      DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QueryListAsync<GoalRecurringLinkDbResult>(
             "MyMoney.usp_GoalRecurringLink_GetByGoal", p, ct);
@@ -225,10 +237,11 @@ internal sealed class GoalRepository(IDbExecutor db) : IGoalRepository
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
 
-    public async Task<GoalDashboardDbResult> GetDashboardAsync(long userId, CancellationToken ct = default)
+    public async Task<GoalDashboardDbResult> GetDashboardAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QueryMultipleAsync<GoalDashboardDbResult>(
             "MyMoney.usp_Goal_GetDashboard",

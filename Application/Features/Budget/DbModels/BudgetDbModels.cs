@@ -5,6 +5,7 @@ namespace Application.Features.Budget.DbModels;
 public class CreateBudgetDbModel
 {
     public long     UserId        { get; set; }
+    public long?    WorkspaceId   { get; set; }
     public string   Name          { get; set; } = null!;
     public int?     CategoryId    { get; set; }
     public byte     BudgetTypeId  { get; set; }
@@ -27,6 +28,7 @@ public class CreateBudgetDbResult
 public class UpdateBudgetDbModel
 {
     public long     UserId       { get; set; }
+    public long?    WorkspaceId  { get; set; }
     public long     BudgetId     { get; set; }
     public string   Name         { get; set; } = null!;
     public decimal  Amount       { get; set; }
@@ -40,6 +42,7 @@ public class UpdateBudgetDbModel
 public class UpdateBudgetStatusDbModel
 {
     public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
     public long  BudgetId    { get; set; }
     public byte  NewStatusId { get; set; }
 }
@@ -48,36 +51,40 @@ public class UpdateBudgetStatusDbModel
 
 public class DeleteBudgetDbModel
 {
-    public long UserId   { get; set; }
-    public long BudgetId { get; set; }
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
+    public long  BudgetId    { get; set; }
 }
 
 // ── Get List ──────────────────────────────────────────────────────────────────
 
 public class GetBudgetListDbModel
 {
-    public long  UserId   { get; set; }
-    public byte? StatusId { get; set; }
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
+    public byte? StatusId    { get; set; }
 }
 
 // ── Get Periods ───────────────────────────────────────────────────────────────
 
 public class GetBudgetPeriodsDbModel
 {
-    public long UserId     { get; set; }
-    public long BudgetId   { get; set; }
-    public int  PageNumber { get; set; } = 1;
-    public int  PageSize   { get; set; } = 12;
+    public long  UserId      { get; set; }
+    public long? WorkspaceId { get; set; }
+    public long  BudgetId    { get; set; }
+    public int   PageNumber  { get; set; } = 1;
+    public int   PageSize    { get; set; } = 12;
 }
 
 // ── Analytics ─────────────────────────────────────────────────────────────────
 
 public class GetBudgetAnalyticsDbModel
 {
-    public long      UserId    { get; set; }
-    public long?     BudgetId  { get; set; }
-    public DateOnly? DateFrom  { get; set; }
-    public DateOnly? DateTo    { get; set; }
+    public long      UserId      { get; set; }
+    public long?     WorkspaceId { get; set; }
+    public long?     BudgetId    { get; set; }
+    public DateOnly? DateFrom    { get; set; }
+    public DateOnly? DateTo      { get; set; }
 }
 
 // ── DB Result rows ────────────────────────────────────────────────────────────

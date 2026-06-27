@@ -5,6 +5,7 @@ namespace Application.Features.RecurringTransactions.DbModels;
 public class CreateRecurringTransactionDbModel
 {
     public long      UserId             { get; set; }
+    public long?     WorkspaceId        { get; set; }
     public int       CategoryId         { get; set; }
     public byte      TransactionTypeId  { get; set; }
     public string    Name               { get; set; } = null!;
@@ -34,6 +35,7 @@ public class UpdateRecurringTransactionDbModel
 {
     public long      Id                 { get; set; }
     public long      UserId             { get; set; }
+    public long?     WorkspaceId        { get; set; }
     public int       CategoryId         { get; set; }
     public string    Name               { get; set; } = null!;
     public decimal   Amount             { get; set; }
@@ -91,6 +93,7 @@ public class RecurringTransactionDbResult
 public class GetRecurringTransactionsDbModel
 {
     public long  UserId            { get; set; }
+    public long? WorkspaceId       { get; set; }
     public byte? StatusId          { get; set; }
     public byte? TransactionTypeId { get; set; }
     public bool? IsSubscription    { get; set; }

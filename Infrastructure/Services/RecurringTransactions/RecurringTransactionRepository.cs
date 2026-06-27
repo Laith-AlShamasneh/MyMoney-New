@@ -12,6 +12,7 @@ internal sealed class RecurringTransactionRepository(IDbExecutor db) : IRecurrin
     {
         var p = new DynamicParameters();
         p.Add("@UserId",             model.UserId,             DbType.Int64);
+        p.Add("@WorkspaceId",        model.WorkspaceId,        DbType.Int64);
         p.Add("@CategoryId",         model.CategoryId,         DbType.Int32);
         p.Add("@TransactionTypeId",  model.TransactionTypeId,  DbType.Byte);
         p.Add("@Name",               model.Name,               DbType.String);
@@ -39,10 +40,12 @@ internal sealed class RecurringTransactionRepository(IDbExecutor db) : IRecurrin
         return p.Get<long>("@NewId");
     }
 
-    public async Task<RecurringTransactionDbResult?> GetByIdAsync(long id, CancellationToken ct = default)
+    public async Task<RecurringTransactionDbResult?> GetByIdAsync(long id, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@Id", id, DbType.Int64);
+        p.Add("@Id",          id,          DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QuerySingleAsync<RecurringTransactionDbResult>(
             "MyMoney.usp_RecurringTransaction_GetById", p, ct);
@@ -52,6 +55,7 @@ internal sealed class RecurringTransactionRepository(IDbExecutor db) : IRecurrin
     {
         var p = new DynamicParameters();
         p.Add("@UserId",            model.UserId,            DbType.Int64);
+        p.Add("@WorkspaceId",       model.WorkspaceId,       DbType.Int64);
         p.Add("@StatusId",          model.StatusId,          DbType.Byte);
         p.Add("@TransactionTypeId", model.TransactionTypeId, DbType.Byte);
         p.Add("@IsSubscription",    model.IsSubscription,    DbType.Boolean);
@@ -74,6 +78,7 @@ internal sealed class RecurringTransactionRepository(IDbExecutor db) : IRecurrin
         var p = new DynamicParameters();
         p.Add("@Id",                 model.Id,                 DbType.Int64);
         p.Add("@UserId",             model.UserId,             DbType.Int64);
+        p.Add("@WorkspaceId",        model.WorkspaceId,        DbType.Int64);
         p.Add("@CategoryId",         model.CategoryId,         DbType.Int32);
         p.Add("@Name",               model.Name,               DbType.String);
         p.Add("@Amount",             model.Amount,             DbType.Decimal);
@@ -94,31 +99,34 @@ internal sealed class RecurringTransactionRepository(IDbExecutor db) : IRecurrin
         await db.ExecuteAsync("MyMoney.usp_RecurringTransaction_Update", p, ct);
     }
 
-    public async Task DeleteAsync(long id, long userId, CancellationToken ct = default)
+    public async Task DeleteAsync(long id, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@Id",     id,     DbType.Int64);
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@Id",          id,          DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         await db.ExecuteAsync("MyMoney.usp_RecurringTransaction_Delete", p, ct);
     }
 
-    public async Task<bool> PauseAsync(long id, long userId, CancellationToken ct = default)
+    public async Task<bool> PauseAsync(long id, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@Id",      id,     DbType.Int64);
-        p.Add("@UserId",  userId, DbType.Int64);
+        p.Add("@Id",          id,          DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@Success", dbType: DbType.Boolean, direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("MyMoney.usp_RecurringTransaction_Pause", p, ct);
         return p.Get<bool>("@Success");
     }
 
-    public async Task<bool> ResumeAsync(long id, long userId, CancellationToken ct = default)
+    public async Task<bool> ResumeAsync(long id, long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@Id",      id,     DbType.Int64);
-        p.Add("@UserId",  userId, DbType.Int64);
+        p.Add("@Id",          id,          DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@Success", dbType: DbType.Boolean, direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("MyMoney.usp_RecurringTransaction_Resume", p, ct);
@@ -161,10 +169,11 @@ internal sealed class RecurringTransactionRepository(IDbExecutor db) : IRecurrin
             "MyMoney.usp_RecurringTransaction_GetUpcoming", p, ct);
     }
 
-    public async Task<RecurringTransactionDashboardDbResult> GetDashboardSummaryAsync(long userId, CancellationToken ct = default)
+    public async Task<RecurringTransactionDashboardDbResult> GetDashboardSummaryAsync(long userId, long? workspaceId, CancellationToken ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QuerySingleAsync<RecurringTransactionDashboardDbResult>(
             "MyMoney.usp_RecurringTransaction_GetDashboardSummary", p, ct)

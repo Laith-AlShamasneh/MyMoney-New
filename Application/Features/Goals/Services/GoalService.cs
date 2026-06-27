@@ -26,7 +26,8 @@ internal sealed class GoalService(
     {
         var model = new GetGoalsDbModel
         {
-            UserId     = userContext.UserId,
+            UserId      = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
             StatusId   = request.StatusId.HasValue   ? (byte?)request.StatusId.Value   : null,
             GoalTypeId = request.GoalTypeId.HasValue ? (byte?)request.GoalTypeId.Value : null,
             Priority   = request.Priority.HasValue   ? (byte?)request.Priority.Value   : null,
@@ -70,7 +71,7 @@ internal sealed class GoalService(
     public async Task<ServiceResult<GoalDetailResponse>> GetByIdAsync(
         long goalId, CancellationToken ct = default)
     {
-        var goal = await goalRepository.GetByIdAsync(goalId, userContext.UserId, ct);
+        var goal = await goalRepository.GetByIdAsync(goalId, userContext.UserId, userContext.WorkspaceId, ct);
         if (goal is null)
         {
             return ServiceResultFactory.Failure<GoalDetailResponse>(
@@ -79,9 +80,9 @@ internal sealed class GoalService(
         }
 
         // Parallel load of auxiliary data
-        var statsTask      = goalRepository.GetMonthlyStatsAsync(goalId, userContext.UserId, 3, ct);
-        var milestonesTask = goalRepository.GetMilestonesAsync(goalId, userContext.UserId, ct);
-        var linksTask      = goalRepository.GetRecurringLinksAsync(goalId, userContext.UserId, ct);
+        var statsTask      = goalRepository.GetMonthlyStatsAsync(goalId, userContext.UserId, userContext.WorkspaceId, 3, ct);
+        var milestonesTask = goalRepository.GetMilestonesAsync(goalId, userContext.UserId, userContext.WorkspaceId, ct);
+        var linksTask      = goalRepository.GetRecurringLinksAsync(goalId, userContext.UserId, userContext.WorkspaceId, ct);
         await Task.WhenAll(statsTask, milestonesTask, linksTask);
 
         var progress   = ComputeProgress(goal.TargetAmount, goal.CurrentAmount, goal.TargetDate, statsTask.Result);
@@ -131,6 +132,7 @@ internal sealed class GoalService(
         var model = new CreateGoalDbModel
         {
             UserId        = userContext.UserId,
+            WorkspaceId   = userContext.WorkspaceId,
             Name          = request.Name.Trim(),
             Description   = request.Description?.Trim(),
             GoalTypeId    = (byte)request.GoalTypeId,
@@ -159,6 +161,7 @@ internal sealed class GoalService(
         {
             GoalId       = request.Id,
             UserId       = userContext.UserId,
+            WorkspaceId  = userContext.WorkspaceId,
             Name         = request.Name.Trim(),
             Description  = request.Description?.Trim(),
             TargetAmount = request.TargetAmount,
@@ -186,7 +189,7 @@ internal sealed class GoalService(
         long goalId, CancellationToken ct = default)
     {
         var affected = await goalRepository.SetStatusAsync(
-            goalId, userContext.UserId, (byte)GoalStatus.Archived, ct);
+            goalId, userContext.UserId, userContext.WorkspaceId, (byte)GoalStatus.Archived, ct);
 
         if (affected == 0)
         {
@@ -203,7 +206,7 @@ internal sealed class GoalService(
 
     public async Task<ServiceResult<object?>> PauseAsync(long goalId, CancellationToken ct = default)
     {
-        var goal = await goalRepository.GetByIdAsync(goalId, userContext.UserId, ct);
+        var goal = await goalRepository.GetByIdAsync(goalId, userContext.UserId, userContext.WorkspaceId, ct);
         if (goal is null)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -218,14 +221,14 @@ internal sealed class GoalService(
                 await messageProvider.GetMessagesAsync(MessageKeys.Goal.AlreadyPaused, ct));
         }
 
-        await goalRepository.SetStatusAsync(goalId, userContext.UserId, (byte)GoalStatus.Paused, ct);
+        await goalRepository.SetStatusAsync(goalId, userContext.UserId, userContext.WorkspaceId, (byte)GoalStatus.Paused, ct);
         var message = await messageProvider.GetMessagesAsync(MessageKeys.Goal.Paused, ct);
         return ServiceResultFactory.Success<object?>(null, InternalResponseCodes.OK, message);
     }
 
     public async Task<ServiceResult<object?>> ResumeAsync(long goalId, CancellationToken ct = default)
     {
-        var goal = await goalRepository.GetByIdAsync(goalId, userContext.UserId, ct);
+        var goal = await goalRepository.GetByIdAsync(goalId, userContext.UserId, userContext.WorkspaceId, ct);
         if (goal is null)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -240,7 +243,7 @@ internal sealed class GoalService(
                 await messageProvider.GetMessagesAsync(MessageKeys.Goal.AlreadyActive, ct));
         }
 
-        await goalRepository.SetStatusAsync(goalId, userContext.UserId, (byte)GoalStatus.Active, ct);
+        await goalRepository.SetStatusAsync(goalId, userContext.UserId, userContext.WorkspaceId, (byte)GoalStatus.Active, ct);
         var message = await messageProvider.GetMessagesAsync(MessageKeys.Goal.Resumed, ct);
         return ServiceResultFactory.Success<object?>(null, InternalResponseCodes.OK, message);
     }
@@ -254,7 +257,8 @@ internal sealed class GoalService(
         {
             GoalId             = request.GoalId,
             UserId             = userContext.UserId,
-            ContributionTypeId = (byte)ContributionType.Contribution,
+            WorkspaceId        = userContext.WorkspaceId,
+            ContributionTypeId =(byte)ContributionType.Contribution,
             Amount             = request.Amount,
             IsDebit            = false,
             Notes              = request.Notes?.Trim(),
@@ -274,7 +278,8 @@ internal sealed class GoalService(
         {
             GoalId             = request.GoalId,
             UserId             = userContext.UserId,
-            ContributionTypeId = (byte)ContributionType.Withdrawal,
+            WorkspaceId        = userContext.WorkspaceId,
+            ContributionTypeId =(byte)ContributionType.Withdrawal,
             Amount             = request.Amount,
             IsDebit            = true,
             Notes              = request.Notes?.Trim(),
@@ -290,7 +295,7 @@ internal sealed class GoalService(
     public async Task<ServiceResult<AddContributionResponse>> AdjustAsync(
         AdjustGoalRequest request, CancellationToken ct = default)
     {
-        var goal = await goalRepository.GetByIdAsync(request.GoalId, userContext.UserId, ct);
+        var goal = await goalRepository.GetByIdAsync(request.GoalId, userContext.UserId, userContext.WorkspaceId, ct);
         if (goal is null)
         {
             return ServiceResultFactory.Failure<AddContributionResponse>(
@@ -314,7 +319,8 @@ internal sealed class GoalService(
         {
             GoalId             = request.GoalId,
             UserId             = userContext.UserId,
-            ContributionTypeId = (byte)ContributionType.Adjustment,
+            WorkspaceId        = userContext.WorkspaceId,
+            ContributionTypeId =(byte)ContributionType.Adjustment,
             Amount             = Math.Abs(delta),
             IsDebit            = delta < 0,
             Notes              = request.Notes?.Trim(),
@@ -415,7 +421,8 @@ internal sealed class GoalService(
     {
         var model = new GetContributionsDbModel
         {
-            UserId     = userContext.UserId,
+            UserId      = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
             GoalId     = request.GoalId,
             PageNumber = request.PageNumber,
             PageSize   = request.PageSize,
@@ -449,7 +456,7 @@ internal sealed class GoalService(
 
     public async Task<ServiceResult<GoalDashboardResponse>> GetDashboardAsync(CancellationToken ct = default)
     {
-        var db = await goalRepository.GetDashboardAsync(userContext.UserId, ct);
+        var db = await goalRepository.GetDashboardAsync(userContext.UserId, userContext.WorkspaceId, ct);
 
         var kpi = new GoalDashboardKpi(
             ActiveGoalCount:     db.Kpi.ActiveGoalCount,
@@ -487,6 +494,7 @@ internal sealed class GoalService(
         var model = new GoalRecurringLinkDbModel
         {
             UserId                = userContext.UserId,
+            WorkspaceId           = userContext.WorkspaceId,
             GoalId                = request.GoalId,
             RecurringDefinitionId = request.RecurringDefinitionId,
         };
@@ -507,7 +515,7 @@ internal sealed class GoalService(
         UnlinkRecurringRequest request, CancellationToken ct = default)
     {
         var affected = await goalRepository.DeleteRecurringLinkAsync(
-            request.GoalId, userContext.UserId, request.RecurringDefinitionId, ct);
+            request.GoalId, userContext.UserId, userContext.WorkspaceId, request.RecurringDefinitionId, ct);
 
         if (affected == 0)
         {

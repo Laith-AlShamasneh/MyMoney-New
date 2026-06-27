@@ -15,7 +15,7 @@ internal sealed class DashboardService(
     public async Task<ServiceResult<DashboardSummaryResponse>> GetSummaryAsync(CancellationToken ct = default)
     {
         var (kpi, trend, breakdown, recent) =
-            await dashboardRepository.GetSummaryAsync(userContext.UserId, ct);
+            await dashboardRepository.GetSummaryAsync(userContext.UserId, userContext.WorkspaceId, ct);
 
         // ── KPI calculations ────────────────────────────────────────────────
         var currentNet  = kpi.CurrentIncome  - kpi.CurrentExpenses;

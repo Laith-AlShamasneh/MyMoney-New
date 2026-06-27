@@ -150,7 +150,8 @@ public static class WorkspaceEndpoints
 
         var invitations = app.MapGroup("api/workspaces/invitations")
                              .WithTags("Workspace Invitations")
-                             .RequireAuthorization();
+                             .RequireAuthorization()
+                             .RequireRateLimiting("auth");
 
         invitations.MapPost("send", async (
             SendInvitationRequest request,

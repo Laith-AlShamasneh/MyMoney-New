@@ -2,8 +2,9 @@ namespace Application.Features.Transaction.DbModels;
 
 public class TransactionSearchDbModel
 {
-    public long      UserId     { get; set; }
-    public byte?     TypeId     { get; set; }
+    public long      UserId      { get; set; }
+    public long?     WorkspaceId { get; set; }
+    public byte?     TypeId      { get; set; }
     public int?      CategoryId { get; set; }
     public DateOnly? DateFrom   { get; set; }
     public DateOnly? DateTo     { get; set; }
@@ -60,9 +61,10 @@ public class TransactionByIdDbResult
 
 public class TransactionAnalyticsDbModel
 {
-    public long      UserId   { get; set; }
-    public DateOnly? DateFrom { get; set; }
-    public DateOnly? DateTo   { get; set; }
+    public long      UserId      { get; set; }
+    public long?     WorkspaceId { get; set; }
+    public DateOnly? DateFrom    { get; set; }
+    public DateOnly? DateTo      { get; set; }
 }
 
 public class TransactionCategoryBreakdownDbResult
@@ -92,6 +94,7 @@ public class TransactionAnalyticsDbResult
 public class CreateTransactionDbModel
 {
     public long     UserId            { get; set; }
+    public long?    WorkspaceId       { get; set; }
     public int      CategoryId        { get; set; }
     public byte     TransactionTypeId { get; set; }
     public decimal  Amount            { get; set; }
@@ -103,6 +106,7 @@ public class CreateTransactionDbModel
 public class UpdateTransactionDbModel
 {
     public long     UserId            { get; set; }
+    public long?    WorkspaceId       { get; set; }
     public long     TransactionId     { get; set; }
     public int      CategoryId        { get; set; }
     public byte     TransactionTypeId { get; set; }
@@ -114,8 +118,9 @@ public class UpdateTransactionDbModel
 
 public class DeleteTransactionDbModel
 {
-    public long UserId        { get; set; }
-    public long TransactionId { get; set; }
+    public long  UserId        { get; set; }
+    public long? WorkspaceId   { get; set; }
+    public long  TransactionId { get; set; }
 }
 
 public class UpdateTransactionDbResult

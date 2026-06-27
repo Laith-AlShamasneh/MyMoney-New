@@ -23,8 +23,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using System.Threading.RateLimiting;
 using WebApi.Common.Exceptions;
 using WebApi.Common.Middlewares;
+using WebApi.Features.Files;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,8 +69,13 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 // ── 5. JWT authentication ─────────────────────────────────────────────────────
-var jwtSecret = builder.Configuration["Jwt:SecretKey"]
-    ?? throw new InvalidOperationException("Jwt:SecretKey is missing from configuration.");
+// Fail fast: the signing key must be supplied out-of-band (user-secrets in dev,
+// the Jwt__SecretKey environment variable in prod) and never committed.
+var jwtSecret = builder.Configuration["Jwt:SecretKey"];
+if (string.IsNullOrWhiteSpace(jwtSecret) || Encoding.UTF8.GetByteCount(jwtSecret) < 32)
+    throw new InvalidOperationException(
+        "Jwt:SecretKey is missing or shorter than 32 bytes. Supply it via user-secrets " +
+        "(dev) or the Jwt__SecretKey environment variable (prod). It must never live in appsettings.json.");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -88,16 +95,63 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// ── 6. Rate limiting ──────────────────────────────────────────────────────────
+// Global per-IP limiter protects every endpoint; the strict "auth" policy is
+// applied to credential/token endpoints to blunt brute-force and email-bomb abuse.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 100,
+            Window      = TimeSpan.FromMinutes(1),
+            QueueLimit  = 0
+        });
+    });
+
+    options.AddPolicy("auth", context =>
+    {
+        var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window      = TimeSpan.FromMinutes(1),
+            QueueLimit  = 0
+        });
+    });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.UseHttpsRedirection();
+
+// Block anonymous static access to sensitive uploaded artifacts. Receipts and
+// reports contain financial PII and are reachable only through their
+// authenticated endpoints (or short-lived signed file links). Public assets
+// (profile pictures, category icons) remain served by the static middleware.
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+    if (path.StartsWithSegments("/uploads/receipts") || path.StartsWithSegments("/uploads/reports"))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    await next();
+});
 app.UseStaticFiles();
 
 app.UseExceptionHandler(opt => { });
 
 app.UseCors("FrontendPolicy");
+
+app.UseRateLimiter();
 
 app.UseMiddleware<RequestLoggingMiddleware>();
 
@@ -123,5 +177,6 @@ app.MapOnboardingEndpoints();
 app.MapReceiptEndpoints();
 app.MapCurrencyEndpoints();
 app.MapWorkspaceEndpoints();
+app.MapFileEndpoints();
 
 app.Run();

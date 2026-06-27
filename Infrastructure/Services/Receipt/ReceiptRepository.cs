@@ -14,6 +14,7 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
     {
         var p = new DynamicParameters();
         p.Add("@UserId",           model.UserId,           DbType.Int64);
+        p.Add("@WorkspaceId",      model.WorkspaceId,      DbType.Int64);
         p.Add("@OriginalFileName", model.OriginalFileName, DbType.String);
         p.Add("@StoredFileName",   model.StoredFileName,   DbType.String);
         p.Add("@FileExtension",    model.FileExtension,    DbType.String);
@@ -43,11 +44,12 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
 
     // ── GetById ───────────────────────────────────────────────────────────────
 
-    public async Task<ReceiptWithTagsDbResult> GetByIdAsync(long userId, long receiptId, CancellationToken ct)
+    public async Task<ReceiptWithTagsDbResult> GetByIdAsync(long userId, long? workspaceId, long receiptId, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",    userId,    DbType.Int64);
-        p.Add("@ReceiptId", receiptId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
+        p.Add("@ReceiptId",   receiptId,   DbType.Int64);
 
         return await db.QueryMultipleAsync(
             "MyMoney.usp_Receipt_GetById",
@@ -71,6 +73,7 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
     {
         var p = new DynamicParameters();
         p.Add("@UserId",     model.UserId,                          DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId,                    DbType.Int64);
         p.Add("@Keyword",    model.Keyword,                         DbType.String);
         p.Add("@StatusId",   model.StatusId.HasValue
                                  ? (byte?)model.StatusId : null,   DbType.Byte);
@@ -99,6 +102,7 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
     {
         var p = new DynamicParameters();
         p.Add("@UserId",       model.UserId,       DbType.Int64);
+        p.Add("@WorkspaceId",  model.WorkspaceId,  DbType.Int64);
         p.Add("@ReceiptId",    model.ReceiptId,    DbType.Int64);
         p.Add("@Title",        model.Title,        DbType.String);
         p.Add("@Description",  model.Description,  DbType.String);
@@ -116,10 +120,11 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
 
     // ── Delete ────────────────────────────────────────────────────────────────
 
-    public async Task<DeleteReceiptDbResult> DeleteAsync(long userId, long receiptId, CancellationToken ct)
+    public async Task<DeleteReceiptDbResult> DeleteAsync(long userId, long? workspaceId, long receiptId, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",            userId,    DbType.Int64);
+        p.Add("@UserId",            userId,      DbType.Int64);
+        p.Add("@WorkspaceId",       workspaceId, DbType.Int64);
         p.Add("@ReceiptId",         receiptId, DbType.Int64);
         p.Add("@StoredFileName",    dbType: DbType.String,  size: 500, direction: ParameterDirection.Output);
         p.Add("@ThumbnailFileName", dbType: DbType.String,  size: 500, direction: ParameterDirection.Output);
@@ -137,10 +142,11 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
 
     // ── Archive / Restore ─────────────────────────────────────────────────────
 
-    public async Task<int> ArchiveAsync(long userId, long receiptId, CancellationToken ct)
+    public async Task<int> ArchiveAsync(long userId, long? workspaceId, long receiptId, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",       userId,    DbType.Int64);
+        p.Add("@UserId",       userId,      DbType.Int64);
+        p.Add("@WorkspaceId",  workspaceId, DbType.Int64);
         p.Add("@ReceiptId",    receiptId, DbType.Int64);
         p.Add("@RowsAffected", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
@@ -149,10 +155,11 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
         return p.Get<int>("@RowsAffected");
     }
 
-    public async Task<int> RestoreAsync(long userId, long receiptId, CancellationToken ct)
+    public async Task<int> RestoreAsync(long userId, long? workspaceId, long receiptId, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",       userId,    DbType.Int64);
+        p.Add("@UserId",       userId,      DbType.Int64);
+        p.Add("@WorkspaceId",  workspaceId, DbType.Int64);
         p.Add("@ReceiptId",    receiptId, DbType.Int64);
         p.Add("@RowsAffected", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
@@ -163,10 +170,11 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
 
     // ── Assign Transaction ────────────────────────────────────────────────────
 
-    public async Task<int> AssignTransactionAsync(long userId, long receiptId, long? transactionId, CancellationToken ct)
+    public async Task<int> AssignTransactionAsync(long userId, long? workspaceId, long receiptId, long? transactionId, CancellationToken ct)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",        userId,        DbType.Int64);
+        p.Add("@WorkspaceId",   workspaceId,   DbType.Int64);
         p.Add("@ReceiptId",     receiptId,     DbType.Int64);
         p.Add("@TransactionId", transactionId, DbType.Int64);
         p.Add("@RowsAffected",  dbType: DbType.Int32, direction: ParameterDirection.Output);
@@ -178,10 +186,11 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
 
-    public async Task<ReceiptDashboardDbResult> GetDashboardAsync(long userId, CancellationToken ct)
+    public async Task<ReceiptDashboardDbResult> GetDashboardAsync(long userId, long? workspaceId, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QueryMultipleAsync(
             "MyMoney.usp_Receipt_GetDashboard",
@@ -202,10 +211,11 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
 
     // ── Tags ──────────────────────────────────────────────────────────────────
 
-    public async Task<IReadOnlyList<ReceiptTagListDbResult>> GetTagListAsync(long userId, CancellationToken ct)
+    public async Task<IReadOnlyList<ReceiptTagListDbResult>> GetTagListAsync(long userId, long? workspaceId, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId", userId, DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
 
         return await db.QueryListAsync<ReceiptTagListDbResult>(
             "MyMoney.usp_Receipt_Tag_GetList", p, ct);
@@ -214,7 +224,8 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
     public async Task<CreateReceiptTagDbResult> CreateTagAsync(CreateReceiptTagDbModel model, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",      model.UserId,   DbType.Int64);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@Name",        model.Name,     DbType.String);
         p.Add("@ColorHex",    model.ColorHex, DbType.String);
         p.Add("@TagId",       dbType: DbType.Int32,   direction: ParameterDirection.Output);
@@ -229,10 +240,11 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
         };
     }
 
-    public async Task<int> DeleteTagAsync(long userId, int tagId, CancellationToken ct)
+    public async Task<int> DeleteTagAsync(long userId, long? workspaceId, int tagId, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",       userId, DbType.Int64);
+        p.Add("@UserId",       userId,      DbType.Int64);
+        p.Add("@WorkspaceId",  workspaceId, DbType.Int64);
         p.Add("@TagId",        tagId,  DbType.Int32);
         p.Add("@RowsAffected", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
@@ -241,10 +253,11 @@ internal sealed class ReceiptRepository(IDbExecutor db) : IReceiptRepository
         return p.Get<int>("@RowsAffected");
     }
 
-    public async Task SetTagsAsync(long userId, long receiptId, string tagIdsJson, CancellationToken ct)
+    public async Task SetTagsAsync(long userId, long? workspaceId, long receiptId, string tagIdsJson, CancellationToken ct)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",    userId,     DbType.Int64);
+        p.Add("@UserId",      userId,      DbType.Int64);
+        p.Add("@WorkspaceId", workspaceId, DbType.Int64);
         p.Add("@ReceiptId", receiptId,  DbType.Int64);
         p.Add("@TagIds",    tagIdsJson, DbType.String);
 

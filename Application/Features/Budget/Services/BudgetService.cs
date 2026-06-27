@@ -24,7 +24,7 @@ internal sealed class BudgetService(
     public async Task<ServiceResult<IReadOnlyList<BudgetResponse>>> GetListAsync(
         int? statusId, CancellationToken ct = default)
     {
-        var model = new GetBudgetListDbModel { UserId = userContext.UserId, StatusId = (byte?)statusId };
+        var model = new GetBudgetListDbModel { UserId = userContext.UserId, WorkspaceId = userContext.WorkspaceId, StatusId = (byte?)statusId };
         var rows  = await budgetRepository.GetListAsync(model, ct);
         var items = rows.Select(MapToBudgetResponse).ToList();
         var msg   = await messageProvider.GetMessagesAsync(MessageKeys.Budget.ListLoaded, ct);
@@ -34,7 +34,7 @@ internal sealed class BudgetService(
     public async Task<ServiceResult<BudgetDetailResponse>> GetByIdAsync(
         long budgetId, CancellationToken ct = default)
     {
-        var (budget, history) = await budgetRepository.GetByIdAsync(userContext.UserId, budgetId, ct);
+        var (budget, history) = await budgetRepository.GetByIdAsync(userContext.UserId, userContext.WorkspaceId, budgetId, ct);
         if (budget is null)
         {
             return ServiceResultFactory.Failure<BudgetDetailResponse>(
@@ -69,7 +69,7 @@ internal sealed class BudgetService(
 
     public async Task<ServiceResult<BudgetDashboardResponse>> GetDashboardAsync(CancellationToken ct = default)
     {
-        var (summary, budgets, trend) = await budgetRepository.GetDashboardAsync(userContext.UserId, ct);
+        var (summary, budgets, trend) = await budgetRepository.GetDashboardAsync(userContext.UserId, userContext.WorkspaceId, ct);
 
         var response = new BudgetDashboardResponse(
             Summary: summary is null
@@ -103,6 +103,7 @@ internal sealed class BudgetService(
         var model  = new CreateBudgetDbModel
         {
             UserId       = userId,
+            WorkspaceId  = userContext.WorkspaceId,
             Name         = request.Name.Trim(),
             CategoryId   = request.CategoryId,
             BudgetTypeId = (byte)request.BudgetTypeId,
@@ -135,7 +136,7 @@ internal sealed class BudgetService(
             new ComputeBudgetSnapshotPayload(userId, result.NewBudgetId),
             priority: 2, maxAttempts: 3, ct: ct);
 
-        var (budget, _) = await budgetRepository.GetByIdAsync(userId, result.NewBudgetId, ct);
+        var (budget, _) = await budgetRepository.GetByIdAsync(userId, userContext.WorkspaceId, result.NewBudgetId, ct);
         if (budget is null)
         {
             return ServiceResultFactory.Failure<BudgetResponse>(
@@ -155,6 +156,7 @@ internal sealed class BudgetService(
         var model  = new UpdateBudgetDbModel
         {
             UserId      = userId,
+            WorkspaceId = userContext.WorkspaceId,
             BudgetId    = request.Id,
             Name        = request.Name.Trim(),
             Amount      = request.Amount,
@@ -176,7 +178,7 @@ internal sealed class BudgetService(
             new ComputeBudgetSnapshotPayload(userId, request.Id),
             priority: 2, maxAttempts: 3, ct: ct);
 
-        var (budget, _) = await budgetRepository.GetByIdAsync(userId, request.Id, ct);
+        var (budget, _) = await budgetRepository.GetByIdAsync(userId, userContext.WorkspaceId, request.Id, ct);
         var response    = MapToBudgetResponse(budget!);
         var msg         = await messageProvider.GetMessagesAsync(MessageKeys.Budget.Updated, ct);
         return ServiceResultFactory.Success(response, InternalResponseCodes.OK, msg);
@@ -185,7 +187,7 @@ internal sealed class BudgetService(
     public async Task<ServiceResult<object?>> DeleteAsync(long budgetId, CancellationToken ct = default)
     {
         var affected = await budgetRepository.DeleteAsync(
-            new DeleteBudgetDbModel { UserId = userContext.UserId, BudgetId = budgetId }, ct);
+            new DeleteBudgetDbModel { UserId = userContext.UserId, WorkspaceId = userContext.WorkspaceId, BudgetId = budgetId }, ct);
 
         if (affected == 0)
         {
@@ -200,7 +202,7 @@ internal sealed class BudgetService(
 
     public async Task<ServiceResult<object?>> PauseAsync(long budgetId, CancellationToken ct = default)
     {
-        var (budget, _) = await budgetRepository.GetByIdAsync(userContext.UserId, budgetId, ct);
+        var (budget, _) = await budgetRepository.GetByIdAsync(userContext.UserId, userContext.WorkspaceId, budgetId, ct);
         if (budget is null)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -223,7 +225,7 @@ internal sealed class BudgetService(
         }
 
         await budgetRepository.UpdateStatusAsync(
-            new UpdateBudgetStatusDbModel { UserId = userContext.UserId, BudgetId = budgetId, NewStatusId = 2 }, ct);
+            new UpdateBudgetStatusDbModel { UserId = userContext.UserId, WorkspaceId = userContext.WorkspaceId, BudgetId = budgetId, NewStatusId = 2 }, ct);
 
         var msg = await messageProvider.GetMessagesAsync(MessageKeys.Budget.Paused, ct);
         return ServiceResultFactory.Success<object?>(null, InternalResponseCodes.OK, msg);
@@ -231,7 +233,7 @@ internal sealed class BudgetService(
 
     public async Task<ServiceResult<object?>> ResumeAsync(long budgetId, CancellationToken ct = default)
     {
-        var (budget, _) = await budgetRepository.GetByIdAsync(userContext.UserId, budgetId, ct);
+        var (budget, _) = await budgetRepository.GetByIdAsync(userContext.UserId, userContext.WorkspaceId, budgetId, ct);
         if (budget is null)
         {
             return ServiceResultFactory.Failure<object?>(
@@ -247,7 +249,7 @@ internal sealed class BudgetService(
         }
 
         await budgetRepository.UpdateStatusAsync(
-            new UpdateBudgetStatusDbModel { UserId = userContext.UserId, BudgetId = budgetId, NewStatusId = 1 }, ct);
+            new UpdateBudgetStatusDbModel { UserId = userContext.UserId, WorkspaceId = userContext.WorkspaceId, BudgetId = budgetId, NewStatusId = 1 }, ct);
 
         var msg = await messageProvider.GetMessagesAsync(MessageKeys.Budget.Resumed, ct);
         return ServiceResultFactory.Success<object?>(null, InternalResponseCodes.OK, msg);
@@ -258,8 +260,9 @@ internal sealed class BudgetService(
     {
         var model = new GetBudgetPeriodsDbModel
         {
-            UserId     = userContext.UserId,
-            BudgetId   = budgetId,
+            UserId      = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
+            BudgetId    = budgetId,
             PageNumber = pageNumber,
             PageSize   = pageSize,
         };
@@ -277,8 +280,9 @@ internal sealed class BudgetService(
     {
         var model = new GetBudgetAnalyticsDbModel
         {
-            UserId   = userContext.UserId,
-            BudgetId = request.BudgetId,
+            UserId      = userContext.UserId,
+            WorkspaceId = userContext.WorkspaceId,
+            BudgetId    = request.BudgetId,
             DateFrom = request.DateFrom is not null ? DateOnly.Parse(request.DateFrom) : null,
             DateTo   = request.DateTo   is not null ? DateOnly.Parse(request.DateTo)   : null,
         };
@@ -321,7 +325,8 @@ internal sealed class BudgetService(
 
         if (result.Alert80PctTriggered)
         {
-            var (budget, _) = await budgetRepository.GetByIdAsync(userId, budgetId, ct);
+            // Job path: the budget's workspace is resolved DB-side by primary key.
+            var (budget, _) = await budgetRepository.GetByIdAsync(userId, null, budgetId, ct);
             if (budget is not null)
             {
                 await notificationPublisher.PublishAsync(
@@ -340,7 +345,8 @@ internal sealed class BudgetService(
 
         if (result.Alert100PctTriggered)
         {
-            var (budget, _) = await budgetRepository.GetByIdAsync(userId, budgetId, ct);
+            // Job path: the budget's workspace is resolved DB-side by primary key.
+            var (budget, _) = await budgetRepository.GetByIdAsync(userId, null, budgetId, ct);
             if (budget is not null)
             {
                 await notificationPublisher.PublishAsync(

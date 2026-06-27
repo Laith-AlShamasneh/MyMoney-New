@@ -45,6 +45,7 @@ internal sealed class RecurringTransactionService(
         var model = new CreateRecurringTransactionDbModel
         {
             UserId            = userContext.UserId,
+            WorkspaceId       = userContext.WorkspaceId,
             CategoryId        = request.CategoryId,
             TransactionTypeId = (byte)request.TransactionTypeId,
             Name              = request.Name.Trim(),
@@ -64,7 +65,7 @@ internal sealed class RecurringTransactionService(
 
         var id = await repository.CreateAsync(model, ct);
 
-        var created = await repository.GetByIdAsync(id, ct);
+        var created = await repository.GetByIdAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
 
         await InvalidateForecastCacheAndEnqueueAsync(userContext.UserId, ct);
 
@@ -78,9 +79,10 @@ internal sealed class RecurringTransactionService(
         long              id,
         CancellationToken ct = default)
     {
-        var result = await repository.GetByIdAsync(id, ct);
+        var result = await repository.GetByIdAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
 
-        if (result is null || result.UserId != userContext.UserId)
+        // Ownership/workspace scoping is enforced by the stored procedure (@UserId + @WorkspaceId).
+        if (result is null)
         {
             return ServiceResultFactory.Failure<RecurringTransactionResponse>(
                 InternalResponseCodes.NotFound,
@@ -100,6 +102,7 @@ internal sealed class RecurringTransactionService(
         var model = new GetRecurringTransactionsDbModel
         {
             UserId            = userContext.UserId,
+            WorkspaceId       = userContext.WorkspaceId,
             StatusId          = request.StatusId.HasValue ? (byte?)request.StatusId.Value : null,
             TransactionTypeId = request.TransactionTypeId.HasValue ? (byte?)request.TransactionTypeId.Value : null,
             IsSubscription    = false,
@@ -127,8 +130,8 @@ internal sealed class RecurringTransactionService(
         UpdateRecurringTransactionRequest request,
         CancellationToken                 ct = default)
     {
-        var existing = await repository.GetByIdAsync(request.Id, ct);
-        if (existing is null || existing.UserId != userContext.UserId)
+        var existing = await repository.GetByIdAsync(request.Id, userContext.UserId, userContext.WorkspaceId, ct);
+        if (existing is null)
         {
             return ServiceResultFactory.Failure<RecurringTransactionResponse>(
                 InternalResponseCodes.NotFound,
@@ -162,6 +165,7 @@ internal sealed class RecurringTransactionService(
         {
             Id                = request.Id,
             UserId            = userContext.UserId,
+            WorkspaceId       = userContext.WorkspaceId,
             CategoryId        = request.CategoryId,
             Name              = request.Name.Trim(),
             Amount            = request.Amount,
@@ -177,7 +181,7 @@ internal sealed class RecurringTransactionService(
 
         await repository.UpdateAsync(model, ct);
 
-        var updated = await repository.GetByIdAsync(request.Id, ct);
+        var updated = await repository.GetByIdAsync(request.Id, userContext.UserId, userContext.WorkspaceId, ct);
 
         await InvalidateForecastCacheAndEnqueueAsync(userContext.UserId, ct);
 
@@ -189,15 +193,15 @@ internal sealed class RecurringTransactionService(
 
     public async Task<ServiceResult<object?>> DeleteAsync(long id, CancellationToken ct = default)
     {
-        var existing = await repository.GetByIdAsync(id, ct);
-        if (existing is null || existing.UserId != userContext.UserId)
+        var existing = await repository.GetByIdAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
+        if (existing is null)
         {
             return ServiceResultFactory.Failure<object?>(
                 InternalResponseCodes.NotFound,
                 await messageProvider.GetMessagesAsync(MessageKeys.RecurringTransaction.NotFound, ct));
         }
 
-        await repository.DeleteAsync(id, userContext.UserId, ct);
+        await repository.DeleteAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
 
         return ServiceResultFactory.Success<object?>(
             null,
@@ -207,8 +211,8 @@ internal sealed class RecurringTransactionService(
 
     public async Task<ServiceResult<object?>> PauseAsync(long id, CancellationToken ct = default)
     {
-        var existing = await repository.GetByIdAsync(id, ct);
-        if (existing is null || existing.UserId != userContext.UserId)
+        var existing = await repository.GetByIdAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
+        if (existing is null)
         {
             return ServiceResultFactory.Failure<object?>(
                 InternalResponseCodes.NotFound,
@@ -222,7 +226,7 @@ internal sealed class RecurringTransactionService(
                 await messageProvider.GetMessagesAsync(MessageKeys.RecurringTransaction.AlreadyPaused, ct));
         }
 
-        await repository.PauseAsync(id, userContext.UserId, ct);
+        await repository.PauseAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
 
         return ServiceResultFactory.Success<object?>(
             null,
@@ -232,8 +236,8 @@ internal sealed class RecurringTransactionService(
 
     public async Task<ServiceResult<object?>> ResumeAsync(long id, CancellationToken ct = default)
     {
-        var existing = await repository.GetByIdAsync(id, ct);
-        if (existing is null || existing.UserId != userContext.UserId)
+        var existing = await repository.GetByIdAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
+        if (existing is null)
         {
             return ServiceResultFactory.Failure<object?>(
                 InternalResponseCodes.NotFound,
@@ -254,7 +258,7 @@ internal sealed class RecurringTransactionService(
                 await messageProvider.GetMessagesAsync(MessageKeys.RecurringTransaction.CannotResumeExpired, ct));
         }
 
-        await repository.ResumeAsync(id, userContext.UserId, ct);
+        await repository.ResumeAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
 
         return ServiceResultFactory.Success<object?>(
             null,
@@ -266,7 +270,7 @@ internal sealed class RecurringTransactionService(
         CancellationToken ct = default)
     {
         var userId   = userContext.UserId;
-        var summary  = await repository.GetDashboardSummaryAsync(userId, ct);
+        var summary  = await repository.GetDashboardSummaryAsync(userId, userContext.WorkspaceId, ct);
         var upcoming = await repository.GetUpcomingByUserAsync(userId, daysAhead: 7, ct);
 
         var upcomingPayments = upcoming
@@ -325,6 +329,7 @@ internal sealed class RecurringTransactionService(
         var model = new CreateRecurringTransactionDbModel
         {
             UserId             = userContext.UserId,
+            WorkspaceId        = userContext.WorkspaceId,
             CategoryId         = request.CategoryId,
             TransactionTypeId  = (byte)2, // Expense — subscriptions are always expenses
             Name               = request.Name.Trim(),
@@ -349,7 +354,7 @@ internal sealed class RecurringTransactionService(
 
         var id = await repository.CreateAsync(model, ct);
 
-        var created = await repository.GetByIdAsync(id, ct);
+        var created = await repository.GetByIdAsync(id, userContext.UserId, userContext.WorkspaceId, ct);
 
         return ServiceResultFactory.Success(
             MapToSubscriptionResponse(created!),
@@ -364,6 +369,7 @@ internal sealed class RecurringTransactionService(
         var model = new GetRecurringTransactionsDbModel
         {
             UserId         = userContext.UserId,
+            WorkspaceId    = userContext.WorkspaceId,
             StatusId       = request.StatusId.HasValue ? (byte?)request.StatusId.Value : null,
             IsSubscription = true,
             PageNumber     = request.PageNumber,
@@ -390,8 +396,8 @@ internal sealed class RecurringTransactionService(
         UpdateSubscriptionRequest request,
         CancellationToken         ct = default)
     {
-        var existing = await repository.GetByIdAsync(request.Id, ct);
-        if (existing is null || existing.UserId != userContext.UserId || !existing.IsSubscription)
+        var existing = await repository.GetByIdAsync(request.Id, userContext.UserId, userContext.WorkspaceId, ct);
+        if (existing is null || !existing.IsSubscription)
         {
             return ServiceResultFactory.Failure<SubscriptionResponse>(
                 InternalResponseCodes.NotFound,
@@ -405,6 +411,7 @@ internal sealed class RecurringTransactionService(
         {
             Id                 = request.Id,
             UserId             = userContext.UserId,
+            WorkspaceId        = userContext.WorkspaceId,
             CategoryId         = request.CategoryId,
             Name               = request.Name.Trim(),
             Amount             = request.Amount,
@@ -420,7 +427,7 @@ internal sealed class RecurringTransactionService(
 
         await repository.UpdateAsync(model, ct);
 
-        var updated = await repository.GetByIdAsync(request.Id, ct);
+        var updated = await repository.GetByIdAsync(request.Id, userContext.UserId, userContext.WorkspaceId, ct);
 
         return ServiceResultFactory.Success(
             MapToSubscriptionResponse(updated!),

@@ -5,6 +5,7 @@ namespace Application.Features.Receipt.DbModels;
 public class UploadReceiptDbModel
 {
     public long    UserId           { get; set; }
+    public long?   WorkspaceId      { get; set; }
     public string  OriginalFileName { get; set; } = null!;
     public string  StoredFileName   { get; set; } = null!;
     public string  FileExtension    { get; set; } = null!;
@@ -71,7 +72,8 @@ public class ReceiptTagDbResult
 
 public class SearchReceiptsDbModel
 {
-    public long    UserId     { get; set; }
+    public long    UserId      { get; set; }
+    public long?   WorkspaceId { get; set; }
     public string? Keyword    { get; set; }
     public byte?   StatusId   { get; set; }
     public DateOnly? DateFrom { get; set; }
@@ -117,6 +119,7 @@ public class SearchReceiptsDbResult
 public class UpdateReceiptDbModel
 {
     public long    UserId       { get; set; }
+    public long?   WorkspaceId  { get; set; }
     public long    ReceiptId    { get; set; }
     public string? Title        { get; set; }
     public string? Description  { get; set; }
@@ -168,7 +171,8 @@ public class ReceiptTagListDbResult
 
 public class CreateReceiptTagDbModel
 {
-    public long   UserId   { get; set; }
+    public long   UserId      { get; set; }
+    public long?  WorkspaceId { get; set; }
     public string Name     { get; set; } = null!;
     public string? ColorHex { get; set; }
 }

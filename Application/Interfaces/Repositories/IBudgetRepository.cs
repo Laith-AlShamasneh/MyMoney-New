@@ -12,8 +12,8 @@ public interface IBudgetRepository
 
     // ── Read ──────────────────────────────────────────────────────────────────
     Task<IReadOnlyList<BudgetRowDbResult>> GetListAsync(GetBudgetListDbModel model, CancellationToken ct = default);
-    Task<(BudgetDetailDbResult? Budget, IReadOnlyList<BudgetPeriodRowDbResult> History)> GetByIdAsync(long userId, long budgetId, CancellationToken ct = default);
-    Task<(BudgetDashboardSummaryDbResult? Summary, IReadOnlyList<BudgetRowDbResult> Budgets, IReadOnlyList<BudgetTrendPointDbResult> Trend)> GetDashboardAsync(long userId, CancellationToken ct = default);
+    Task<(BudgetDetailDbResult? Budget, IReadOnlyList<BudgetPeriodRowDbResult> History)> GetByIdAsync(long userId, long? workspaceId, long budgetId, CancellationToken ct = default);
+    Task<(BudgetDashboardSummaryDbResult? Summary, IReadOnlyList<BudgetRowDbResult> Budgets, IReadOnlyList<BudgetTrendPointDbResult> Trend)> GetDashboardAsync(long userId, long? workspaceId, CancellationToken ct = default);
     Task<IReadOnlyList<BudgetAnalyticsRowDbResult>> GetAnalyticsAsync(GetBudgetAnalyticsDbModel model, CancellationToken ct = default);
 
     // ── Period history ────────────────────────────────────────────────────────

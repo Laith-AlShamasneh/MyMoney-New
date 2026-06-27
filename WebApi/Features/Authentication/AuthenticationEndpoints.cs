@@ -10,7 +10,8 @@ public static class AuthenticationEndpoints
 {
     public static void MapAuthenticationEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/authentication").WithTags("Authentication");
+        var group = app.MapGroup("/api/authentication").WithTags("Authentication")
+                       .RequireRateLimiting("auth");
 
         group.MapPost("/register", RegisterAsync)
              .DisableAntiforgery()
@@ -50,6 +51,7 @@ public static class AuthenticationEndpoints
         // Confirm is public — user arrives from email link, JS page POSTs the token
         app.MapPost("/api/authentication/email-change/confirm", ConfirmEmailChangeAsync)
            .WithTags("Authentication")
+           .RequireRateLimiting("auth")
            .AddEndpointFilter<ValidationFilter<ConfirmEmailChangeRequest>>();
 
         group.MapPost("/email-change/cancel", CancelEmailChangeAsync)

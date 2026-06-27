@@ -14,6 +14,7 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
     {
         var p = new DynamicParameters();
         p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
         p.Add("@TypeId",      model.TypeId,      DbType.Byte);
         p.Add("@CategoryId",  model.CategoryId,  DbType.Int32);
         p.Add("@DateFrom",    model.DateFrom,    DbType.Date);
@@ -50,9 +51,10 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
         CancellationToken           ct = default)
     {
         var p = new DynamicParameters();
-        p.Add("@UserId",   model.UserId,   DbType.Int64);
-        p.Add("@DateFrom", model.DateFrom, DbType.Date);
-        p.Add("@DateTo",   model.DateTo,   DbType.Date);
+        p.Add("@UserId",      model.UserId,      DbType.Int64);
+        p.Add("@WorkspaceId", model.WorkspaceId, DbType.Int64);
+        p.Add("@DateFrom",    model.DateFrom,    DbType.Date);
+        p.Add("@DateTo",      model.DateTo,      DbType.Date);
 
         return await db.QueryMultipleAsync(
             "MyMoney.usp_Transaction_GetAnalytics",
@@ -71,11 +73,13 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
 
     public async Task<TransactionByIdDbResult?> GetByIdAsync(
         long              userId,
+        long?             workspaceId,
         long              transactionId,
         CancellationToken ct = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserId",        userId,        DbType.Int64);
+        p.Add("@WorkspaceId",   workspaceId,   DbType.Int64);
         p.Add("@TransactionId", transactionId, DbType.Int64);
 
         return await db.QuerySingleAsync<TransactionByIdDbResult>(
@@ -86,6 +90,7 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
     {
         var p = new DynamicParameters();
         p.Add("@UserId",            model.UserId,            DbType.Int64);
+        p.Add("@WorkspaceId",       model.WorkspaceId,       DbType.Int64);
         p.Add("@CategoryId",        model.CategoryId,        DbType.Int32);
         p.Add("@TransactionTypeId", model.TransactionTypeId, DbType.Byte);
         p.Add("@Amount",            model.Amount,            DbType.Decimal);
@@ -103,6 +108,7 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
     {
         var p = new DynamicParameters();
         p.Add("@UserId",              model.UserId,            DbType.Int64);
+        p.Add("@WorkspaceId",         model.WorkspaceId,       DbType.Int64);
         p.Add("@TransactionId",       model.TransactionId,     DbType.Int64);
         p.Add("@CategoryId",          model.CategoryId,        DbType.Int32);
         p.Add("@TransactionTypeId",   model.TransactionTypeId, DbType.Byte);
@@ -126,6 +132,7 @@ internal sealed class TransactionRepository(IDbExecutor db) : ITransactionReposi
     {
         var p = new DynamicParameters();
         p.Add("@UserId",        model.UserId,        DbType.Int64);
+        p.Add("@WorkspaceId",   model.WorkspaceId,   DbType.Int64);
         p.Add("@TransactionId", model.TransactionId, DbType.Int64);
         p.Add("@AffectedRows",  dbType: DbType.Int32, direction: ParameterDirection.Output);
         p.Add("@DeletedDate",   dbType: DbType.Date,  direction: ParameterDirection.Output);
