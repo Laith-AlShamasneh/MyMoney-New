@@ -17,6 +17,10 @@ internal sealed class BackgroundJobRepository(IDbExecutor db) : IBackgroundJobRe
         p.Add("@ScheduledAt", input.ScheduledAt, DbType.DateTime2);
         p.Add("@MaxAttempts", input.MaxAttempts, DbType.Int32);
         p.Add("@CreatedBy",   input.CreatedBy,   DbType.Int64);
+        // Only sent when present so the call still works against an SP build that
+        // predates the @DedupKey parameter (H7 migration applied separately).
+        if (input.DedupKey is not null)
+            p.Add("@DedupKey", input.DedupKey, DbType.String, size: 200);
         return db.ExecuteAsync("MyMoney.usp_BackgroundJob_Enqueue", p, ct);
     }
 

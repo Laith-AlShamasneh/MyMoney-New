@@ -8,5 +8,6 @@ public interface IBackgroundJobService
         byte        priority    = 2,
         DateTime?   scheduledAt = null,
         int         maxAttempts = 3,
+        string?     dedupKey    = null,
         CancellationToken ct    = default);
 }

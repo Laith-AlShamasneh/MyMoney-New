@@ -8,6 +8,10 @@ public sealed class BackgroundJobEnqueueInput
     public DateTime  ScheduledAt { get; init; } = DateTime.UtcNow;
     public int       MaxAttempts { get; init; } = 3;
     public long?     CreatedBy   { get; init; }
+
+    // Optional idempotency key. When set, the enqueue SP skips insertion if a
+    // non-terminal (Pending/Processing) job with the same key already exists.
+    public string?   DedupKey    { get; init; }
 }
 
 public sealed class BackgroundJobRow

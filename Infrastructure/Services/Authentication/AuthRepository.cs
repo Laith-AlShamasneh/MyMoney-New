@@ -16,6 +16,20 @@ internal sealed class AuthRepository(IDbExecutor db) : IAuthRepository
         return result ?? false;
     }
 
+    public Task<Guid?> GetSecurityStampAsync(long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId", userId, DbType.Int64);
+        return db.QuerySingleAsync<Guid?>("MyMoney.usp_Authentication_GetSecurityStamp", p, ct);
+    }
+
+    public Task BumpSecurityStampAsync(long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId", userId, DbType.Int64);
+        return db.ExecuteAsync("MyMoney.usp_Authentication_BumpSecurityStamp", p, ct);
+    }
+
     public async Task<RegisterDbResult?> RegisterAsync(RegisterDbInput input, CancellationToken ct = default)
     {
         var p = new DynamicParameters();

@@ -4,5 +4,6 @@ public record JwtTokenResponse(
     long UserId,
     string Email,
     string DisplayName,
-    IEnumerable<int> RoleIds
+    IEnumerable<int> RoleIds,
+    string? SecurityStamp = null
 );

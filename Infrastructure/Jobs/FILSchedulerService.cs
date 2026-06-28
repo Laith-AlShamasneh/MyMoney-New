@@ -60,6 +60,7 @@ internal sealed class FILSchedulerService(
             JobTypes.HourlyAnomalyCheck,
             new HourlyAnomalyPayload(now.AddHours(-1)),
             priority: 2,
+            dedupKey: $"{JobTypes.HourlyAnomalyCheck}:{now:yyyyMMddHH}",
             ct);
 
         _lastHourlyRun = now;
@@ -77,6 +78,7 @@ internal sealed class FILSchedulerService(
             JobTypes.DailyFILProcessing,
             new DailyFILPayload(target.Year, target.Month, target.Day),
             priority: 3,
+            dedupKey: $"{JobTypes.DailyFILProcessing}:{target:yyyyMMdd}",
             ct);
 
         _lastDailyRun = now;
@@ -94,6 +96,7 @@ internal sealed class FILSchedulerService(
             JobTypes.MonthlyFILProcessing,
             new MonthlyFILPayload(prev.Year, prev.Month),
             priority: 3,
+            dedupKey: $"{JobTypes.MonthlyFILProcessing}:{prev.Year}-{prev.Month:D2}",
             ct);
 
         _lastMonthlyRun = now;
@@ -104,10 +107,11 @@ internal sealed class FILSchedulerService(
         string            jobType,
         TPayload          payload,
         byte              priority,
+        string            dedupKey,
         CancellationToken ct)
     {
         using var scope  = scopeFactory.CreateScope();
         var jobService   = scope.ServiceProvider.GetRequiredService<IBackgroundJobService>();
-        await jobService.EnqueueAsync(jobType, payload, priority, ct: ct);
+        await jobService.EnqueueAsync(jobType, payload, priority, dedupKey: dedupKey, ct: ct);
     }
 }

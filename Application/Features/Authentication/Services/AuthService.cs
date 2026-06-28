@@ -27,6 +27,7 @@ internal sealed class AuthService(
     INotificationPublisher          notificationPublisher,
     IOptions<AuthenticationOptions> authOptions,
     IOnboardingService              onboardingService,
+    ICacheService                   cacheService,
     ILogger<AuthService>            logger) : IAuthService
 {
     private const int RefreshTokenExpiryDays = 7;
@@ -100,7 +101,8 @@ internal sealed class AuthService(
 
         // 4. Generate tokens
         var jwtModel = new JwtTokenResponse(
-            dbResult.UserId, dbResult.Email, dbResult.DisplayNameEn, [(int)SystemRoles.User]);
+            dbResult.UserId, dbResult.Email, dbResult.DisplayNameEn, [(int)SystemRoles.User],
+            await GetSecurityStampAsync(dbResult.UserId, ct));
 
         var (accessToken, accessTokenExpiresAt) = jwtService.GenerateAccessToken(jwtModel);
 
@@ -252,7 +254,8 @@ internal sealed class AuthService(
 
         // 7. Generate access token
         var jwtModel = new JwtTokenResponse(
-            user.UserId, user.Email, user.DisplayNameEn, [user.RoleId]);
+            user.UserId, user.Email, user.DisplayNameEn, [user.RoleId],
+            await GetSecurityStampAsync(user.UserId, ct));
 
         var (accessToken, accessTokenExpiresAt) = jwtService.GenerateAccessToken(jwtModel);
 
@@ -425,6 +428,14 @@ internal sealed class AuthService(
                 InternalResponseCodes.Unauthorized,
                 await messageProvider.GetMessagesAsync(MessageKeys.Common.Unauthorized, ct));
 
+        // 4.5 Bump the security stamp so every outstanding access token for this user
+        //     is rejected on its next request (when stamp validation is enabled).
+        if (authOptions.Value.ValidateAccessTokenStamp)
+        {
+            await authRepository.BumpSecurityStampAsync(user.UserId, ct);
+            await cacheService.RemoveAsync($"sstamp:{user.UserId}");
+        }
+
         // 5. Enqueue security notification email via durable background job (Rule 16)
         var isArabic    = userContext.Language == SystemLanguages.Arabic;
         var displayName = isArabic && !string.IsNullOrWhiteSpace(user.DisplayNameAr)
@@ -576,7 +587,8 @@ internal sealed class AuthService(
                 await messageProvider.GetMessagesAsync(MessageKeys.Authentication.InvalidToken, ct));
 
         var jwtModel = new JwtTokenResponse(
-            dbResult.UserId, dbResult.Email!, dbResult.DisplayNameEn!, [dbResult.RoleId]);
+            dbResult.UserId, dbResult.Email!, dbResult.DisplayNameEn!, [dbResult.RoleId],
+            await GetSecurityStampAsync(dbResult.UserId, ct));
 
         var (accessToken, accessTokenExpiresAt) = jwtService.GenerateAccessToken(jwtModel);
 
@@ -747,6 +759,14 @@ internal sealed class AuthService(
             InternalResponseCodes.OK,
             await messageProvider.GetMessagesAsync(MessageKeys.Profile.EmailChangeCancelled, ct));
     }
+
+    // Resolves the per-user security stamp for the access-token claim, but only when
+    // stamp validation is enabled — so with the flag off there is no extra DB call and
+    // the feature has no dependency on the H8 migration being applied yet.
+    private async Task<string?> GetSecurityStampAsync(long userId, CancellationToken ct) =>
+        authOptions.Value.ValidateAccessTokenStamp
+            ? (await authRepository.GetSecurityStampAsync(userId, ct))?.ToString()
+            : null;
 
     private static string BuildEmailChangeLink(AuthenticationOptions opts, string rawToken)
     {

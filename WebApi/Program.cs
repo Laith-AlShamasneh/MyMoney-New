@@ -17,8 +17,11 @@ using WebApi.Features.Transaction;
 using WebApi.Features.Receipt;
 using WebApi.Features.Currency;
 using WebApi.Features.Workspace;
+using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using FluentValidation;
 using Infrastructure;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -80,6 +83,11 @@ if (string.IsNullOrWhiteSpace(jwtSecret) || Encoding.UTF8.GetByteCount(jwtSecret
         "Jwt:SecretKey is missing or shorter than 32 bytes. Supply it via user-secrets " +
         "(dev) or the Jwt__SecretKey environment variable (prod). It must never live in appsettings.json.");
 
+// H8: when enabled, each request's access token must carry a security stamp that
+// matches the user's current stamp (cached ~60s). Bumping the stamp (on password
+// change) revokes outstanding tokens. Keep off until the H8 migration is applied.
+var validateAccessTokenStamp = builder.Configuration.GetValue<bool>("Authentication:ValidateAccessTokenStamp");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -94,6 +102,40 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
             ClockSkew = TimeSpan.Zero
         };
+
+        if (validateAccessTokenStamp)
+        {
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var principal  = context.Principal;
+                    var userIdStr  = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var tokenStamp = principal?.FindFirst("sstamp")?.Value;
+
+                    if (!long.TryParse(userIdStr, out var userId) || string.IsNullOrEmpty(tokenStamp))
+                    {
+                        context.Fail("Missing or invalid security stamp.");
+                        return;
+                    }
+
+                    var services = context.HttpContext.RequestServices;
+                    var cache    = services.GetRequiredService<ICacheService>();
+                    var cacheKey = $"sstamp:{userId}";
+
+                    var currentStamp = await cache.GetAsync<string>(cacheKey);
+                    if (currentStamp is null)
+                    {
+                        var authRepo = services.GetRequiredService<IAuthRepository>();
+                        currentStamp = (await authRepo.GetSecurityStampAsync(userId))?.ToString() ?? string.Empty;
+                        await cache.SetAsync(cacheKey, currentStamp, TimeSpan.FromSeconds(60));
+                    }
+
+                    if (!string.Equals(currentStamp, tokenStamp, StringComparison.OrdinalIgnoreCase))
+                        context.Fail("Security stamp mismatch.");
+                }
+            };
+        }
     });
 
 builder.Services.AddAuthorization();

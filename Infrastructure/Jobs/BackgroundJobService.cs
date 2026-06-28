@@ -15,6 +15,7 @@ internal sealed class BackgroundJobService(
         byte      priority    = 2,
         DateTime? scheduledAt = null,
         int       maxAttempts = 3,
+        string?   dedupKey    = null,
         CancellationToken ct  = default)
     {
         var input = new BackgroundJobEnqueueInput
@@ -24,7 +25,8 @@ internal sealed class BackgroundJobService(
             Priority    = priority,
             ScheduledAt = scheduledAt ?? DateTime.UtcNow,
             MaxAttempts = maxAttempts,
-            CreatedBy   = userContext.IsAuthenticated ? userContext.UserId : null
+            CreatedBy   = userContext.IsAuthenticated ? userContext.UserId : null,
+            DedupKey    = dedupKey
         };
         return repository.EnqueueAsync(input, ct);
     }

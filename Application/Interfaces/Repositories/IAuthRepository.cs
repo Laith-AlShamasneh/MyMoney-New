@@ -30,4 +30,8 @@ public interface IAuthRepository
     Task<RefreshTokenDbResult> RefreshTokenAsync(RefreshTokenDbInput input, CancellationToken ct = default);
 
     Task LogoutAsync(LogoutDbInput input, CancellationToken ct = default);
+
+    // H8 — access-token revocation via per-user security stamp.
+    Task<Guid?> GetSecurityStampAsync(long userId, CancellationToken ct = default);
+    Task        BumpSecurityStampAsync(long userId, CancellationToken ct = default);
 }

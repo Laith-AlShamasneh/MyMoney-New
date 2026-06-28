@@ -45,6 +45,11 @@ internal sealed class JwtService : IJwtService
         foreach (var role in model.RoleIds)
             claims.Add(new Claim("role", role.ToString()));
 
+        // Per-user security stamp — lets the API revoke outstanding access tokens
+        // (validated per request when Authentication:ValidateAccessTokenStamp is on).
+        if (!string.IsNullOrEmpty(model.SecurityStamp))
+            claims.Add(new Claim("sstamp", model.SecurityStamp));
+
         var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
