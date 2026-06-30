@@ -186,8 +186,8 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
-    headers["X-Content-Type-Options"] = "nosniff";
-    headers["X-Frame-Options"]        = "DENY";
+    headers.XContentTypeOptions = "nosniff";
+    headers.XFrameOptions = "DENY";
     headers["Referrer-Policy"]        = "no-referrer";
     await next();
 });
