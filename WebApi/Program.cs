@@ -26,7 +26,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
-using System.Threading.RateLimiting;
 using WebApi.Common.Exceptions;
 using WebApi.Common.Health;
 using WebApi.Common.Middlewares;
@@ -164,36 +163,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ── 6. Rate limiting ──────────────────────────────────────────────────────────
-// Global per-IP limiter protects every endpoint; the strict "auth" policy is
-// applied to credential/token endpoints to blunt brute-force and email-bomb abuse.
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-    {
-        var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 100,
-            Window      = TimeSpan.FromMinutes(1),
-            QueueLimit  = 0
-        });
-    });
-
-    options.AddPolicy("auth", context =>
-    {
-        var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 10,
-            Window      = TimeSpan.FromMinutes(1),
-            QueueLimit  = 0
-        });
-    });
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 // ─────────────────────────────────────────────────────────────────────────────
@@ -245,8 +214,6 @@ app.UseExceptionHandler(opt => { });
 
 app.UseCors("FrontendPolicy");
 
-app.UseRateLimiter();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -275,9 +242,7 @@ app.MapWorkspaceEndpoints();
 app.MapFileEndpoints();
 
 // Liveness: process is up (no dependency checks). Readiness: dependencies (DB) are reachable.
-app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false })
-   .DisableRateLimiting();
-app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") })
-   .DisableRateLimiting();
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
+app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 
 app.Run();
