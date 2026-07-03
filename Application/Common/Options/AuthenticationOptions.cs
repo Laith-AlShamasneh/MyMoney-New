@@ -8,6 +8,7 @@ public sealed class AuthenticationOptions
     public string ConfirmEmailBaseUrl          { get; init; } = string.Empty;
     public int    PasswordResetExpiryMinutes   { get; init; } = 15;
     public string ResetPasswordBaseUrl         { get; init; } = string.Empty;
+    public string AcceptInvitationBaseUrl      { get; init; } = string.Empty;
 
     // H8: when true, access tokens carry a per-user security stamp that is validated
     // on each request, and the stamp is bumped on password change (revoking tokens).

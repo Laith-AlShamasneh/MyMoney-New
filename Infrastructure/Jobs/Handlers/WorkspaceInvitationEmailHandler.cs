@@ -21,7 +21,7 @@ internal sealed class WorkspaceInvitationEmailHandler(
             ["InviterName"]   = isAr ? payload.InviterNameAr : payload.InviterNameEn,
             ["WorkspaceName"] = payload.WorkspaceName,
             ["RoleCode"]      = payload.RoleCode,
-            ["AcceptToken"]   = payload.AcceptToken,
+            ["AcceptLink"]    = payload.AcceptLink,
             ["ExpiresAt"]     = payload.ExpiresAtUtc.ToString("yyyy-MM-dd HH:mm UTC"),
             ["CurrentYear"]   = DateTime.UtcNow.Year.ToString()
         };

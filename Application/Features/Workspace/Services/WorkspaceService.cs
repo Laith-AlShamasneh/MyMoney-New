@@ -1,9 +1,11 @@
 using Application.Common.Constants;
+using Application.Common.Options;
 using Application.Features.Email.Jobs;
 using Application.Features.Workspace.DbModels;
 using Application.Features.Workspace.DTOs;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
+using Microsoft.Extensions.Options;
 using Shared.Constants;
 using Shared.Enums.System;
 using Shared.Enums.Workspace;
@@ -12,11 +14,12 @@ using Shared.Results;
 namespace Application.Features.Workspace.Services;
 
 internal sealed class WorkspaceService(
-    IWorkspaceRepository  workspaceRepository,
-    IUserContext           userContext,
-    IMessageProvider       messageProvider,
-    IBackgroundJobService  backgroundJobService,
-    ITokenHasher           tokenHasher) : IWorkspaceService
+    IWorkspaceRepository            workspaceRepository,
+    IUserContext                   userContext,
+    IMessageProvider               messageProvider,
+    IBackgroundJobService          backgroundJobService,
+    ITokenHasher                   tokenHasher,
+    IOptions<AuthenticationOptions> authOptions) : IWorkspaceService
 {
     private const int InvitationExpiryDays = 7;
 
@@ -282,8 +285,7 @@ internal sealed class WorkspaceService(
                       await messageProvider.GetMessagesAsync(MessageKeys.Workspace.CannotInviteOwnerRole, ct)),
             -3 => ServiceResultFactory.Failure<object?>(InternalResponseCodes.Conflict,
                       await messageProvider.GetMessagesAsync(MessageKeys.Workspace.AlreadyMember, ct)),
-            _  => await EnqueueInvitationEmailAndSucceedAsync(
-                      request.Email, rawToken, request.WorkspaceId, expiry, ct),
+            _  => await EnqueueInvitationEmailAndSucceedAsync(request, rawToken, expiry, ct),
         };
     }
 
@@ -414,20 +416,31 @@ internal sealed class WorkspaceService(
     // ── Helpers ───────────────────────────────────────────────
 
     private async Task<ServiceResult<object?>> EnqueueInvitationEmailAndSucceedAsync(
-        string email, string rawToken, long workspaceId, DateTime expiry, CancellationToken ct)
+        SendInvitationRequest request, string rawToken, DateTime expiry, CancellationToken ct)
     {
-        // Fetch workspace name for the email — reuse GetByIdAsync result already cached by the caller's SP
-        // We enqueue the email job; the handler will build the email body from the payload.
+        // Populate the email payload with real data so the invitation renders completely
+        // (workspace name, who invited you, the granted role) — matching the other emails.
+        var workspace   = await workspaceRepository.GetByIdAsync(request.WorkspaceId, userContext.UserId, ct);
+        var inviterName = userContext.DisplayName;
+        var roleCode    = Enum.IsDefined(typeof(WorkspaceRoleId), request.RoleId)
+            ? ((WorkspaceRoleId)request.RoleId).ToString()
+            : request.RoleId.ToString();
+        var language    = userContext.Language == SystemLanguages.Arabic ? "ar" : "en";
+
+        // Build the accept link the same way AuthService builds ResetLink/confirmationLink.
+        var acceptLink = $"{authOptions.Value.AcceptInvitationBaseUrl}?token={Uri.EscapeDataString(rawToken)}";
+
         var payload = new WorkspaceInvitationEmailPayload(
-            ToEmail:       email,
-            InviterNameEn: string.Empty,   // handler will resolve from job context if needed
-            InviterNameAr: string.Empty,
-            WorkspaceName: string.Empty,
-            RoleCode:      string.Empty,
+            ToEmail:       request.Email,
+            InviterNameEn: inviterName,
+            InviterNameAr: inviterName,
+            WorkspaceName: workspace?.Name ?? string.Empty,
+            RoleCode:      roleCode,
             AcceptToken:   rawToken,
             RejectToken:   rawToken,
+            AcceptLink:    acceptLink,
             ExpiresAtUtc:  expiry,
-            Language:      "en");           // handler resolves target user's language preference
+            Language:      language);
 
         await backgroundJobService.EnqueueAsync(
             JobTypes.WorkspaceInvitationEmail,

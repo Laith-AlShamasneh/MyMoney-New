@@ -1,0 +1,6 @@
+{
+  "SubjectEn":  "You're invited to join {{WorkspaceName}} on MyMoney",
+  "SubjectAr":  "دعوة للانضمام إلى {{WorkspaceName}} على MyMoney",
+  "PreviewEn":  "{{InviterName}} invited you to collaborate on {{WorkspaceName}}. This invitation expires in 7 days.",
+  "PreviewAr":  "دعاك {{InviterName}} للتعاون في {{WorkspaceName}}. تنتهي صلاحية هذه الدعوة خلال 7 أيام."
+}

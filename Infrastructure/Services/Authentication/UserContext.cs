@@ -29,7 +29,14 @@ internal sealed class UserContext(IHttpContextAccessor httpContextAccessor) : IU
 
     public string Email => Http?.User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
 
-    public string DisplayName => Http?.User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+    // The JWT stores the display name under "preferred_username"
+    // (JwtRegisteredClaimNames.PreferredUsername); it is NOT in the default inbound
+    // claim map, so it is never remapped to ClaimTypes.Name. Read it directly, with a
+    // fallback to ClaimTypes.Name for any principal that does use the standard claim.
+    public string DisplayName =>
+        Http?.User.FindFirst("preferred_username")?.Value
+        ?? Http?.User.FindFirst(ClaimTypes.Name)?.Value
+        ?? string.Empty;
 
     public bool IsAuthenticated => Http?.User.Identity?.IsAuthenticated ?? false;
 
