@@ -4,9 +4,8 @@
     {
       "name": "MyMoney-FE",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["C:\\Users\\LAITHA~1\\AppData\\Local\\Temp\\claude\\E--Development--NET-Projects-MyMoney\\11dd3ce8-39dd-435f-b345-b252711f3785\\scratchpad\\serve_nocache.py"],
-      "port": 3000,
-      "autoPort": false
+      "runtimeArgs": ["-m", "http.server", "5501", "--directory", "E:\\Development\\Frontend\\MyMoney-FE"],
+      "port": 5501
     }
   ]
 }
