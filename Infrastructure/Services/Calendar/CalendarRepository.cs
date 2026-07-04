@@ -235,4 +235,52 @@ internal sealed class CalendarRepository(IDbExecutor db) : ICalendarRepository
         await db.ExecuteAsync("MyMoney.usp_Calendar_Reminder_Dismiss", p, ct);
         return p.Get<int>("@AffectedRows");
     }
+
+    // ── Smart reminders ─────────────────────────────────────────────────────────
+
+    public async Task<IReadOnlyList<ActiveReminderDbResult>> GetActiveRemindersAsync(long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserId", userId, DbType.Int64);
+
+        return await db.QueryListAsync<ActiveReminderDbResult>("MyMoney.usp_Calendar_Reminder_GetActive", p, ct);
+    }
+
+    public async Task<int> SnoozeReminderAsync(long reminderId, long userId, int minutes, int maxSnoozes, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@ReminderId", reminderId, DbType.Int64);
+        p.Add("@UserId",     userId,     DbType.Int64);
+        p.Add("@Minutes",    minutes,    DbType.Int32);
+        p.Add("@MaxSnoozes", maxSnoozes, DbType.Int32);
+        p.Add("@Result", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+        await db.ExecuteAsync("MyMoney.usp_Calendar_Reminder_Snooze", p, ct);
+        return p.Get<int>("@Result");
+    }
+
+    public async Task<int> MarkReminderClickedAsync(long reminderId, long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@ReminderId", reminderId, DbType.Int64);
+        p.Add("@UserId",     userId,     DbType.Int64);
+        p.Add("@AffectedRows", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+        await db.ExecuteAsync("MyMoney.usp_Calendar_Reminder_MarkClicked", p, ct);
+        return p.Get<int>("@AffectedRows");
+    }
+
+    public async Task<IReadOnlyList<ReminderHistoryDbResult>> GetReminderHistoryAsync(long reminderId, long userId, CancellationToken ct = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@ReminderId", reminderId, DbType.Int64);
+        p.Add("@UserId",     userId,     DbType.Int64);
+
+        return await db.QueryListAsync<ReminderHistoryDbResult>("MyMoney.usp_Calendar_Reminder_History", p, ct);
+    }
+
+    public async Task<int> ExpireRemindersAsync(CancellationToken ct = default)
+    {
+        return await db.ExecuteScalarAsync<int>("MyMoney.usp_Calendar_Reminder_Expire", new DynamicParameters(), ct);
+    }
 }

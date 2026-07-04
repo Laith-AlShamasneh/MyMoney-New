@@ -130,5 +130,44 @@ public static class CalendarEndpoints
             return result.ToHttpResponse();
         })
         .AddEndpointFilter<ValidationFilter<DismissReminderRequest>>();
+
+        // ── Smart reminders (popup) ───────────────────────────────────────────
+        group.MapPost("reminders/active", async (
+            ICalendarService  service,
+            CancellationToken ct) =>
+        {
+            var result = await service.GetActiveRemindersAsync(ct);
+            return result.ToHttpResponse();
+        });
+
+        group.MapPost("reminders/snooze", async (
+            SnoozeReminderRequest request,
+            ICalendarService      service,
+            CancellationToken     ct) =>
+        {
+            var result = await service.SnoozeReminderAsync(request.ReminderId, ct);
+            return result.ToHttpResponse();
+        })
+        .AddEndpointFilter<ValidationFilter<SnoozeReminderRequest>>();
+
+        group.MapPost("reminders/go-to", async (
+            MarkReminderClickedRequest request,
+            ICalendarService           service,
+            CancellationToken          ct) =>
+        {
+            var result = await service.MarkReminderClickedAsync(request.ReminderId, ct);
+            return result.ToHttpResponse();
+        })
+        .AddEndpointFilter<ValidationFilter<MarkReminderClickedRequest>>();
+
+        group.MapPost("reminders/history", async (
+            ReminderHistoryRequest request,
+            ICalendarService       service,
+            CancellationToken      ct) =>
+        {
+            var result = await service.GetReminderHistoryAsync(request.ReminderId, ct);
+            return result.ToHttpResponse();
+        })
+        .AddEndpointFilter<ValidationFilter<ReminderHistoryRequest>>();
     }
 }

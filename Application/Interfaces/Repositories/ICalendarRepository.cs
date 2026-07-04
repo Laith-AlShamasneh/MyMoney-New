@@ -23,4 +23,11 @@ public interface ICalendarRepository
     Task<IReadOnlyList<PendingReminderDbResult>> GetPendingRemindersAsync(int windowMinutes = 5, CancellationToken ct = default);
     Task                                         MarkReminderSentAsync(long reminderId, long? jobId = null, CancellationToken ct = default);
     Task<int>                                    DismissReminderAsync(long reminderId, long userId, CancellationToken ct = default);
+
+    // Smart reminders
+    Task<IReadOnlyList<ActiveReminderDbResult>>  GetActiveRemindersAsync(long userId, CancellationToken ct = default);
+    Task<int>                                    SnoozeReminderAsync(long reminderId, long userId, int minutes, int maxSnoozes, CancellationToken ct = default);
+    Task<int>                                    MarkReminderClickedAsync(long reminderId, long userId, CancellationToken ct = default);
+    Task<IReadOnlyList<ReminderHistoryDbResult>> GetReminderHistoryAsync(long reminderId, long userId, CancellationToken ct = default);
+    Task<int>                                    ExpireRemindersAsync(CancellationToken ct = default);
 }

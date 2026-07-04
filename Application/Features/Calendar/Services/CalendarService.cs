@@ -280,15 +280,97 @@ internal sealed class CalendarService(
     public async Task<ServiceResult<object?>> DismissReminderAsync(long reminderId, CancellationToken ct = default)
     {
         var affected = await calendarRepository.DismissReminderAsync(reminderId, userContext.UserId, ct);
+
+        if (affected == -3)
+            return ServiceResultFactory.Failure<object?>(
+                InternalResponseCodes.BadRequest,
+                await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderCannotDismissCritical, ct));
+
         if (affected == 0)
-        {
             return ServiceResultFactory.Failure<object?>(
                 InternalResponseCodes.NotFound,
                 await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderNotFound, ct));
-        }
 
         var msg = await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderDismissed, ct);
         return ServiceResultFactory.Success<object?>(null, InternalResponseCodes.OK, msg);
+    }
+
+    // ── Smart reminders ──────────────────────────────────────────────────────────
+
+    /// <summary>Snooze duration and cap. Snooze is disabled after MaxSnoozes and for Critical events.</summary>
+    public const int SnoozeMinutes = 5;
+    public const int MaxSnoozes    = 2;
+
+    public async Task<ServiceResult<ActiveRemindersResponse>> GetActiveRemindersAsync(CancellationToken ct = default)
+    {
+        var rows = await calendarRepository.GetActiveRemindersAsync(userContext.UserId, ct);
+
+        var items = rows.Select(r => new ActiveReminderDto(
+            ReminderId:    r.ReminderId,
+            EventId:       r.EventId,
+            ReminderAtUtc: r.ReminderAtUtc,
+            SnoozeCount:   r.SnoozeCount,
+            MaxSnoozes:    MaxSnoozes,
+            Title:         r.Title,
+            Description:   r.Description,
+            EventDate:     r.EventDate.ToString("yyyy-MM-dd"),
+            StartTime:     r.StartTime,
+            EndTime:       r.EndTime,
+            AllDay:        r.AllDay,
+            EventTypeId:   r.EventTypeId,
+            Priority:      r.Priority,
+            ColorHex:      r.ColorHex,
+            Icon:          r.Icon,
+            Location:      null)).ToList();
+
+        var msg = await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ActiveRemindersLoaded, ct);
+        return ServiceResultFactory.Success(new ActiveRemindersResponse(items), InternalResponseCodes.OK, msg);
+    }
+
+    public async Task<ServiceResult<SnoozeReminderResponse>> SnoozeReminderAsync(long reminderId, CancellationToken ct = default)
+    {
+        var result = await calendarRepository.SnoozeReminderAsync(
+            reminderId, userContext.UserId, SnoozeMinutes, MaxSnoozes, ct);
+
+        return result switch
+        {
+            -1 => ServiceResultFactory.Failure<SnoozeReminderResponse>(
+                      InternalResponseCodes.NotFound,
+                      await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderNotFound, ct)),
+            -2 => ServiceResultFactory.Failure<SnoozeReminderResponse>(
+                      InternalResponseCodes.BadRequest,
+                      await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderSnoozeLimit, ct)),
+            -3 => ServiceResultFactory.Failure<SnoozeReminderResponse>(
+                      InternalResponseCodes.BadRequest,
+                      await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderCannotSnoozeCritical, ct)),
+            _  => ServiceResultFactory.Success(
+                      new SnoozeReminderResponse(result, MaxSnoozes, DateTime.UtcNow.AddMinutes(SnoozeMinutes)),
+                      InternalResponseCodes.OK,
+                      await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderSnoozed, ct)),
+        };
+    }
+
+    public async Task<ServiceResult<object?>> MarkReminderClickedAsync(long reminderId, CancellationToken ct = default)
+    {
+        var affected = await calendarRepository.MarkReminderClickedAsync(reminderId, userContext.UserId, ct);
+        if (affected == 0)
+            return ServiceResultFactory.Failure<object?>(
+                InternalResponseCodes.NotFound,
+                await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderNotFound, ct));
+
+        var msg = await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderOpened, ct);
+        return ServiceResultFactory.Success<object?>(null, InternalResponseCodes.OK, msg);
+    }
+
+    public async Task<ServiceResult<ReminderHistoryResponse>> GetReminderHistoryAsync(long reminderId, CancellationToken ct = default)
+    {
+        var rows = await calendarRepository.GetReminderHistoryAsync(reminderId, userContext.UserId, ct);
+
+        var items = rows.Select(h => new ReminderHistoryItemDto(
+            h.HistoryId, h.ReminderId, h.Action, h.FromStatusId, h.ToStatusId, h.DetailJson, h.CreatedAtUtc)).ToList();
+
+        var msg = await messageProvider.GetMessagesAsync(MessageKeys.Calendar.ReminderHistoryLoaded, ct);
+        return ServiceResultFactory.Success(new ReminderHistoryResponse(items), InternalResponseCodes.OK, msg);
     }
 
     // ── Mapping ────────────────────────────────────────────────────────────────

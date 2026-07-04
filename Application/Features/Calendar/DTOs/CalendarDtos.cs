@@ -65,8 +65,45 @@ public sealed record SearchCalendarRequest(
     int     PageSize    = 20);
 
 public sealed record DismissReminderRequest(long ReminderId);
+public sealed record SnoozeReminderRequest(long ReminderId);
+public sealed record MarkReminderClickedRequest(long ReminderId);
+public sealed record ReminderHistoryRequest(long ReminderId);
 
 // ── Responses ─────────────────────────────────────────────────────────────────
+
+// Smart reminder popup — one active reminder (event snapshot + reminder state).
+public sealed record ActiveReminderDto(
+    long     ReminderId,
+    long     EventId,
+    DateTime ReminderAtUtc,
+    int      SnoozeCount,
+    int      MaxSnoozes,
+    string   Title,
+    string?  Description,
+    string   EventDate,
+    string?  StartTime,
+    string?  EndTime,
+    bool     AllDay,
+    byte     EventTypeId,
+    byte     Priority,
+    string?  ColorHex,
+    string?  Icon,
+    string?  Location);
+
+public sealed record ActiveRemindersResponse(IReadOnlyList<ActiveReminderDto> Reminders);
+
+public sealed record SnoozeReminderResponse(int SnoozeCount, int MaxSnoozes, DateTime SnoozedUntilUtc);
+
+public sealed record ReminderHistoryItemDto(
+    long     HistoryId,
+    long     ReminderId,
+    string   Action,
+    byte?    FromStatusId,
+    byte?    ToStatusId,
+    string?  DetailJson,
+    DateTime CreatedAtUtc);
+
+public sealed record ReminderHistoryResponse(IReadOnlyList<ReminderHistoryItemDto> Items);
 
 public sealed record CreateCalendarEventResponse(long EventId);
 

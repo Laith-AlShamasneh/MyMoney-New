@@ -473,6 +473,13 @@ public static class MessageKeys
         public const string SearchResultsLoaded      = "Calendar.SearchResultsLoaded";
         public const string ReminderDismissed        = "Calendar.ReminderDismissed";
         public const string ReminderNotFound         = "Calendar.ReminderNotFound";
+        public const string ActiveRemindersLoaded    = "Calendar.ActiveRemindersLoaded";
+        public const string ReminderSnoozed          = "Calendar.ReminderSnoozed";
+        public const string ReminderSnoozeLimit      = "Calendar.ReminderSnoozeLimit";
+        public const string ReminderCannotSnoozeCritical = "Calendar.ReminderCannotSnoozeCritical";
+        public const string ReminderCannotDismissCritical = "Calendar.ReminderCannotDismissCritical";
+        public const string ReminderOpened           = "Calendar.ReminderOpened";
+        public const string ReminderHistoryLoaded    = "Calendar.ReminderHistoryLoaded";
     }
 
     public static class Receipt

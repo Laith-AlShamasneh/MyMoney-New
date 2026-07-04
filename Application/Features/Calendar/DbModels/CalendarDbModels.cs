@@ -160,9 +160,40 @@ public class PendingReminderDbResult
     public long    EventId      { get; set; }
     public long    UserId       { get; set; }
     public DateTime ReminderAtUtc { get; set; }
+    public int     SnoozeCount  { get; set; }
     public string  Title        { get; set; } = null!;
     public DateOnly EventDate   { get; set; }
     public byte    EventTypeId  { get; set; }
+    public byte    Priority     { get; set; }
+}
+
+public class ActiveReminderDbResult
+{
+    public long     ReminderId    { get; set; }
+    public long     EventId       { get; set; }
+    public DateTime ReminderAtUtc { get; set; }
+    public int      SnoozeCount   { get; set; }
+    public string   Title         { get; set; } = null!;
+    public string?  Description   { get; set; }
+    public DateOnly EventDate     { get; set; }
+    public string?  StartTime     { get; set; }
+    public string?  EndTime       { get; set; }
+    public bool     AllDay        { get; set; }
+    public byte     EventTypeId   { get; set; }
+    public byte     Priority      { get; set; }
+    public string?  ColorHex      { get; set; }
+    public string?  Icon          { get; set; }
+}
+
+public class ReminderHistoryDbResult
+{
+    public long     HistoryId    { get; set; }
+    public long     ReminderId   { get; set; }
+    public string   Action       { get; set; } = null!;
+    public byte?    FromStatusId { get; set; }
+    public byte?    ToStatusId   { get; set; }
+    public string?  DetailJson   { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
 }
 
 public sealed class TotalCountRow { public int TotalCount { get; set; } }

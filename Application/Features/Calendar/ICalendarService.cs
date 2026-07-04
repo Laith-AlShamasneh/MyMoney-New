@@ -19,4 +19,10 @@ public interface ICalendarService
     Task<ServiceResult<CalendarSearchResponse>>   SearchAsync(SearchCalendarRequest request, CancellationToken ct = default);
 
     Task<ServiceResult<object?>> DismissReminderAsync(long reminderId, CancellationToken ct = default);
+
+    // Smart reminders
+    Task<ServiceResult<ActiveRemindersResponse>> GetActiveRemindersAsync(CancellationToken ct = default);
+    Task<ServiceResult<SnoozeReminderResponse>>  SnoozeReminderAsync(long reminderId, CancellationToken ct = default);
+    Task<ServiceResult<object?>>                 MarkReminderClickedAsync(long reminderId, CancellationToken ct = default);
+    Task<ServiceResult<ReminderHistoryResponse>> GetReminderHistoryAsync(long reminderId, CancellationToken ct = default);
 }

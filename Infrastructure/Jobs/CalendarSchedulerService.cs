@@ -47,6 +47,18 @@ internal sealed class CalendarSchedulerService(
         var calendarRepo     = scope.ServiceProvider.GetRequiredService<ICalendarRepository>();
         var backgroundJobSvc = scope.ServiceProvider.GetRequiredService<IBackgroundJobService>();
 
+        // Expire stale reminders (event long past / deleted / completed) — idempotent.
+        try
+        {
+            var expired = await calendarRepo.ExpireRemindersAsync(ct);
+            if (expired > 0)
+                logger.LogInformation("Calendar: Expired {Count} stale reminder(s).", expired);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Calendar: Reminder expiry sweep failed.");
+        }
+
         var pendingReminders = await calendarRepo.GetPendingRemindersAsync(WindowMinutes, ct);
 
         if (pendingReminders.Count == 0) return;

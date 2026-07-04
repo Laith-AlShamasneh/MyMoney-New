@@ -181,6 +181,33 @@ public sealed class DismissReminderValidator : AbstractValidator<DismissReminder
     }
 }
 
+public sealed class SnoozeReminderValidator : AbstractValidator<SnoozeReminderRequest>
+{
+    public SnoozeReminderValidator()
+    {
+        RuleFor(x => x.ReminderId)
+            .GreaterThan(0).WithMessage(MessageKeys.Calendar.InvalidReminderId);
+    }
+}
+
+public sealed class MarkReminderClickedValidator : AbstractValidator<MarkReminderClickedRequest>
+{
+    public MarkReminderClickedValidator()
+    {
+        RuleFor(x => x.ReminderId)
+            .GreaterThan(0).WithMessage(MessageKeys.Calendar.InvalidReminderId);
+    }
+}
+
+public sealed class ReminderHistoryValidator : AbstractValidator<ReminderHistoryRequest>
+{
+    public ReminderHistoryValidator()
+    {
+        RuleFor(x => x.ReminderId)
+            .GreaterThan(0).WithMessage(MessageKeys.Calendar.InvalidReminderId);
+    }
+}
+
 public sealed class GetCalendarEventValidator : AbstractValidator<GetCalendarEventRequest>
 {
     public GetCalendarEventValidator()

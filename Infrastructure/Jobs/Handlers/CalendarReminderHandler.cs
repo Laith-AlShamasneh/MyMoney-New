@@ -14,6 +14,15 @@ internal sealed class CalendarReminderHandler(
 
     protected override async Task HandleAsync(CalendarReminderPayload payload, CancellationToken ct)
     {
+        // Deep-link payload so the Notification Center item (and the reminder popup)
+        // can open the event directly. JSON is intentionally minimal + stable.
+        var deepLink = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            code       = "CALENDAR_REMINDER_DUE",
+            eventId    = payload.EventId,
+            reminderId = payload.ReminderId,
+        });
+
         var notificationPayload = new CreateNotificationPayload(
             TemplateCode: "CALENDAR_REMINDER_DUE",
             UserId:       payload.UserId,
@@ -22,7 +31,7 @@ internal sealed class CalendarReminderHandler(
                 { "EventTitle", payload.EventTitle },
                 { "EventDate",  payload.EventDate  },
             },
-            PayloadJson: null);
+            PayloadJson: deepLink);
 
         await backgroundJobService.EnqueueAsync(
             JobTypes.CreateNotification,
