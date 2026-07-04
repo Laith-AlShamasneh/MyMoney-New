@@ -163,14 +163,22 @@ BEGIN
     IF @NotifyBefore IS NOT NULL AND @EventDate >= CAST(GETUTCDATE() AS DATE)
     BEGIN
         DECLARE @ReminderAt DATETIME2(0);
-        IF @StartTime IS NOT NULL
+        IF @AllDay = 0 AND @StartTime IS NOT NULL
+            -- Timed event: anchor at the start time.
             SET @ReminderAt = DATEADD(MINUTE, -@NotifyBefore,
                 DATEADD(SECOND,
                     DATEDIFF(SECOND, CAST('00:00:00' AS TIME(0)), @StartTime),
                     CAST(@EventDate AS DATETIME2(0))));
         ELSE
+            -- All-day (or no start time): anchor at 09:00 local on the event day,
+            -- so "N minutes before" is meaningful (not N minutes before midnight).
             SET @ReminderAt = DATEADD(MINUTE, -@NotifyBefore,
-                CAST(@EventDate AS DATETIME2(0)));
+                DATEADD(HOUR, 9, CAST(@EventDate AS DATETIME2(0))));
+
+        -- Event times are entered in the user's local wall-clock; convert the
+        -- reminder instant to true UTC (server offset) so ReminderAtUtc is genuine
+        -- UTC and the scheduler's `<= GETUTCDATE()` comparison fires on time.
+        SET @ReminderAt = DATEADD(SECOND, DATEDIFF(SECOND, SYSDATETIME(), SYSUTCDATETIME()), @ReminderAt);
 
         IF @ReminderAt > GETUTCDATE()
             INSERT INTO [MyMoney].[CalendarReminders]
@@ -232,14 +240,19 @@ BEGIN
         IF @NotifyBefore IS NOT NULL AND @EventDate >= CAST(GETUTCDATE() AS DATE)
         BEGIN
             DECLARE @ReminderAt DATETIME2(0);
-            IF @StartTime IS NOT NULL
+            IF @AllDay = 0 AND @StartTime IS NOT NULL
+                -- Timed event: anchor at the start time.
                 SET @ReminderAt = DATEADD(MINUTE, -@NotifyBefore,
                     DATEADD(SECOND,
                         DATEDIFF(SECOND, CAST('00:00:00' AS TIME(0)), @StartTime),
                         CAST(@EventDate AS DATETIME2(0))));
             ELSE
+                -- All-day (or no start time): anchor at 09:00 local on the event day.
                 SET @ReminderAt = DATEADD(MINUTE, -@NotifyBefore,
-                    CAST(@EventDate AS DATETIME2(0)));
+                    DATEADD(HOUR, 9, CAST(@EventDate AS DATETIME2(0))));
+
+            -- Local wall-clock → true UTC (server offset), see create SP note.
+            SET @ReminderAt = DATEADD(SECOND, DATEDIFF(SECOND, SYSDATETIME(), SYSUTCDATETIME()), @ReminderAt);
 
             IF @ReminderAt > GETUTCDATE()
                 INSERT INTO [MyMoney].[CalendarReminders]
