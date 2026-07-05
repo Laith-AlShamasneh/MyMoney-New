@@ -8,7 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Email templates are physical HTML files; must be present at runtime -->
+    <!-- Email templates are physical HTML files read from ContentRoot at runtime and
+         must be copied to the publish output. .html files outside wwwroot default to
+         the None item type, so a bare <Content Update> silently skips them (only the
+         .json copied). Reclassify the .html (incl. Layouts) as copied Content, and keep
+         the Update for the .json metadata. -->
+    <None Remove="EmailTemplates\**\*.html" />
+    <Content Include="EmailTemplates\**\*.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Update="EmailTemplates\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
