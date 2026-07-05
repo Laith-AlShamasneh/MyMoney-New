@@ -19,6 +19,7 @@ internal sealed class WorkspaceService(
     IMessageProvider               messageProvider,
     IBackgroundJobService          backgroundJobService,
     ITokenHasher                   tokenHasher,
+    IStorageUtility                storageUtility,
     IOptions<AuthenticationOptions> authOptions) : IWorkspaceService
 {
     private const int InvitationExpiryDays = 7;
@@ -405,7 +406,7 @@ internal sealed class WorkspaceService(
         var dtos = items.Select(a => new WorkspaceActivityDto(
             a.ActivityId, a.WorkspaceId, a.ActorUserId, a.Action,
             a.EntityType, a.EntityId, a.MetadataJson, a.CreatedAtUtc,
-            a.ActorNameEn, a.ActorNameAr, a.ActorProfilePicture)).ToList();
+            a.ActorNameEn, a.ActorNameAr, _profilePictureUrl(a.ActorProfilePicture))).ToList();
 
         var response = new WorkspaceActivityResponse(total, request.PageNumber, request.PageSize, dtos);
 
@@ -458,9 +459,21 @@ internal sealed class WorkspaceService(
             db.IsActive, db.CreatedAtUtc, db.UpdatedAtUtc,
             db.CallerRoleId, db.CallerRoleCode, db.ActiveMemberCount);
 
-    private static WorkspaceMemberDto MapMemberDto(WorkspaceMemberDbResult m) =>
+    private WorkspaceMemberDto MapMemberDto(WorkspaceMemberDbResult m) =>
         new(m.MemberId, m.WorkspaceId, m.UserId, m.RoleId, m.StatusId,
             m.InvitedByUserId, m.JoinedAtUtc, m.CreatedAtUtc,
             m.RoleCode, m.RoleNameEn, m.RoleNameAr,
-            m.DisplayNameEn, m.DisplayNameAr, m.ProfilePicture, m.Email);
+            m.DisplayNameEn, m.DisplayNameAr, _profilePictureUrl(m.ProfilePicture), m.Email);
+
+    /// <summary>
+    /// Builds the full, publicly-servable URL for a stored profile-picture file
+    /// name. The backend owns URL construction so the frontend only displays it.
+    /// </summary>
+    private string? _profilePictureUrl(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)) return null;
+        var (url, _) = storageUtility.BuildFilePathWithExpiration(
+            FolderPaths.ProfilePictures, fileName, isInternalStorage: true, baseUrl: userContext.RequestBaseUrl);
+        return url;
+    }
 }
