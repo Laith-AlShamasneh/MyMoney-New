@@ -5,5 +5,6 @@ namespace Application.Interfaces.Services;
 
 public interface IDashboardService
 {
-    Task<ServiceResult<DashboardSummaryResponse>> GetSummaryAsync(CancellationToken ct = default);
+    /// <param name="period">0 = current month (with vs-last-month comparison), 1 = all time.</param>
+    Task<ServiceResult<DashboardSummaryResponse>> GetSummaryAsync(byte period = 0, CancellationToken ct = default);
 }

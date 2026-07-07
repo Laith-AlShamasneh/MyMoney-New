@@ -12,21 +12,27 @@ internal sealed class DashboardService(
     IUserContext         userContext,
     IMessageProvider     messageProvider) : IDashboardService
 {
-    public async Task<ServiceResult<DashboardSummaryResponse>> GetSummaryAsync(CancellationToken ct = default)
+    public async Task<ServiceResult<DashboardSummaryResponse>> GetSummaryAsync(byte period = 0, CancellationToken ct = default)
     {
+        // Only 0 (current month) and 1 (all time) are supported; clamp anything else.
+        var effectivePeriod = period == 1 ? (byte)1 : (byte)0;
+        var isAllTime       = effectivePeriod == 1;
+
         var (kpi, trend, breakdown, recent) =
-            await dashboardRepository.GetSummaryAsync(userContext.UserId, userContext.WorkspaceId, ct);
+            await dashboardRepository.GetSummaryAsync(userContext.UserId, userContext.WorkspaceId, effectivePeriod, ct);
 
         // ── KPI calculations ────────────────────────────────────────────────
         var currentNet  = kpi.CurrentIncome  - kpi.CurrentExpenses;
         var previousNet = kpi.PreviousIncome - kpi.PreviousExpenses;
 
-        decimal? incomeChange   = ComputeChange(kpi.CurrentIncome,   kpi.PreviousIncome);
-        decimal? expensesChange = ComputeChange(kpi.CurrentExpenses, kpi.PreviousExpenses);
-        decimal? netChange      = previousNet != 0
-            ? Math.Round((currentNet - previousNet) / Math.Abs(previousNet) * 100, 1)
-            : (decimal?)null;
-        int? countChange = kpi.CurrentTransactionCount - kpi.PreviousTransactionCount;
+        // All-time has no previous-period baseline → no comparison pills.
+        decimal? incomeChange   = isAllTime ? null : ComputeChange(kpi.CurrentIncome,   kpi.PreviousIncome);
+        decimal? expensesChange = isAllTime ? null : ComputeChange(kpi.CurrentExpenses, kpi.PreviousExpenses);
+        decimal? netChange      = isAllTime ? null
+            : previousNet != 0
+                ? Math.Round((currentNet - previousNet) / Math.Abs(previousNet) * 100, 1)
+                : (decimal?)null;
+        int? countChange = isAllTime ? null : kpi.CurrentTransactionCount - kpi.PreviousTransactionCount;
 
         var kpiSummary = new KpiSummary(
             CurrentIncome:           kpi.CurrentIncome,

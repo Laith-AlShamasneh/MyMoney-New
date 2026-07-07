@@ -1,3 +1,4 @@
+using Application.Features.Dashboard.DTOs;
 using Application.Interfaces.Services;
 using WebApi.Common.Extensions;
 
@@ -15,10 +16,12 @@ public static class DashboardEndpoints
     }
 
     private static async Task<IResult> GetSummaryAsync(
-        IDashboardService dashboardService,
-        CancellationToken ct)
+        DashboardSummaryRequest? request,
+        IDashboardService        dashboardService,
+        CancellationToken        ct)
     {
-        var result = await dashboardService.GetSummaryAsync(ct);
+        // Body is optional; default to current-month when omitted.
+        var result = await dashboardService.GetSummaryAsync(request?.Period ?? 0, ct);
         return result.ToHttpResponse();
     }
 }

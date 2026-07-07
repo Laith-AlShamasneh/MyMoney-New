@@ -1,5 +1,8 @@
 namespace Application.Features.Dashboard.DTOs;
 
+/// <summary>Dashboard summary request. Period: 0 = current month, 1 = all time.</summary>
+public sealed record DashboardSummaryRequest(byte Period = 0);
+
 public sealed record DashboardSummaryResponse(
     KpiSummary                           Kpi,
     IReadOnlyList<MonthlyTrendItem>      MonthlyTrend,
