@@ -6,6 +6,18 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "5501", "--directory", "E:\\Development\\Frontend\\MyMoney-FE"],
       "port": 5501
+    },
+    {
+      "name": "portfolio-fe",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5500", "--directory", "E:\\Development\\Frontend\\Portfolio-FE"],
+      "port": 5500
+    },
+    {
+      "name": "portfolio-fe-debug",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "E:\\Development\\Frontend\\Portfolio-FE"],
+      "port": 8080
     }
   ]
 }

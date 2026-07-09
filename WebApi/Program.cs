@@ -74,13 +74,14 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 // ── 5. JWT authentication ─────────────────────────────────────────────────────
-// Fail fast: the signing key must be supplied out-of-band (user-secrets in dev,
-// the Jwt__SecretKey environment variable in prod) and never committed.
+// Signing key comes from configuration (Jwt:SecretKey in appsettings.json; an
+// environment variable Jwt__SecretKey still overrides it per-environment if set).
+// Fail fast if it's absent or too short to produce a secure HMAC-SHA256 signature.
 var jwtSecret = builder.Configuration["Jwt:SecretKey"];
 if (string.IsNullOrWhiteSpace(jwtSecret) || Encoding.UTF8.GetByteCount(jwtSecret) < 32)
     throw new InvalidOperationException(
-        "Jwt:SecretKey is missing or shorter than 32 bytes. Supply it via user-secrets " +
-        "(dev) or the Jwt__SecretKey environment variable (prod). It must never live in appsettings.json.");
+        "Jwt:SecretKey is missing or shorter than 32 bytes. Set it in appsettings.json " +
+        "(or override with the Jwt__SecretKey environment variable).");
 
 // H8: when enabled, each request's access token must carry a security stamp that
 // matches the user's current stamp (cached ~60s). Bumping the stamp (on password
