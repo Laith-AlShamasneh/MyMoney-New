@@ -12,6 +12,10 @@ internal sealed class NotificationPublisher(IBackgroundJobService backgroundJobS
         long                        userId,
         Dictionary<string, string>? parameters = null,
         object?                     payload    = null,
+        string?                     titleEn    = null,
+        string?                     titleAr    = null,
+        string?                     messageEn  = null,
+        string?                     messageAr  = null,
         CancellationToken           ct         = default)
     {
         var payloadJson = payload is not null
@@ -20,7 +24,8 @@ internal sealed class NotificationPublisher(IBackgroundJobService backgroundJobS
 
         await backgroundJobService.EnqueueAsync(
             JobTypes.CreateNotification,
-            new CreateNotificationPayload(templateCode, userId, parameters, payloadJson),
+            new CreateNotificationPayload(templateCode, userId, parameters, payloadJson,
+                                          titleEn, titleAr, messageEn, messageAr),
             priority:    2,
             maxAttempts: 3,
             ct:          ct);

@@ -30,10 +30,12 @@ internal sealed class CreateNotificationHandler(
         if (en is null || ar is null)
             return;
 
-        var titleEn   = ApplyParameters(en.TitleTemplate,   payload.Parameters);
-        var titleAr   = ApplyParameters(ar.TitleTemplate,   payload.Parameters);
-        var messageEn = ApplyParameters(en.MessageTemplate, payload.Parameters);
-        var messageAr = ApplyParameters(ar.MessageTemplate, payload.Parameters);
+        // Prefer caller-supplied pre-rendered text; otherwise substitute {placeholders}
+        // into the template translations.
+        var titleEn   = payload.TitleEn   ?? ApplyParameters(en.TitleTemplate,   payload.Parameters);
+        var titleAr   = payload.TitleAr   ?? ApplyParameters(ar.TitleTemplate,   payload.Parameters);
+        var messageEn = payload.MessageEn ?? ApplyParameters(en.MessageTemplate, payload.Parameters);
+        var messageAr = payload.MessageAr ?? ApplyParameters(ar.MessageTemplate, payload.Parameters);
 
         await notificationRepository.CreateAsync(
             new CreateNotificationDbModel

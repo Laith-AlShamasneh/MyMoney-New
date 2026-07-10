@@ -142,12 +142,16 @@ internal sealed class CashFlowForecastService(
 
             if (code is null) continue;
 
+            // The forecast risk already carries fully-rendered bilingual title/description
+            // (goal name, required vs. current pace, affected month, …). Publish that text
+            // directly so the notification never shows unfilled {placeholders}.
             await notificationPublisher.PublishAsync(
                 templateCode: code,
                 userId:       userId,
-                parameters:   risk.AffectedMonthYear.HasValue
-                    ? new Dictionary<string, string> { ["month"] = risk.AffectedMonthYear.Value.ToString("MMMM yyyy") }
-                    : null,
+                titleEn:      risk.TitleEn,
+                titleAr:      risk.TitleAr,
+                messageEn:    risk.DescriptionEn,
+                messageAr:    risk.DescriptionAr,
                 ct: ct);
 
             await cashFlowRepo.MarkRiskNotifiedAsync(risk.RiskId, ct);

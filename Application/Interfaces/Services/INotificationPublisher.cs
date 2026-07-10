@@ -14,10 +14,18 @@ public interface INotificationPublisher
     /// <param name="userId">Target user.</param>
     /// <param name="parameters">Token-replacement values for the template, e.g. { "ChangedAt", "2025-01-01" }.</param>
     /// <param name="payload">Optional deep-link metadata serialised to JSON, e.g. new { transactionId = 123 }.</param>
+    /// <param name="titleEn">Optional pre-rendered EN title (overrides template {placeholder} substitution).</param>
+    /// <param name="titleAr">Optional pre-rendered AR title.</param>
+    /// <param name="messageEn">Optional pre-rendered EN message.</param>
+    /// <param name="messageAr">Optional pre-rendered AR message.</param>
     Task PublishAsync(
         string                      templateCode,
         long                        userId,
         Dictionary<string, string>? parameters = null,
         object?                     payload    = null,
+        string?                     titleEn    = null,
+        string?                     titleAr    = null,
+        string?                     messageEn  = null,
+        string?                     messageAr  = null,
         CancellationToken           ct         = default);
 }
